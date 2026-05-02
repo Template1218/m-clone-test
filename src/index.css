@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-primary: #c1df1f;
+  --color-brand-dark: #111111;
+  --color-brand-surface: #1e1e1e;
+  --color-brand-border: #2d2d2d;
+  --color-brand-yellow: #facc15;
+  
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-brand-dark text-white font-sans antialiased;
+  }
+}
+
+.bet-button {
+  @apply bg-brand-surface border border-brand-border py-2 px-3 rounded-sm text-sm font-medium transition-all hover:bg-brand-primary/10 hover:border-brand-primary/40 active:scale-95;
+}
+
+.bet-button-active {
+  @apply bg-brand-primary text-black border-brand-primary;
+}
+
+.sidebar-item {
+  @apply flex items-center gap-3 px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-brand-dark;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-brand-border rounded-full hover:bg-gray-600;
+}
