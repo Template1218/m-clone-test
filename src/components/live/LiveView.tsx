@@ -1,5 +1,6 @@
 import { Trophy, Activity, ChevronDown, ChevronRight, Globe, BarChart2 } from 'lucide-react';
 import { useState } from 'react';
+import { useFixtures } from '../../modules/betting/hooks';
 
 const LIVE_MARKETS = ['Match result', 'Handicap', 'Total Goals', 'Both Teams To Score'];
 
@@ -56,9 +57,18 @@ const LIVE_MATCHES = [
 
 export default function LiveView() {
   const [activeMarket, setActiveMarket] = useState('Match result');
-  const [selectedMatchId, setSelectedMatchId] = useState('l1');
+  const { data: allFixtures = [] } = useFixtures();
+  
+  // For demo, we consider fixtures starting within +/- 2 hours as "live" or use status if available
+  const liveMatches = allFixtures.filter(f => {
+     const now = new Date();
+     const start = new Date(f.startsAt);
+     const diff = Math.abs(now.getTime() - start.getTime());
+     return diff < 2 * 60 * 60 * 1000; // 2 hours
+  });
 
-  const selectedMatch = LIVE_MATCHES.find(m => m.id === selectedMatchId) || LIVE_MATCHES[0];
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(liveMatches[0]?.id || null);
+  const selectedMatch = liveMatches.find(m => m.id === selectedMatchId) || liveMatches[0];
 
   return (
     <div className="flex flex-col h-full text-white min-w-0">
@@ -81,176 +91,55 @@ export default function LiveView() {
         {/* Match List Section */}
         <div className="flex-1 flex flex-col gap-1 overflow-y-auto pr-2 no-scrollbar bg-brand-surface rounded-2xl border border-brand-border shadow-xl h-fit">
           <div className="flex flex-col">
-            {/* England Group */}
-            <div className="space-y-0 text-white">
-               <div className="flex items-center justify-between bg-[#111] p-3 rounded-t-2xl border-b border-white/5">
-                  <div className="flex items-center gap-3">
-                    <img src="https://flagcdn.com/w20/gb.png" className="w-5" alt=""/>
-                    <span className="text-[13px] font-black uppercase italic tracking-tight text-white/90">England</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-black text-white/40">1</span>
-                    <ChevronDown className="w-4 h-4 text-[#7CBB3D]" />
-                  </div>
-                </div>
+            {liveMatches.map((m) => (
+              <div key={m.id} className="space-y-0">
                 <div className="bg-[#181818] px-4 py-2 flex items-center justify-between border-b border-white/5">
-                  <span className="text-[11px] font-bold text-[#86EFAC]/90 italic tracking-wide uppercase">Premier League</span>
+                  <span className="text-[11px] font-bold text-[#86EFAC]/90 italic tracking-wide uppercase">{m.leagueName}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-white/40">1</span>
                     <ChevronDown className="w-4 h-4 text-[#7CBB3D]" />
                   </div>
                 </div>
 
                 <div 
-                  onClick={() => setSelectedMatchId('l1')}
-                  className={`border-b border-white/5 p-4 grid grid-cols-[1fr_240px] gap-4 transition-all cursor-pointer group ${selectedMatchId === 'l1' ? 'bg-white/[0.04]' : 'hover:bg-white/[0.02]'}`}
+                  onClick={() => setSelectedMatchId(m.id)}
+                  className={`border-b border-white/5 p-4 grid grid-cols-[1fr_240px] gap-4 transition-all cursor-pointer group ${selectedMatchId === m.id ? 'bg-white/[0.04]' : 'hover:bg-white/[0.02]'}`}
                 >
                   <div className="flex flex-col gap-1.5">
                     <div className="text-[9px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                      <span>Football</span>
-                      <span className="opacity-30">|</span>
-                      <span>England</span>
-                      <span className="opacity-30">|</span>
-                      <span>Premier League</span>
+                       <span>Football</span> <span className="opacity-30">|</span> <span>{m.country}</span> <span className="opacity-30">|</span> <span>{m.leagueName}</span>
                     </div>
                     <div className="flex flex-col">
                       <div className="flex justify-between items-center group-hover:translate-x-1 transition-transform">
-                        <span className="text-[15px] font-black italic text-[#7CBB3D] tracking-tight">Arsenal</span>
-                        <span className="text-[17px] font-black text-white tabular-nums">3</span>
+                        <span className="text-[15px] font-black italic text-[#7CBB3D] tracking-tight">{m.homeTeam}</span>
+                        <span className="text-[17px] font-black text-white tabular-nums">{m.homeScore || 0}</span>
                       </div>
                       <div className="flex justify-between items-center group-hover:translate-x-1 transition-transform">
-                        <span className="text-[15px] font-black italic text-white/90 tracking-tight">Fulham</span>
-                        <span className="text-[17px] font-black text-white tabular-nums">0</span>
+                        <span className="text-[15px] font-black italic text-white/90 tracking-tight">{m.awayTeam}</span>
+                        <span className="text-[17px] font-black text-white tabular-nums">{m.awayScore || 0}</span>
                       </div>
                     </div>
                     <div className="flex justify-between items-center mt-1.5">
                       <span className="text-[10px] font-black text-white/30 italic">+120</span>
-                      <span className="text-[10px] font-black text-[#7CBB3D] uppercase italic tracking-wider">2nd Half / 81m</span>
-                    </div>
-                  </div>
-                  <div className="flex items-stretch gap-1">
-                    {['1', 'X', '2'].map((key) => (
-                      <div key={key} className="flex-1 bg-black/40 rounded border border-white/[0.03] p-2 flex flex-col items-center justify-between group-hover:border-white/10 transition-colors">
-                        <span className="text-[10px] font-black text-white/20 uppercase">{key}</span>
-                        <span className="text-[15px] font-black text-gray-700 tracking-tighter">-</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-            </div>
-
-            {/* Spain Group */}
-            <div className="space-y-0 mt-0">
-               <div className="flex items-center justify-between bg-[#111] p-3 border-b border-white/5">
-                  <div className="flex items-center gap-3">
-                    <img src="https://flagcdn.com/w20/es.png" className="w-5" alt=""/>
-                    <span className="text-[13px] font-black uppercase italic tracking-tight text-white/90">Spain</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-black text-white/40">18</span>
-                    <ChevronDown className="w-4 h-4 text-[#7CBB3D]" />
-                  </div>
-                </div>
-
-                <div className="bg-[#181818] px-4 py-2 flex items-center justify-between border-b border-white/5">
-                  <span className="text-[11px] font-bold text-[#86EFAC]/90 italic tracking-wide uppercase">La Liga</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-white/40">1</span>
-                    <ChevronDown className="w-4 h-4 text-[#7CBB3D]" />
-                  </div>
-                </div>
-
-                <div 
-                  onClick={() => setSelectedMatchId('l2')}
-                  className={`border-b border-white/5 p-4 grid grid-cols-[1fr_240px] gap-4 transition-all cursor-pointer group ${selectedMatchId === 'l2' ? 'bg-white/[0.04]' : 'hover:bg-white/[0.02]'}`}
-                >
-                  <div className="flex flex-col gap-1.5">
-                    <div className="text-[9px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                       <span>Football</span> <span className="opacity-30">|</span> <span>Spain</span> <span className="opacity-30">|</span> <span>La Liga</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <div className="flex justify-between items-center group-hover:translate-x-1 transition-transform">
-                        <span className="text-[15px] font-black italic text-white/90 tracking-tight">Deportivo Alaves</span>
-                        <span className="text-[17px] font-black text-white tabular-nums">2</span>
-                      </div>
-                      <div className="flex justify-between items-center group-hover:translate-x-1 transition-transform">
-                        <span className="text-[15px] font-black italic text-white/90 tracking-tight">Athletic Bilbao</span>
-                        <span className="text-[17px] font-black text-white tabular-nums">2</span>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center mt-1.5">
-                      <span className="text-[10px] font-black text-white/30 italic">+177</span>
-                      <span className="text-[10px] font-black text-[#7CBB3D] uppercase italic tracking-wider">2nd Half / 82m</span>
+                      <span className="text-[10px] font-black text-[#7CBB3D] uppercase italic tracking-wider">Live / {m.time}</span>
                     </div>
                   </div>
                   <div className="flex items-stretch gap-1">
                     {[
-                      { l: '1', v: '6.32', t: 'down' },
-                      { l: 'X', v: '1.41', t: 'down' },
-                      { l: '2', v: '4.64', t: 'down' }
+                      { l: '1', v: m.odds.home },
+                      { l: 'X', v: m.odds.draw },
+                      { l: '2', v: m.odds.away }
                     ].map((odd) => (
                       <div key={odd.l} className="flex-1 bg-black/40 rounded border border-white/[0.03] p-2 flex flex-col items-center justify-between group-hover:border-white/10 transition-colors">
                         <span className="text-[10px] font-black text-white/20 uppercase">{odd.l}</span>
                         <div className="flex items-center gap-1">
-                          <span className="text-[14px] font-black text-[#7CBB3D] tracking-tighter">{odd.v}</span>
-                          <div className={`w-0 h-0 border-l-[3.5px] border-l-transparent border-r-[3.5px] border-r-transparent ${odd.t === 'up' ? 'border-b-[5.5px] border-b-green-500' : 'border-t-[5.5px] border-t-red-600'}`} />
+                          <span className="text-[14px] font-black text-[#7CBB3D] tracking-tighter">{odd.v.toFixed(2)}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
-
-                <div className="bg-[#181818] px-4 py-2 flex items-center justify-between border-b border-white/5">
-                  <span className="text-[11px] font-bold text-[#86EFAC]/90 italic tracking-wide uppercase">Primera Division RFEF</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-white/40">4</span>
-                    <ChevronDown className="w-4 h-4 text-[#7CBB3D]" />
-                  </div>
-                </div>
-
-                {[
-                  { id: 'l4', h: 'Real Aviles', a: 'CD Guadalajara S.A.D.', hs: 1, as: 1, odds: [{l:'1', v:'5.26', t:'up'}, {l:'X', v:'1.34', t:'down'}, {l:'2', v:'5.75', t:'down'}] },
-                  { id: 'l5', h: 'Talavera', a: 'Arenas Club de Getxo', hs: 0, as: 1, odds: [{l:'1', v:'12.8', t:'down'}, {l:'X', v:'3.05', t:'down'}, {l:'2', v:'1.42', t:'up'}] },
-                  { id: 'l6', h: 'Zamora Cf', a: 'Ponferradina', hs: 1, as: 0, odds: [{l:'1', v:'1.1', t:'down'}, {l:'X', v:'6.01', t:'up'}, {l:'2', v:'29.7', t:'up'}] }
-                ].map((m, idx) => (
-                  <div 
-                    key={m.id} 
-                    onClick={() => setSelectedMatchId(m.id)}
-                    className={`border-b border-white/5 p-4 grid grid-cols-[1fr_240px] gap-4 transition-all cursor-pointer group ${selectedMatchId === m.id ? 'bg-white/[0.04]' : 'hover:bg-white/[0.02]'} last:rounded-b-2xl`}
-                  >
-                    <div className="flex flex-col gap-1.5">
-                      <div className="text-[9px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                        <span>Football</span> <span className="opacity-30">|</span> <span>Spain</span> <span className="opacity-30">|</span> <span>Primera Division</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <div className="flex justify-between items-center group-hover:translate-x-1 transition-transform">
-                          <span className={`text-[15px] font-black italic tracking-tight ${m.hs > m.as ? 'text-[#7CBB3D]' : 'text-white/90'}`}>{m.h}</span>
-                          <span className="text-[17px] font-black text-white tabular-nums">{m.hs}</span>
-                        </div>
-                        <div className="flex justify-between items-center group-hover:translate-x-1 transition-transform">
-                          <span className={`text-[15px] font-black italic tracking-tight ${m.as > m.hs ? 'text-[#7CBB3D]' : 'text-white/90'}`}>{m.a}</span>
-                          <span className="text-[17px] font-black text-white tabular-nums">{m.as}</span>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center mt-1.5">
-                        <span className="text-[10px] font-black text-white/30 italic">+{58 + idx * 10}</span>
-                        <span className="text-[10px] font-black text-[#7CBB3D] uppercase italic tracking-wider">2nd Half / 82m</span>
-                      </div>
-                    </div>
-                    <div className="flex items-stretch gap-1">
-                      {m.odds.map((odd) => (
-                        <div key={odd.l} className="flex-1 bg-black/40 rounded border border-white/[0.03] p-2 flex flex-col items-center justify-between group-hover:border-white/10 transition-colors">
-                          <span className="text-[10px] font-black text-white/20 uppercase">{odd.l}</span>
-                          <div className="flex items-center gap-1">
-                            <span className="text-[14px] font-black text-[#7CBB3D] tracking-tighter">{odd.v}</span>
-                            <div className={`w-0 h-0 border-l-[3.5px] border-l-transparent border-r-[3.5px] border-r-transparent ${odd.t === 'up' ? 'border-b-[5.5px] border-b-green-500' : 'border-t-[5.5px] border-t-red-600'}`} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
 

@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Activity, Smartphone } from "lucide-react";
 import { Match, BetSelection } from "./types";
-import { MATCHES } from "./data";
+import { useFixtures, useFixturesInfinite, useRefreshVisibleOdds } from "./modules/betting/hooks";
+import { useMe } from "./modules/auth/hooks";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Modular Components
 import Header from "./components/layout/Header";
@@ -13,18 +15,65 @@ import Betslip from "./components/betting/Betslip";
 import MatchCard from "./components/betting/MatchCard";
 import MatchDetail from "./components/betting/MatchDetail";
 import AuthModal from "./components/betting/AuthModal";
+import AccountPanelPage from "./components/betting/AccountPanelPage";
+import { MatchCardSkeletonList } from "./components/betting/MatchCardSkeleton";
 
 import GamesView from "./components/games/GamesView";
 import LiveView from "./components/live/LiveView";
 import VirtualSportsView from "./components/virtual/VirtualSportsView";
 
 export default function App() {
-  const [selectedBets, setSelectedBets] = useState<BetSelection[]>([]);
+  const getInitialSlipSlot = (): 1 | 2 | 3 => {
+    if (typeof window === "undefined") return 1;
+    const raw = localStorage.getItem("activeSlipSlot");
+    if (raw === "2") return 2;
+    if (raw === "3") return 3;
+    return 1;
+  };
+  const [activeSlipSlot, setActiveSlipSlot] = useState<1 | 2 | 3>(getInitialSlipSlot);
+  const [selectedBetsBySlot, setSelectedBetsBySlot] = useState<Record<1 | 2 | 3, BetSelection[]>>({
+    1: [],
+    2: [],
+    3: [],
+  });
+  const selectedBets = selectedBetsBySlot[activeSlipSlot];
+  const [betslipNotice, setBetslipNotice] = useState<string | null>(null);
   const [stake, setStake] = useState<number>(20);
   const [view, setView] = useState<string>("home");
   const [isBetslipOpen, setIsBetslipOpen] = useState(false);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
+  const [activeSport, setActiveSport] = useState<string | null>(null);
+  const [activeLeague, setActiveLeague] = useState<string | null>(null);
+  const [timeFilter, setTimeFilter] = useState<string>('All Time');
+  const [fixturesTab, setFixturesTab] = useState<"upcoming" | "top">("top");
+  const queryClient = useQueryClient();
+  const refreshVisibleOdds = useRefreshVisibleOdds();
+  const lastBulkRefreshAtRef = useRef<number>(0);
+  const bulkRefreshInFlightRef = useRef<boolean>(false);
+  const { data: currentUser, isLoading: meLoading, isFetching: meFetching } = useMe();
+  const hasToken = typeof window !== "undefined" && !!localStorage.getItem("accessToken");
+  const authLoading = hasToken && (meLoading || meFetching);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("activeSlipSlot", String(activeSlipSlot));
+  }, [activeSlipSlot]);
+
+  useEffect(() => {
+    if (!authLoading) setUser(currentUser || null);
+  }, [authLoading, currentUser]);
+
+  const handleSignOut = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    setUser(null);
+    queryClient.invalidateQueries({ queryKey: ['user'] });
+  };
+
+  const handleAuth = (type: "login" | "register") => {
+    setAuthModal({ open: true, type });
+  };
   const [authModal, setAuthModal] = useState<{
     open: boolean;
     type: "login" | "register";
@@ -32,56 +81,89 @@ export default function App() {
     open: false,
     type: "login",
   });
+  const [accountPanelTab, setAccountPanelTab] = useState<"deposit" | "bets" | "ticket">("deposit");
 
   const toggleBet = (
     match: Match,
     market: string,
     selection: string,
     odd: number,
+    outcomeId?: string,
+    acceptedOddsVersion?: number,
+    lastFetchedAt?: string,
+    status?: string,
+    uiStatus?: "fresh" | "warning" | "expired" | "suspended" | "closed",
   ) => {
-    setSelectedBets((prev) => {
-      const exists = prev.find(
-        (b) =>
-          b.matchId === match.id &&
-          b.market === market &&
-          b.selection === selection,
-      );
+    setSelectedBetsBySlot((prevBySlot) => {
+      const prev = prevBySlot[activeSlipSlot];
+      const exists = prev.find((b) => b.matchId === match.id && b.market === market && b.selection === selection);
       if (exists) {
-        return prev.filter(
-          (b) =>
-            !(
-              b.matchId === match.id &&
-              b.market === market &&
-              b.selection === selection
-            ),
-        );
+        const nextSlot = prev.filter((b) => !(b.matchId === match.id && b.market === market && b.selection === selection));
+        return { ...prevBySlot, [activeSlipSlot]: nextSlot };
       }
-      const newBets = [
-        ...prev,
+
+      const matchExternalEventId = match.externalEventId ?? null;
+      const hasExistingForMatch = prev.some(
+        (b) =>
+          b.matchId === match.id ||
+          (matchExternalEventId && b.externalEventId && String(b.externalEventId) === String(matchExternalEventId)),
+      );
+      const filteredPrev = prev.filter(
+        (b) =>
+          !(
+            b.matchId === match.id ||
+            (matchExternalEventId && b.externalEventId && String(b.externalEventId) === String(matchExternalEventId))
+          ),
+      );
+      if (hasExistingForMatch) {
+        setBetslipNotice("Selection updated for this match.");
+        setTimeout(() => setBetslipNotice(null), 2000);
+      }
+
+      const nextSlot: BetSelection[] = [
+        ...filteredPrev,
         {
           matchId: match.id,
           matchName: `${match.homeTeam} v ${match.awayTeam}`,
+          externalEventId: matchExternalEventId,
           market,
           selection,
           odd,
+          outcomeId,
+          acceptedOddsVersion,
+          lastFetchedAt,
+          status,
+          uiStatus,
         },
       ];
-      if (newBets.length === 1) setIsBetslipOpen(true);
-      return newBets;
+      if (nextSlot.length === 1) setIsBetslipOpen(true);
+      return { ...prevBySlot, [activeSlipSlot]: nextSlot };
     });
   };
 
+  const requestRefreshOdds = async (fixtureId: string) => {
+    try {
+      await refreshVisibleOdds.mutateAsync([fixtureId]);
+      await queryClient.invalidateQueries({ queryKey: ["fixtures"] });
+    } catch {
+      // Ignore; odds will remain disabled until next poll.
+    }
+  };
+
+  const chunk = <T,>(arr: T[], size: number) => {
+    const out: T[][] = [];
+    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+    return out;
+  };
+
   const removeBet = (matchId: string, market: string, selection: string) => {
-    setSelectedBets((prev) =>
-      prev.filter(
-        (b) =>
-          !(
-            b.matchId === matchId &&
-            b.market === market &&
-            b.selection === selection
-          ),
+    setSelectedBetsBySlot((prevBySlot) => ({
+      ...prevBySlot,
+      [activeSlipSlot]: prevBySlot[activeSlipSlot].filter(
+        (b) => !(b.matchId === matchId && b.market === market && b.selection === selection),
       ),
-    );
+    }));
+    setBetslipNotice(null);
   };
 
   const [currentBanner, setCurrentBanner] = useState(0);
@@ -127,9 +209,124 @@ export default function App() {
   const handleViewChange = (newView: string) => {
     setView(newView);
     setSelectedMatchId(null);
+    if (newView === 'home') {
+      setActiveSport(null);
+      setActiveLeague(null);
+    }
   };
 
-  const selectedMatch = MATCHES.find((m) => m.id === selectedMatchId);
+  const { 
+    data, 
+    fetchNextPage, 
+    hasNextPage, 
+    isFetchingNextPage,
+    status
+  } = useFixturesInfinite({
+    sportId: activeSport,
+    leagueName: activeLeague,
+    timeLimit: timeFilter,
+    tab: fixturesTab
+  });
+
+  const fixturesRaw = data?.pages.flatMap(page => page.fixtures) || [];
+  // Backend dedupes by canonical identity, but keep a client-side guard too.
+  const normalizeText = (value: any) =>
+    String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .replace(/\s+vs\s+/g, " v ")
+      .replace(/\s+v\s+/g, " v ");
+
+  const canonicalKey = (f: any) => {
+    const provider = String(f?.externalProvider || f?.external_provider || "unknown").trim();
+    const externalId = f?.externalEventId ?? f?.external_event_id ?? f?.sourceEventId ?? f?.source_event_id;
+    if (externalId) return `${provider}:${String(externalId)}`;
+
+    const sport = f?.sportName || f?.Sport?.name || "";
+    const league = f?.league || f?.League?.name || "";
+    const home = f?.homeTeam || f?.homeTeamName || "";
+    const away = f?.awayTeam || f?.awayTeamName || "";
+    const startsAt = f?.startsAt || "";
+    try {
+      const iso = startsAt ? new Date(startsAt).toISOString() : "";
+      const fallback = [sport, league, home, away, iso].map(normalizeText).join("|");
+      if (fallback.replace(/\|/g, "").trim()) return fallback;
+    } catch {
+      // ignore
+    }
+
+    return `local:${f?.id}`;
+  };
+  const fixtures = (() => {
+    const map = new Map<string, any>();
+    for (const f of fixturesRaw) map.set(canonicalKey(f), f); // prefer latest page occurrence
+    return Array.from(map.values());
+  })();
+
+  // Bulk refresh visible fixtures (one call per chunk) so a page refresh updates odds "all at once".
+  useEffect(() => {
+    if (!fixtures.length) return;
+    if (bulkRefreshInFlightRef.current) return;
+
+    const now = Date.now();
+    // Client-side throttle; backend also has per-fixture locks.
+    if (now - lastBulkRefreshAtRef.current < 20_000) return;
+
+    const staleFixtureIds = fixtures
+      .filter((m) => {
+        const markets = m.markets || [];
+        const mainKeys = new Set(["1X2", "DC", "BTS"]);
+        for (const mk of markets) {
+          const key = String(mk.key || "").toUpperCase();
+          if (!mainKeys.has(key)) continue;
+          for (const o of mk.outcomes || []) {
+            if (o.isSelectable === false) return true;
+          }
+        }
+        return false;
+      })
+      .map((m) => m.id);
+
+    if (!staleFixtureIds.length) return;
+
+    bulkRefreshInFlightRef.current = true;
+    lastBulkRefreshAtRef.current = now;
+
+    (async () => {
+      try {
+        for (const group of chunk(Array.from(new Set(staleFixtureIds)), 30)) {
+          await refreshVisibleOdds.mutateAsync(group);
+        }
+        await queryClient.invalidateQueries({ queryKey: ["fixtures"] });
+      } finally {
+        bulkRefreshInFlightRef.current = false;
+      }
+    })();
+  }, [fixtures, refreshVisibleOdds, queryClient]);
+
+  const loaderRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
+      }
+    }, { threshold: 1.0 });
+
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  useEffect(() => {
+    console.log("Filters:", { activeSport, activeLeague, timeFilter });
+    console.log("Fixtures count:", fixtures.length);
+  }, [activeSport, activeLeague, timeFilter, fixtures.length]);
+
+  const selectedMatch = fixtures.find((m) => m.id === selectedMatchId);
 
   const isLiveView = view === "live";
   const isGamesView = view === "games";
@@ -139,10 +336,20 @@ export default function App() {
     <div className="h-screen overflow-hidden flex flex-col bg-brand-dark">
       <Header
         user={user}
-        onAuth={(type) => setAuthModal({ open: true, type })}
-        onSignOut={() => {
-          setUser(null);
-          setView("home");
+        authLoading={authLoading}
+        onAuth={handleAuth}
+        onSignOut={handleSignOut}
+        onOpenDeposit={() => {
+          setAccountPanelTab("deposit");
+          setView("account");
+        }}
+        onOpenBetsHistory={() => {
+          setAccountPanelTab("bets");
+          setView("account");
+        }}
+        onOpenCheckTicket={() => {
+          setAccountPanelTab("ticket");
+          setView("account");
         }}
       />
       <Navbar
@@ -153,13 +360,26 @@ export default function App() {
       <div className="flex flex-1 overflow-hidden">
         {/* Only show sidebar on home/detail/live views */}
         {(view === "home" || view === "detail" || view === "live") && (
-          <Sidebar />
+          <Sidebar 
+            activeSport={activeSport} 
+            onSportChange={setActiveSport}
+            activeLeague={activeLeague}
+            onLeagueChange={setActiveLeague}
+            timeFilter={timeFilter}
+            onTimeFilterChange={setTimeFilter}
+            isHot={fixturesTab === "top"}
+            onIsHotChange={(v) => setFixturesTab(v ? "top" : "upcoming")}
+          />
         )}
 
         <main
           className={`flex-1 overflow-y-auto ${isGamesView || isVirtualView ? "bg-[#0a0a0a]" : "p-0 lg:p-4"} pb-32 lg:pb-4`}
         >
-          {isGamesView ? (
+          {view === "account" ? (
+            <div className="p-4 lg:p-0">
+              <AccountPanelPage tab={accountPanelTab} onTabChange={setAccountPanelTab} user={user} />
+            </div>
+          ) : isGamesView ? (
             <GamesView />
           ) : isLiveView ? (
             <LiveView />
@@ -222,12 +442,21 @@ export default function App() {
                 {/* Match Headers - Pill Shaped */}
                 <div className="flex bg-brand-surface rounded-full overflow-hidden mb-1 p-1 border border-white/5">
                   <button
-                    className={`px-6 py-3  font-normal transition-all flex-1 rounded-full ${selectedMatchId ? "text-[15px]" : "text-[16px]"} ${!selectedMatchId ? "bg-brand-primary text-black shadow-lg shadow-green-500/20" : "text-gray-500 hover:text-white"}`}
+                    onClick={() => {
+                      setFixturesTab("upcoming");
+                      setTimeFilter("3 Hours");
+                      setSelectedMatchId(null);
+                    }}
+                    className={`px-6 py-3 font-normal transition-all flex-1 rounded-full ${selectedMatchId ? "text-[15px]" : "text-[16px]"} ${fixturesTab === "upcoming" ? "bg-brand-primary text-black shadow-lg shadow-green-500/20" : "text-gray-500 hover:text-white"}`}
                   >
                     Upcoming
                   </button>
                   <button
-                    className={`px-6 py-3 font-normal flex-1 rounded-full transition-all text-gray-500 hover:text-white ${selectedMatchId ? "text-[15px]" : "text-[16px]"}`}
+                    onClick={() => {
+                      setFixturesTab("top");
+                      setSelectedMatchId(null);
+                    }}
+                    className={`px-6 py-3 font-normal flex-1 rounded-full transition-all ${fixturesTab === "top" ? "bg-brand-primary text-black shadow-lg shadow-green-500/20" : "text-gray-500 hover:text-white"} ${selectedMatchId ? "text-[15px]" : "text-[16px]"}`}
                   >
                     Top Matches
                   </button>
@@ -250,17 +479,55 @@ export default function App() {
                     </div>
                   </div>
 
-                  {MATCHES.map((match) => (
-                    <MatchCard
-                      key={match.id}
-                      match={match}
-                      selectedBets={selectedBets}
-                      onToggleBet={toggleBet}
-                      onClick={handleMatchClick}
-                      isCompact={!!selectedMatchId}
-                      isSelected={selectedMatchId === match.id}
-                    />
-                  ))}
+                  {status === 'pending' ? (
+                    <MatchCardSkeletonList count={10} isCompact={!!selectedMatchId} />
+                  ) : (
+                    fixtures.map((match) => (
+                      <MatchCard
+                        key={canonicalKey(match)}
+                        match={match}
+                        selectedBets={selectedBets}
+                        onToggleBet={toggleBet}
+                        onClick={handleMatchClick}
+                        onRequestRefreshOdds={requestRefreshOdds}
+                        isCompact={!!selectedMatchId}
+                        isSelected={selectedMatchId === match.id}
+                      />
+                    ))
+                  )}
+                  
+                  <div ref={loaderRef} className="h-10 flex items-center justify-center">
+                    {isFetchingNextPage && (
+                       <div className="flex gap-1">
+                          {[0, 1, 2].map(i => (
+                            <motion.div
+                              key={i}
+                              animate={{ scale: [1, 1.5, 1] }}
+                              transition={{ repeat: Infinity, duration: 1, delay: i * 0.2 }}
+                              className="w-1.5 h-1.5 rounded-full bg-brand-primary"
+                            />
+                          ))}
+                       </div>
+                    )}
+                  </div>
+                  
+                  {!hasNextPage && fixtures.length > 0 && (
+                    <div className="p-8 text-center text-gray-600 text-[10px] font-black uppercase italic tracking-widest">
+                      No more matches to show
+                    </div>
+                  )}
+
+                  {status === 'success' && fixtures.length === 0 && (
+                    <div className="p-12 text-center">
+                      <div className="text-gray-500 text-[11px] font-black uppercase italic mb-2">No matches found</div>
+                      <button 
+                        onClick={() => handleViewChange('home')}
+                        className="text-brand-primary text-[10px] font-black uppercase italic underline"
+                      >
+                        Clear Filters
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -283,16 +550,36 @@ export default function App() {
         </main>
 
         {/* Sidebar/Drawer: Betslip */}
-        {view !== "games" && view !== "virtual" && (
-          <Betslip
-            selectedBets={selectedBets}
-            onRemoveBet={removeBet}
-            onClear={() => setSelectedBets([])}
-            stake={stake}
-            onStakeChange={setStake}
-            isOpen={isBetslipOpen}
-            onClose={() => setIsBetslipOpen(false)}
-          />
+        {view !== "games" && view !== "virtual" && view !== "account" && (
+      <Betslip
+        selectedBets={selectedBets}
+        onRemoveBet={removeBet}
+        onClear={() => {
+          setSelectedBetsBySlot((prevBySlot) => ({ ...prevBySlot, [activeSlipSlot]: [] }));
+          setBetslipNotice(null);
+        }}
+        activeSlot={activeSlipSlot}
+        onChangeSlot={(slot) => {
+          setActiveSlipSlot(slot);
+          setBetslipNotice(null);
+        }}
+        slotCounts={{
+          1: selectedBetsBySlot[1].length,
+          2: selectedBetsBySlot[2].length,
+          3: selectedBetsBySlot[3].length,
+        }}
+        stake={stake}
+        onStakeChange={setStake}
+        isOpen={isBetslipOpen}
+        onClose={() => {
+          setIsBetslipOpen(false);
+          setBetslipNotice(null);
+        }}
+        isAuthenticated={hasToken}
+        authLoading={authLoading}
+        onRequireAuth={() => setAuthModal({ open: true, type: "login" })}
+        notice={betslipNotice}
+      />
         )}
       </div>
 

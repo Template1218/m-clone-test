@@ -6,9 +6,13 @@ interface HeaderProps {
   onAuth: (type: 'login' | 'register') => void;
   onSignOut?: () => void;
   user?: any;
+  authLoading?: boolean;
+  onOpenDeposit?: () => void;
+  onOpenBetsHistory?: () => void;
+  onOpenCheckTicket?: () => void;
 }
 
-export default function Header({ onAuth, onSignOut, user }: HeaderProps) {
+export default function Header({ onAuth, onSignOut, user, authLoading = false, onOpenDeposit, onOpenBetsHistory, onOpenCheckTicket }: HeaderProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -23,11 +27,11 @@ export default function Header({ onAuth, onSignOut, user }: HeaderProps) {
   }, []);
 
   const menuItems = [
-    { label: 'BETS HISTORY', icon: History, action: () => {} },
-    { label: 'DEPOSIT', icon: Wallet, action: () => {} },
+    { label: 'BETS HISTORY', icon: History, action: onOpenBetsHistory },
+    { label: 'DEPOSIT', icon: Wallet, action: onOpenDeposit },
     { label: 'WITHDRAW', icon: ArrowUpRight, action: () => {} },
     { label: 'TRANSACTION HISTORY', icon: FileText, action: () => {} },
-    { label: 'CHECK TICKET', icon: Search, action: () => {} },
+    { label: 'CHECK TICKET', icon: Search, action: onOpenCheckTicket },
     { label: 'PROFILE', icon: Settings, action: () => {} },
     { label: 'SIGN OUT', icon: LogOut, action: onSignOut, isDanger: true },
   ];
@@ -38,7 +42,7 @@ export default function Header({ onAuth, onSignOut, user }: HeaderProps) {
         {/* Mobile Header */}
         <div className="flex items-center gap-1 cursor-pointer">
            <div className="flex flex-col items-center leading-none">
-            <span className="text-xl font-black text-black italic tracking-tighter">mezzo</span>
+            <span className="text-xl font-black text-black italic tracking-tighter">king</span>
             <div className="bg-black text-[#a3e635] px-1.5 py-0.5 mt-[-1px] rounded-sm transform">
               <span className="text-[9px] font-black italic">bet</span>
             </div>
@@ -47,18 +51,26 @@ export default function Header({ onAuth, onSignOut, user }: HeaderProps) {
 
         <div className="flex items-center gap-2">
           <Search className="w-5 h-5 text-black" />
-          <button 
-            onClick={() => onAuth('login')}
-            className="border-2 border-black/20 text-black font-black text-[11px] px-3 py-1.5 rounded-full uppercase italic"
-          >
-            Login
-          </button>
-          <button 
-            onClick={() => onAuth('register')}
-            className="bg-brand-yellow text-black font-black text-[11px] px-3 py-1.5 rounded-full uppercase italic shadow-md"
-          >
-            Register
-          </button>
+          {user ? null : authLoading ? (
+            <div className="border-2 border-black/20 text-black/70 font-black text-[11px] px-3 py-1.5 rounded-full uppercase italic select-none">
+              Loading…
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={() => onAuth('login')}
+                className="border-2 border-black/20 text-black font-black text-[11px] px-3 py-1.5 rounded-full uppercase italic"
+              >
+                Login
+              </button>
+              <button
+                onClick={() => onAuth('register')}
+                className="bg-brand-yellow text-black font-black text-[11px] px-3 py-1.5 rounded-full uppercase italic shadow-md"
+              >
+                Register
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -66,7 +78,7 @@ export default function Header({ onAuth, onSignOut, user }: HeaderProps) {
         {/* Logo Section */}
         <div className="flex items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/'}>
           <div className="flex flex-col items-center leading-none">
-            <span className="text-2xl font-black text-black italic tracking-tighter">mezzo</span>
+            <span className="text-2xl font-black text-black italic tracking-tighter">king</span>
             <div className="bg-black text-brand-primary px-2 py-0.5 mt-[-1px] rounded-sm transform">
               <span className="text-[11px] font-black italic">bet</span>
             </div>
@@ -160,13 +172,21 @@ export default function Header({ onAuth, onSignOut, user }: HeaderProps) {
             {/* Account Info */}
             <div className="flex items-center gap-3">
               <div className="text-right flex flex-col leading-none">
-                <span className="text-black font-black text-[15px] italic">{user.balance.toFixed(2)} {user.currency}</span>
-                <span className="text-black font-black text-[10px] uppercase italic opacity-50">ID: {user.id}</span>
+                <span className="text-black font-black text-[15px] italic">
+                  {(Number(user?.balance) || 0).toFixed(2)} {user?.currency || 'ETB'}
+                </span>
+                <span className="text-black font-black text-[10px] uppercase italic opacity-50">
+                  ID: {user?.id?.slice(-6).toUpperCase()}
+                </span>
               </div>
-              <button className="bg-brand-yellow text-black font-black px-6 h-9 rounded-full text-[12px] uppercase italic shadow-md hover:scale-105 hover:brightness-110 active:scale-95 transition-all">
+              <button onClick={onOpenDeposit} className="bg-brand-yellow text-black font-black px-6 h-9 rounded-full text-[12px] uppercase italic shadow-md hover:scale-105 hover:brightness-110 active:scale-95 transition-all">
                 DEPOSIT
               </button>
             </div>
+          </div>
+        ) : authLoading ? (
+          <div className="px-6 py-2.5 text-black/70 font-black text-sm uppercase rounded-full italic select-none">
+            Loading…
           </div>
         ) : (
           <div className="flex items-center gap-2">

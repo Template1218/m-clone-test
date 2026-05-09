@@ -1,6 +1,7 @@
 import { X, Search, User, Mail, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, FormEvent } from 'react';
+import { useLogin, useRegister } from '../../modules/auth/hooks';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -26,17 +27,38 @@ export default function AuthModal({ isOpen, onClose, type, onSwitch, onSuccess }
   const [rememberMe, setRememberMe] = useState(false);
   const [agreeRules, setAgreeRules] = useState(true);
 
-  const handleSubmit = (e: FormEvent) => {
+  const loginMutation = useLogin();
+  const registerMutation = useRegister();
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    // Mock login/register success
-    onSuccess({
-      id: '84653',
-      balance: 0.00,
-      currency: 'ETB',
-      phoneNumber
-    });
-    onClose();
+    
+    try {
+      if (type === 'login') {
+        const data = await loginMutation.mutateAsync({ 
+          phoneNumber: phoneNumber.startsWith("+") ? phoneNumber : `+251${phoneNumber}`,
+          password 
+        });
+        onSuccess(data.user);
+      } else {
+        if (password !== confirmPassword) {
+          alert("Passwords do not match");
+          return;
+        }
+        const data = await registerMutation.mutateAsync({
+          phoneNumber: phoneNumber.startsWith("+") ? phoneNumber : `+251${phoneNumber}`,
+          password,
+          role: 'user'
+        });
+        onSuccess(data.user);
+      }
+      onClose();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Authentication failed');
+    }
   };
+
+  const isPending = loginMutation.isPending || registerMutation.isPending;
 
   return (
     <AnimatePresence>
@@ -143,9 +165,10 @@ export default function AuthModal({ isOpen, onClose, type, onSwitch, onSuccess }
 
                 <button 
                   type="submit"
-                  className="w-full bg-[#B3B3B3] hover:bg-white text-[#2C2C2C] font-black py-4 rounded-full text-sm uppercase transition-all mt-4"
+                  disabled={isPending}
+                  className="w-full bg-[#B3B3B3] hover:bg-white text-[#2C2C2C] font-black py-4 rounded-full text-sm uppercase transition-all mt-4 disabled:opacity-50"
                 >
-                  {type === 'login' ? 'LOGIN' : 'CONFIRM'}
+                  {isPending ? 'PROCESSING...' : (type === 'login' ? 'LOGIN' : 'CONFIRM')}
                 </button>
 
                 {type === 'login' && (

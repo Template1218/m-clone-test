@@ -7,9 +7,11 @@ interface TicketPreviewProps {
   onClose: () => void;
   selectedBets: BetSelection[];
   stake: number;
+  onPlaceBet: () => void;
+  placing?: boolean;
 }
 
-export default function TicketPreview({ isOpen, onClose, selectedBets, stake }: TicketPreviewProps) {
+export default function TicketPreview({ isOpen, onClose, selectedBets, stake, onPlaceBet, placing }: TicketPreviewProps) {
   const totalOdds = selectedBets.reduce((acc, current) => acc * current.odd, 1);
   const incomeTaxRate = 0.15;
   const potentialPayout = totalOdds * stake;
@@ -27,15 +29,15 @@ export default function TicketPreview({ isOpen, onClose, selectedBets, stake }: 
             onClick={onClose}
             className="absolute inset-0 bg-black/80 backdrop-blur-sm"
           />
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="bg-white w-full max-w-2xl rounded-lg overflow-hidden relative z-10 shadow-2xl"
+            className="bg-white w-full max-w-2xl overflow-hidden relative z-10 shadow-2xl"
           >
             {/* Header */}
-            <div className="bg-white p-4 flex items-center justify-between border-b border-gray-200">
-              <h2 className="text-black font-black text-xl uppercase tracking-wider mx-auto">Ticket Preview</h2>
+            <div className="bg-white p-4 flex items-center justify-center border-b border-gray-200 relative">
+              <h2 className="text-black font-black text-xl uppercase tracking-wider">TICKET PREVIEW</h2>
               <button 
                 onClick={onClose}
                 className="absolute right-4 top-4 text-gray-500 hover:text-black transition-colors"
@@ -45,20 +47,20 @@ export default function TicketPreview({ isOpen, onClose, selectedBets, stake }: 
             </div>
 
             {/* Content */}
-            <div className="p-6">
-              <div className="border border-gray-300 rounded mb-6">
+            <div className="p-6 space-y-6">
+              <div className="border border-black">
                 <div className="bg-black text-white px-4 py-2 flex justify-between items-center text-sm font-bold">
-                  <span className="uppercase italic">AKO</span>
-                  <span className="uppercase italic">Odds</span>
+                  <span className="uppercase">AKO</span>
+                  <span className="uppercase">ODDS</span>
                 </div>
                 
                 <div className="divide-y divide-gray-200">
                   {selectedBets.map((bet, idx) => (
-                    <div key={`${bet.matchId}-${idx}`} className="p-4 py-3">
-                      <div className="text-black font-black text-xs uppercase mb-1">{bet.matchName}</div>
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="text-gray-600 font-bold uppercase">{bet.market} : {bet.selection}</span>
-                        <span className="text-black font-black">{bet.odd.toFixed(2)}</span>
+                    <div key={`${bet.matchId}-${idx}`} className="px-4 py-3">
+                      <div className="text-black font-black text-xs mb-1">{bet.matchName}</div>
+                      <div className="flex justify-between items-center text-[11px] font-bold">
+                        <span className="text-black uppercase">{bet.market} : {bet.selection}</span>
+                        <span className="text-black">{bet.odd.toFixed(2)}</span>
                       </div>
                     </div>
                   ))}
@@ -66,24 +68,24 @@ export default function TicketPreview({ isOpen, onClose, selectedBets, stake }: 
               </div>
 
               {/* Financials */}
-              <div className="space-y-2 mb-8">
-                <div className="flex justify-between items-center py-1 border-t border-gray-100 italic">
-                  <span className="text-black font-black text-xs uppercase">Deposit</span>
-                  <span className="text-black font-black text-xs uppercase">{stake.toFixed(2)} ETB</span>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-sm font-bold">
+                  <span className="text-black">Deposit</span>
+                  <span className="text-black">{stake.toFixed(2)} ETB</span>
                 </div>
-                <div className="flex justify-between items-center py-1 italic">
-                  <span className="text-black font-black text-xs uppercase">Income Tax 15%</span>
-                  <span className="text-black font-black text-xs uppercase">{incomeTax.toFixed(2)} ETB</span>
+                <div className="flex justify-between items-center text-sm font-bold">
+                  <span className="text-black">Income Tax 15%</span>
+                  <span className="text-black">{incomeTax.toFixed(2)} ETB</span>
                 </div>
-                <div className="flex justify-between items-center py-1 italic">
-                  <span className="text-black font-black text-xs uppercase">Possible Win</span>
-                  <span className="text-black font-black text-xs uppercase">{netWin.toFixed(2)} ETB</span>
+                <div className="flex justify-between items-center text-sm font-bold">
+                  <span className="text-black">Possible Win</span>
+                  <span className="text-black">{netWin.toFixed(2)} ETB</span>
                 </div>
               </div>
 
               {/* Action */}
-              <button className="w-full bg-[#7CBB3D] text-white font-black py-4 rounded-full text-lg shadow-lg hover:brightness-110 active:scale-[0.98] transition-all uppercase italic">
-                Place Bet Online
+              <button onClick={onPlaceBet} disabled={placing} className="w-full bg-[#7CBB3D] text-black font-black py-4 rounded-full text-lg shadow-lg hover:brightness-110 active:scale-[0.98] transition-all uppercase disabled:opacity-60">
+                PLACE BET ONLINE
               </button>
             </div>
           </motion.div>

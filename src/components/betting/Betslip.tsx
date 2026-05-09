@@ -1,27 +1,257 @@
-import { Trash2, Smartphone, ChevronRight, Info, ChevronDown, X } from 'lucide-react';
+import { Trash2, Smartphone, Info, ChevronDown, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BetSelection } from '../../types';
+import { useBulkUpsertSlipSelections, useCreateUserSlip, usePlaceSlip } from '../../modules/betslips/hooks';
+import { useQueryClient } from '@tanstack/react-query';
+import TicketPreview from './TicketPreview';
+import OfflineTicketModal from "./OfflineTicketModal";
+import { useCreateOfflineTicket } from "../../modules/offlineTickets/hooks";
 
 interface BetslipProps {
   selectedBets: BetSelection[];
   onRemoveBet: (matchId: string, market: string, selection: string) => void;
   onClear: () => void;
+  activeSlot: 1 | 2 | 3;
+  onChangeSlot: (slot: 1 | 2 | 3) => void;
+  slotCounts?: Record<1 | 2 | 3, number>;
   stake: number;
   onStakeChange: (stake: number) => void;
   isOpen: boolean;
   onClose: () => void;
+  isAuthenticated?: boolean;
+  authLoading?: boolean;
+  onRequireAuth?: () => void;
+  notice?: string | null;
 }
 
-export default function Betslip({ selectedBets, onRemoveBet, onClear, stake, onStakeChange, isOpen, onClose }: BetslipProps) {
+export default function Betslip({
+  selectedBets,
+  onRemoveBet,
+  onClear,
+  activeSlot,
+  onChangeSlot,
+  slotCounts,
+  stake,
+  onStakeChange,
+  isOpen,
+  onClose,
+  isAuthenticated = false,
+  authLoading = false,
+  onRequireAuth,
+  notice = null,
+}: BetslipProps) {
   const totalOdds = selectedBets.reduce((acc, current) => acc * current.odd, 1);
   const incomeTaxRate = 0.15;
   const potentialPayout = totalOdds * stake;
   const incomeTax = potentialPayout * incomeTaxRate;
   const netWin = potentialPayout - incomeTax;
+  const [busy, setBusy] = useState(false);
+  const bulkUpsert = useBulkUpsertSlipSelections();
+  const createSlip = useCreateUserSlip();
+  const placeSlip = usePlaceSlip();
+  const queryClient = useQueryClient();
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [acceptedOpen, setAcceptedOpen] = useState(false);
+  const [offlineOpen, setOfflineOpen] = useState(false);
+  const [offlineCode, setOfflineCode] = useState<string>("");
+  const [offlineExpiresAt, setOfflineExpiresAt] = useState<string | null>(null);
+  const createOffline = useCreateOfflineTicket();
+  const [inlineError, setInlineError] = useState<string | null>(null);
+  const [balanceModalOpen, setBalanceModalOpen] = useState(false);
+  const [localNotice, setLocalNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    setLocalNotice(notice);
+    const t = setTimeout(() => setLocalNotice(null), 2000);
+    return () => clearTimeout(t);
+  }, [notice]);
+
+  const selectionSignature = useMemo(
+    () => selectedBets.map((b) => `${b.outcomeId || ""}:${b.acceptedOddsVersion || ""}:${b.odd}`).join("|"),
+    [selectedBets]
+  );
+
+  useEffect(() => {
+    // Clear inline errors when user changes selections (add/remove/change).
+    setInlineError(null);
+  }, [selectionSignature]);
+
+  useEffect(() => {
+    // Clear errors when betslip closes.
+    if (!isOpen) {
+      setInlineError(null);
+      setBalanceModalOpen(false);
+    }
+  }, [isOpen]);
+
+  const extractError = (e: any) => {
+    const codeRaw = e?.response?.data?.error?.code ?? e?.response?.data?.code ?? null;
+    const messageRaw = e?.response?.data?.error?.message ?? e?.response?.data?.message ?? e?.message ?? null;
+    const code = codeRaw ? String(codeRaw) : null;
+    const message = messageRaw ? String(messageRaw) : null;
+    const status = Number(e?.response?.status || 0) || null;
+    return { code, message, status };
+  };
+
+  const mapBetslipError = (e: any): { kind: "balance" | "inline"; message: string; code?: string | null } => {
+    const { code, message } = extractError(e);
+    const codeU = String(code || "").toUpperCase();
+    const msgL = String(message || "").toLowerCase();
+
+    const balance =
+      codeU === "INSUFFICIENT_BALANCE" ||
+      msgL.includes("insufficient user balance") ||
+      msgL.includes("insufficient balance") ||
+      msgL.includes("not enough balance");
+    if (balance) {
+      return { kind: "balance", message: "Insufficient balance. Please deposit to place this bet.", code };
+    }
+
+    // Domain codes
+    if (codeU === "ODDS_EXPIRED") return { kind: "inline", message: "Odds expired. Please refresh.", code };
+    if (codeU === "ODDS_CHANGED") return { kind: "inline", message: "Odds changed. Please accept the new odds.", code };
+    if (codeU === "MARKET_CLOSED") return { kind: "inline", message: "This market is closed.", code };
+    if (codeU === "INVALID_SELECTION") return { kind: "inline", message: "This selection is no longer available.", code };
+
+    // Heuristic mapping if backend didn't provide codes consistently.
+    if (msgL.includes("odds expired")) return { kind: "inline", message: "Odds expired. Please refresh.", code };
+    if (msgL.includes("odds changed")) return { kind: "inline", message: "Odds changed. Please accept the new odds.", code };
+    if (msgL.includes("market") && msgL.includes("closed")) return { kind: "inline", message: "This market is closed.", code };
+    if (msgL.includes("selection") && (msgL.includes("inactive") || msgL.includes("no longer active") || msgL.includes("not found"))) {
+      return { kind: "inline", message: "This selection is no longer available.", code };
+    }
+
+    return { kind: "inline", message: "Could not place bet. Please try again.", code };
+  };
+
+  const handlePlaceOnline = async () => {
+    if (!selectedBets.length) return;
+    if (authLoading) return;
+    if (!isAuthenticated) {
+      onRequireAuth?.();
+      return;
+    }
+    const missing = selectedBets.find((b) => !b.outcomeId || !b.acceptedOddsVersion);
+    if (missing) {
+      setInlineError("This selection is no longer available.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const slip = await createSlip.mutateAsync({ slotNumber: activeSlot });
+      const slipId = slip?.id;
+      if (!slipId) throw new Error("Failed to create slip");
+
+      await bulkUpsert.mutateAsync({
+        slipId,
+        slotNumber: activeSlot,
+        selections: selectedBets.map((b) => ({
+          outcomeId: b.outcomeId!,
+          acceptedOdds: b.odd,
+          acceptedOddsVersion: b.acceptedOddsVersion!,
+        })),
+      });
+      await placeSlip.mutateAsync({ slipId, stake });
+      await queryClient.invalidateQueries({ queryKey: ['user'] });
+      await queryClient.invalidateQueries({ queryKey: ['user-betslips'] });
+      setAcceptedOpen(true);
+      setPreviewOpen(false);
+      setInlineError(null);
+      onClear();
+    } catch (e: any) {
+      const status = Number(e?.response?.status || 0);
+      if (status === 401 || status === 403) {
+        onRequireAuth?.();
+        return;
+      }
+      const mapped = mapBetslipError(e);
+      // eslint-disable-next-line no-console
+      console.debug("[betslip][error]", { code: mapped.code || null, raw: extractError(e) });
+      if (mapped.kind === "balance") {
+        setInlineError(null);
+        setBalanceModalOpen(true);
+        return;
+      }
+      setInlineError(mapped.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handlePrintPreview = async () => {
+    if (!selectedBets.length) return;
+    const missing = selectedBets.find((b) => !b.outcomeId || !b.acceptedOddsVersion);
+    if (missing) {
+      setInlineError("This selection is no longer available.");
+      return;
+    }
+    try {
+      const res = await createOffline.mutateAsync({
+        stake,
+        selections: selectedBets.map((b) => ({ outcomeId: b.outcomeId!, acceptedOdds: b.odd, acceptedOddsVersion: b.acceptedOddsVersion! })),
+      });
+      setOfflineCode(res.shortCode);
+      setOfflineExpiresAt(res.expiresAt || null);
+      setOfflineOpen(true);
+      setInlineError(null);
+    } catch (e: any) {
+      const mapped = mapBetslipError(e);
+      // eslint-disable-next-line no-console
+      console.debug("[betslip][error]", { code: mapped.code || null, raw: extractError(e) });
+      if (mapped.kind === "balance") {
+        setInlineError(null);
+        setBalanceModalOpen(true);
+        return;
+      }
+      setInlineError(mapped.message);
+    }
+  };
 
   return (
     <>
+      {/* Insufficient balance modal */}
+      <AnimatePresence>
+        {balanceModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+            onClick={() => setBalanceModalOpen(false)}
+          >
+            <motion.div
+              initial={{ y: 10, opacity: 0, scale: 0.98 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 10, opacity: 0, scale: 0.98 }}
+              transition={{ type: "spring", damping: 22, stiffness: 220 }}
+              className="w-full max-w-sm bg-[#0a0a0a] border border-red-500/30 rounded-xl p-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-black uppercase italic tracking-widest text-red-400">Error</div>
+                <button type="button" onClick={() => setBalanceModalOpen(false)} className="text-white/60 hover:text-white">
+                  <X className="w-5 h-5 stroke-[3]" />
+                </button>
+              </div>
+              <div className="mt-3 text-sm font-bold text-red-400">
+                Insufficient balance. Please deposit to place this bet.
+              </div>
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setBalanceModalOpen(false)}
+                  className="bg-red-500 text-black px-4 py-2 rounded-lg text-xs font-black uppercase italic"
+                >
+                  OK
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Mobile Backdrop */}
       <AnimatePresence>
         {isOpen && (
@@ -51,17 +281,29 @@ export default function Betslip({ selectedBets, onRemoveBet, onClear, stake, onS
 
         {/* Header Tabs with Close Button */}
         <div className="flex bg-brand-dark overflow-hidden relative">
-          {['BETSLIP 1', 'BETSLIP 2', 'BETSLIP 3'].map((tab, idx) => (
-          <button 
-            key={tab}
-            className={`flex-1 py-4 text-[11px] font-black uppercase italic tracking-wider transition-all relative ${
-              idx === 0 ? 'bg-brand-yellow text-black' : 'text-gray-500 hover:text-white'
-            }`}
-          >
-            {tab}
-            {idx === 0 && <div className="absolute top-0 left-0 w-full h-1 bg-black/10" />}
-          </button>
-        ))}
+          {([1, 2, 3] as const).map((slot) => {
+            const label = `BETSLIP ${slot}`;
+            const isActive = activeSlot === slot;
+            const count = slotCounts?.[slot] ?? null;
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() => onChangeSlot(slot)}
+                className={`flex-1 py-4 text-[11px] font-black uppercase italic tracking-wider transition-all relative ${
+                  isActive ? "bg-brand-yellow text-black" : "text-gray-500 hover:text-white"
+                }`}
+              >
+                <span>{label}</span>
+                {typeof count === "number" && count > 0 ? (
+                  <span className={`ml-2 text-[10px] font-black ${isActive ? "text-black/80" : "text-white/50"}`}>
+                    {count}
+                  </span>
+                ) : null}
+                {isActive ? <div className="absolute top-0 left-0 w-full h-1 bg-black/10" /> : null}
+              </button>
+            );
+          })}
         <button 
           onClick={onClear}
           className="px-4 text-gray-500 hover:text-red-500 transition-colors bg-brand-dark border-r border-white/5"
@@ -93,6 +335,18 @@ export default function Betslip({ selectedBets, onRemoveBet, onClear, stake, onS
           </div>
         </div>
       </div>
+
+      {/* Inline error */}
+      {inlineError ? (
+        <div className="px-3 py-2 border-b border-white/5 bg-black/30">
+          <div className="text-[11px] font-bold text-red-400">{inlineError}</div>
+        </div>
+      ) : null}
+      {localNotice ? (
+        <div className="px-3 py-2 border-b border-white/5 bg-black/30">
+          <div className="text-[11px] font-bold text-emerald-300">{localNotice}</div>
+        </div>
+      ) : null}
 
       {/* Bets List */}
       <div className="flex-1 overflow-y-auto p-3 space-y-1 no-scrollbar">
@@ -197,22 +451,77 @@ export default function Betslip({ selectedBets, onRemoveBet, onClear, stake, onS
 
             {/* Buttons */}
             <div className="space-y-2 pt-3">
-              <div className="flex justify-center">
-                <button className="text-white text-[10px] font-black uppercase underline-offset-4 border-b border-brand-primary italic hover:text-brand-primary transition-colors pb-0.5">
-                  Ticket Preview
-                </button>
+              <div className="flex justify-center gap-4">
+                {!isAuthenticated ? (
+                  <button
+                    onClick={handlePrintPreview}
+                    disabled={busy || createOffline.isPending}
+                    className="text-white text-[10px] font-black uppercase underline-offset-4 border-b border-brand-primary italic hover:text-brand-primary transition-colors pb-0.5 disabled:opacity-60"
+                  >
+                    {createOffline.isPending ? "Preparing..." : "Print Preview"}
+                  </button>
+                ) : (
+                  <button onClick={() => setPreviewOpen(true)} className="text-white text-[10px] font-black uppercase underline-offset-4 border-b border-brand-primary italic hover:text-brand-primary transition-colors pb-0.5">
+                    Ticket Preview
+                  </button>
+                )}
               </div>
-              <button className="w-full bg-[#7CBB3D] text-white font-black py-2.5 rounded-full text-[12px] hover:scale-[1.01] active:scale-95 transition-all uppercase italic shadow-[0_5px_15px_rgba(124,187,61,0.2)]">
-                Place Bet
-              </button>
-              <button className="w-full bg-brand-yellow text-black font-black py-2.5 rounded-full text-[12px] hover:scale-[1.01] active:scale-95 transition-all uppercase italic shadow-[0_5px_15px_rgba(250,204,21,0.1)]">
-                 Place Bet Online
-              </button>
+              {!isAuthenticated ? (
+                <div className="flex items-stretch gap-2">
+                  <button
+                    onClick={handlePrintPreview}
+                    disabled={busy || createOffline.isPending}
+                    className="flex-1 bg-black/30 text-white font-black py-2.5 rounded-full text-[12px] hover:bg-black/40 active:scale-95 transition-all uppercase italic border border-white/10 disabled:opacity-60"
+                  >
+                    {createOffline.isPending ? "Preparing..." : "Print"}
+                  </button>
+                  <button
+                    onClick={handlePlaceOnline}
+                    disabled={busy || authLoading}
+                    className="flex-[1.4] bg-brand-yellow text-black font-black py-2.5 rounded-full text-[12px] hover:scale-[1.01] active:scale-95 transition-all uppercase italic shadow-[0_5px_15px_rgba(250,204,21,0.1)] disabled:opacity-60"
+                  >
+                    Place Bet Online
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handlePlaceOnline}
+                  disabled={busy}
+                  className="w-full bg-brand-yellow text-black font-black py-2.5 rounded-full text-[12px] hover:scale-[1.01] active:scale-95 transition-all uppercase italic shadow-[0_5px_15px_rgba(250,204,21,0.1)] disabled:opacity-60"
+                >
+                  Place Bet Online
+                </button>
+              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
     </motion.aside>
+    <TicketPreview
+      isOpen={previewOpen}
+      onClose={() => setPreviewOpen(false)}
+      selectedBets={selectedBets}
+      stake={stake}
+      onPlaceBet={handlePlaceOnline}
+      placing={busy}
+    />
+    <OfflineTicketModal
+      open={offlineOpen}
+      onClose={() => setOfflineOpen(false)}
+      code={offlineCode}
+      expiresAt={offlineExpiresAt}
+    />
+    <AnimatePresence>
+      {acceptedOpen && (
+        <div className="fixed inset-0 z-[170] flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/80" onClick={() => setAcceptedOpen(false)} />
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative z-10 bg-white w-full max-w-3xl min-h-[320px] flex items-center justify-center">
+            <button onClick={() => setAcceptedOpen(false)} className="absolute right-4 top-4 text-black"><X className="w-8 h-8" /></button>
+            <div className="text-black text-4xl font-medium tracking-wide">BET ACCEPTED</div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
     </>
   );
 }
