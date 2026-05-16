@@ -102,10 +102,10 @@ export function useActiveOddsProvider() {
   return useQuery({
     queryKey: ['active-odds-provider'],
     queryFn: getActiveOddsProviderFromCatalog,
-    staleTime: 0,
-    refetchInterval: 30_000,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -390,16 +390,22 @@ function mapMezzoTopEventsToMatches(payload: any): Match[] {
   });
 }
 
-export function useMezzoTopEvents(args: { enabled?: boolean; sportId?: number } = {}) {
+export function useMezzoTopEvents(
+  args: { enabled?: boolean; sportId?: number; tab?: "top" | "upcoming"; leagueId?: string | null } = {}
+) {
   const enabled = args.enabled ?? true;
   const sportId = Number(args.sportId ?? 501);
-  const pageSize = 30;
+  const tab = (args.tab === "top" || args.tab === "upcoming") ? args.tab : "upcoming";
+  const leagueId = String(args.leagueId || "").trim();
+  const pageSize = 10;
   const q = useInfiniteQuery({
-    queryKey: ['mezzo-top-events', 'infinite', sportId],
+    queryKey: ['mezzo-top-events', 'infinite', sportId, tab, leagueId || "all"],
     enabled,
     queryFn: async ({ pageParam = 0 }) => {
       const offset = Number(pageParam || 0);
-      const { data } = await api.get('/odds/mezzo/top-events', { params: { sportId, limit: pageSize, offset } });
+      const { data } = await api.get('/odds/mezzo/top-events', {
+        params: { sportId, tab, leagueId: leagueId || undefined, limit: pageSize, offset },
+      });
       const fixtures = Array.isArray((data as any)?.fixtures) ? (data as any).fixtures : [];
       const count = Number((data as any)?.count ?? 0) || 0;
       return {
@@ -414,7 +420,8 @@ export function useMezzoTopEvents(args: { enabled?: boolean; sportId?: number } 
     getNextPageParam: (lastPage) => (lastPage?.hasMore ? lastPage.nextOffset : undefined),
     initialPageParam: 0,
     staleTime: 60 * 1000,
-    refetchInterval: 60 * 1000,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
   });
 
   const matches = q.data?.pages.flatMap((p) => p.matches) || [];
@@ -458,45 +465,68 @@ export function useBanners(enabled: boolean = true) {
   });
 }
 
+function stableQueryKey(value: any) {
+  const seen = new WeakSet();
+  const normalize = (v: any): any => {
+    if (v === null || v === undefined) return v;
+    if (typeof v !== "object") return v;
+    if (seen.has(v)) return "[Circular]";
+    seen.add(v);
+    if (Array.isArray(v)) return v.map(normalize);
+    const out: any = {};
+    for (const k of Object.keys(v).sort()) out[k] = normalize(v[k]);
+    return out;
+  };
+  try {
+    return JSON.stringify(normalize(value));
+  } catch {
+    return String(value);
+  }
+}
+
 export function useFixtures(filters: any = {}) {
+  const filtersKey = stableQueryKey(filters);
   return useQuery({
-    queryKey: ['fixtures', filters],
+    queryKey: ['fixtures', filtersKey],
+    enabled: filters?.enabled === false ? false : true,
     queryFn: async () => {
-      console.log("FIXTURE REQUEST FILTERS", filters);
-      const provider = String(filters?.providerOverride || (await getActiveOddsProviderFromCatalog()) || "");
-      if (provider === 'pissbet_socket') {
+      const provider = String(filters?.providerOverride || "");
+      const effectiveProvider = provider || String((await getActiveOddsProviderFromCatalog()) || "");
+      if (effectiveProvider === 'pissbet_socket') {
         // This list is driven by a WS stream; keep HTTP fixtures empty to avoid mixing providers.
         return [];
       }
-      if (provider === 'mezzo') {
+      if (effectiveProvider === 'mezzo') {
         // Mezzo is served from stored snapshots via /odds/mezzo; keep fixtures HTTP empty to avoid mixing providers.
         return [];
       }
 
       const { providerOverride: _providerOverride, ...params } = filters || {};
       const { data } = await api.get('/betting/fixtures', { params });
-      console.log("FIXTURE RESPONSE", data);
       const rows = data.rows || data.fixtures || [];
       const fixtures = mapBackendFixtures(rows);
-      console.log("Parsed fixtures:", fixtures);
       return fixtures;
     },
 
-    refetchInterval: 30000,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
   });
 }
 
 export function useFixturesInfinite(filters: any = {}) {
   const pageSize = 10;
+  const filtersKey = stableQueryKey(filters);
   return useInfiniteQuery({
-    queryKey: ['fixtures', 'infinite', filters],
+    queryKey: ['fixtures', 'infinite', filtersKey],
+    enabled: filters?.enabled === false ? false : true,
     queryFn: async ({ pageParam = 0 }) => {
-      const provider = String(filters?.providerOverride || (await getActiveOddsProviderFromCatalog()) || "");
-      if (provider === 'pissbet_socket') {
+      const provider = String(filters?.providerOverride || "");
+      const effectiveProvider = provider || String((await getActiveOddsProviderFromCatalog()) || "");
+      if (effectiveProvider === 'pissbet_socket') {
         // This list is driven by a WS stream; keep HTTP fixtures empty to avoid mixing providers.
         return { fixtures: [], count: 0, nextOffset: undefined };
       }
-      if (provider === 'mezzo') {
+      if (effectiveProvider === 'mezzo') {
         // Mezzo is served from stored snapshots via /odds/mezzo; keep fixtures HTTP empty to avoid mixing providers.
         return { fixtures: [], count: 0, nextOffset: undefined };
       }
@@ -509,14 +539,8 @@ export function useFixturesInfinite(filters: any = {}) {
           limit: pageSize
         }
       });
-      console.log(`Betting fixtures infinite API response (offset: ${pageParam}):`, data);
       const rows = data.rows || data.fixtures || [];
       const fixtures = mapBackendFixtures(rows);
-      console.log(`Parsed fixtures for page ${pageParam}:`, fixtures);
-      if (fixtures.length > 0) {
-        console.log("First fixture markets:", fixtures[0]?.markets);
-        console.log("First fixture odds:", fixtures[0]?.odds);
-      }
       return {
         fixtures,
         count: data.count,
@@ -528,7 +552,8 @@ export function useFixturesInfinite(filters: any = {}) {
     },
     getNextPageParam: (lastPage) => lastPage.nextOffset,
     initialPageParam: 0,
-    staleTime: 10000
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
   });
 }
 

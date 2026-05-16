@@ -57,11 +57,16 @@ export default function App() {
   const { data: currentUser, isLoading: meLoading, isFetching: meFetching } = useMe();
   const hasToken = typeof window !== "undefined" && !!localStorage.getItem("accessToken");
   const authLoading = hasToken && (meLoading || meFetching);
-  const { data: activeProvider = "apifootball" } = useActiveOddsProvider();
+  const { data: activeProvider } = useActiveOddsProvider();
   const { data: remoteBanners = [] } = useBanners(true);
   const pissbetStream = usePissbetTopEventsStream(activeProvider === "pissbet_socket");
   const mezzoSportId = activeProvider === "mezzo" ? Number(activeSport ?? 501) : 501;
-  const mezzoTopEvents = useMezzoTopEvents({ enabled: activeProvider === "mezzo", sportId: mezzoSportId });
+  const mezzoTopEvents = useMezzoTopEvents({
+    enabled: activeProvider === "mezzo",
+    sportId: mezzoSportId,
+    tab: fixturesTab,
+    leagueId: activeLeagueId,
+  });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -244,12 +249,14 @@ export default function App() {
 
 
   const apifbInfinite = useFixturesInfinite({
+    enabled: !!activeProvider && activeProvider !== "mezzo" && activeProvider !== "pissbet_socket",
     sportId: activeSport,
     leagueName: activeLeague,
     leagueId: activeLeagueId,
     apiFootballLeagueId: activeApiFootballLeagueId,
     timeLimit: timeFilter,
     tab: fixturesTab,
+    providerOverride: activeProvider,
   });
 
   const data = apifbInfinite.data;
@@ -305,20 +312,8 @@ export default function App() {
   const providerFilteredFixtures = (() => {
     // For Mezzo + Pissbet, filtering happens client-side (they don't use /betting/fixtures).
     if (activeProvider === "mezzo") {
-      return fixtures.filter((f: any) => {
-        if (activeSport) {
-          const sportId = f?.sportId ?? null;
-          if (sportId != null && String(sportId) !== String(activeSport)) return false;
-        }
-        if (activeLeagueId) {
-          const leagueId = f?.leagueId ?? null;
-          if (leagueId != null && String(leagueId) !== String(activeLeagueId)) return false;
-        } else if (activeLeague) {
-          const leagueName = String(f?.league || "").trim();
-          if (leagueName && leagueName !== String(activeLeague)) return false;
-        }
-        return true;
-      });
+      // Mezzo filtering is backend-driven via `/odds/mezzo/top-events` params.
+      return fixtures;
     }
 
     if (activeProvider === "pissbet_socket") {

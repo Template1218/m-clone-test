@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMyUserBetslips, useTicketDetails } from "../../modules/betslips/hooks";
-import { Activity, CreditCard, Ticket, Clock, CheckCircle, XCircle, ChevronRight, Search } from "lucide-react";
+import { Activity, CreditCard, Ticket, ChevronRight, Search, Clock, Wallet, Info, RotateCw } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
 type AccountTab = "deposit" | "bets" | "ticket";
 type PeriodFilter = "24h" | "7d" | "30d" | "all";
@@ -29,28 +30,77 @@ function normalizeBetStatus(status: any) {
   return String(status || "").trim().toLowerCase();
 }
 
-function statusBadgeClass(status: any) {
+function statusConfig(status: any) {
   const v = normalizeBetStatus(status);
-  if (v === "won" || v === "win" || v === "settled_won") return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
-  if (v === "lost" || v === "lose" || v === "settled_lost") return "bg-rose-500/10 text-rose-400 border-rose-500/20";
-  if (v === "pending" || v === "open" || v === "placed") return "bg-amber-500/10 text-amber-400 border-amber-500/20";
-  return "bg-slate-500/10 text-slate-400 border-slate-500/20";
+  if (v === "won" || v === "win" || v === "settled_won") {
+    return { label: "WON", bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20" };
+  }
+  if (v === "lost" || v === "lose" || v === "settled_lost") {
+    return { label: "LOST", bg: "bg-rose-500/10", text: "text-rose-400", border: "border-rose-500/20" };
+  }
+  if (v === "pending" || v === "open" || v === "placed") {
+    return { label: "PENDING", bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20" };
+  }
+  return { label: String(v || "UNKNOWN").toUpperCase(), bg: "bg-zinc-500/10", text: "text-zinc-400", border: "border-zinc-500/20" };
 }
 
-function ticketCardClass(status: any) {
-  const v = normalizeBetStatus(status);
-  if (v === "won" || v === "win" || v === "settled_won") return "border-emerald-500/20 bg-emerald-500/[0.02]";
-  if (v === "lost" || v === "lose" || v === "settled_lost") return "border-rose-500/20 bg-rose-500/[0.02]";
-  return "border-zinc-800 bg-[#0d1117]";
+function BetHistorySkeleton() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="w-full bg-brand-dark/40 border border-white/5 rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4 animate-pulse">
+          <div className="flex flex-col gap-2">
+            <div className="h-2.5 w-32 bg-white/5 rounded" />
+            <div className="h-4 w-24 bg-white/10 rounded" />
+          </div>
+          <div className="flex items-center gap-8">
+            <div className="h-6 w-16 bg-white/5 rounded" />
+            <div className="h-6 w-16 bg-white/5 rounded" />
+            <div className="h-8 w-20 bg-white/5 rounded-lg" />
+            <div className="h-4 w-4 bg-white/5 rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TicketDetailsSkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      <div className="h-16 w-full bg-brand-dark/40 border border-white/5 rounded-2xl" />
+      <div className="bg-brand-dark/20 border border-white/5 rounded-3xl overflow-hidden divide-y divide-white/5">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="px-8 py-6 flex justify-between items-center">
+            <div className="space-y-2">
+              <div className="h-4 w-48 bg-white/10 rounded" />
+              <div className="h-3 w-32 bg-white/5 rounded" />
+            </div>
+            <div className="space-y-2 flex flex-col items-end">
+              <div className="h-8 w-12 bg-white/10 rounded-lg" />
+              <div className="h-3 w-16 bg-white/5 rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-20 bg-brand-dark/40 border border-white/5 rounded-2xl" />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function AccountPanelPage({ tab, onTabChange, user }: AccountPanelPageProps) {
   const [period, setPeriod] = useState<PeriodFilter>("24h");
-  const [category, setCategory] = useState("sports");
   const [ticketId, setTicketId] = useState("");
   const [submittedTicketId, setSubmittedTicketId] = useState("");
-  const { data: slips = [] } = useMyUserBetslips(tab === "bets" || tab === "ticket");
-  const { data: ticket, isError } = useTicketDetails(submittedTicketId, tab === "ticket" && !!submittedTicketId);
+  
+  const { data: slips = [], isLoading: slipsLoading, refetch: refetchSlips, isFetching: slipsFetching } = useMyUserBetslips(tab === "bets" || tab === "ticket");
+  const { data: ticket, isError, isLoading: ticketLoading, isFetching: ticketFetching, refetch: refetchTicket } = useTicketDetails(submittedTicketId, tab === "ticket" && !!submittedTicketId);
+
+  const isTicketSearching = ticketLoading || (ticketFetching && !!submittedTicketId);
 
   const filteredSlips = useMemo(() => {
     const now = Date.now();
@@ -60,162 +110,305 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
       period === "30d" ? 30 * 24 * 3600 * 1000 :
       null;
     return slips.filter((s: any) => {
-      if (category !== "sports") return false;
       if (!maxAgeMs) return true;
       return now - new Date(s.placedAt || s.createdAt).getTime() <= maxAgeMs;
     });
-  }, [slips, period, category]);
+  }, [slips, period]);
 
   return (
-    <div className="bg-[#050505] rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl">
-      <div className="flex bg-[#0d1117] border-b border-zinc-800">
+    <div className="max-w-5xl mx-auto space-y-4">
+      {/* Header Tabs - Modern Pill Style */}
+      <div className="bg-brand-dark border border-white/5 rounded-2xl p-1.5 flex gap-1 shadow-xl">
         {[
-          { id: 'deposit', label: 'DEPOSIT', icon: CreditCard },
+          { id: 'deposit', label: 'DEPOSIT', icon: Wallet },
           { id: 'bets', label: 'MY BETS', icon: Activity },
           { id: 'ticket', label: 'CHECK TICKET', icon: Ticket }
         ].map((t) => (
-            <button 
-              key={t.id}
-              onClick={() => onTabChange(t.id as AccountTab)} 
-              className={`flex-1 flex items-center justify-center gap-2 py-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 ${tab === t.id ? "text-[#ccff00] border-[#ccff00] bg-[#111]" : "text-zinc-600 border-transparent hover:text-zinc-400"}`}
-            >
-              <t.icon size={14} /> {t.label}
-            </button>
+          <button 
+            key={t.id}
+            onClick={() => onTabChange(t.id as AccountTab)} 
+            className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-[11px] font-bold transition-all ${
+              tab === t.id 
+                ? "bg-brand-primary text-black shadow-lg shadow-brand-primary/10" 
+                : "text-gray-500 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <t.icon size={16} /> 
+            <span className="tracking-widest">{t.label}</span>
+          </button>
         ))}
       </div>
 
-      <div className="p-6 md:p-8">
-        {tab === "deposit" && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between p-6 bg-[#0d1117] border border-zinc-800 rounded-2xl">
-              <div>
-                <p className="text-[9px] font-black uppercase text-zinc-500 tracking-widest">Available Balance</p>
-                <p className="text-4xl font-black text-white mt-1 italic">{fmtMoney(user?.balance)}</p>
+      {/* Main Content Area */}
+      <div className="bg-[#0a0a0a] rounded-3xl border border-white/5 overflow-hidden shadow-2xl min-h-[500px]">
+        <AnimatePresence mode="wait">
+          {tab === "deposit" && (
+            <motion.div 
+              key="deposit"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="p-8 space-y-8"
+            >
+              <div className="flex flex-col md:flex-row items-center justify-between p-8 bg-brand-dark/50 border border-white/5 rounded-3xl gap-6">
+                <div className="text-center md:text-left">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Total Available Balance</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl lg:text-5xl font-black text-white">{amount(user?.balance).toFixed(2)}</span>
+                    <span className="text-xl font-bold text-brand-primary">ETB</span>
+                  </div>
+                </div>
+                <button className="w-full md:w-auto bg-brand-primary text-black px-12 py-4 rounded-2xl font-black uppercase tracking-widest text-[13px] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-brand-primary/10">
+                  Top Up Now
+                </button>
               </div>
-              <button className="bg-[#ccff00] text-black px-8 py-3 rounded-xl font-black uppercase italic tracking-widest text-xs hover:bg-[#a8d100] transition-all">Top Up</button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              <div className="bg-[#0d1117] p-4 border border-zinc-800 rounded-xl"><span className="text-zinc-500 font-bold uppercase tracking-wider block mb-1">User ID</span> <span className="font-mono text-zinc-300">{user?.displayName || "-"}</span></div>
-              <div className="bg-[#0d1117] p-4 border border-zinc-800 rounded-xl"><span className="text-zinc-500 font-bold uppercase tracking-wider block mb-1">Phone</span> <span className="font-mono text-zinc-300">{user?.phoneNumber || "-"}</span></div>
-            </div>
-          </div>
-        )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-brand-dark/30 p-6 border border-white/5 rounded-2xl group hover:border-white/10 transition-colors">
+                  <span className="text-gray-500 text-[9px] font-bold uppercase tracking-widest block mb-1.5">Account ID</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-bold text-white tracking-tight">{user?.displayName || user?.id || "-"}</span>
+                    <CreditCard size={18} className="text-white/10 group-hover:text-brand-primary transition-colors" />
+                  </div>
+                </div>
+                <div className="bg-brand-dark/30 p-6 border border-white/5 rounded-2xl group hover:border-white/10 transition-colors">
+                  <span className="text-gray-500 text-[9px] font-bold uppercase tracking-widest block mb-1.5">Phone Number</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-bold text-white tracking-tight">{user?.phoneNumber || "-"}</span>
+                    <Clock size={18} className="text-white/10 group-hover:text-brand-primary transition-colors" />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
-        {tab === "bets" && (
-          <div className="space-y-6">
-            <div className="flex flex-col md:flex-row gap-4 items-center">
-              <select value={period} onChange={(e) => setPeriod(e.target.value as PeriodFilter)} className="bg-[#0d1117] border border-zinc-800 text-zinc-400 text-[10px] font-black uppercase px-4 py-3 rounded-xl w-full md:w-auto focus:outline-none focus:border-[#ccff00]">
-                <option value="24h">24 hours</option>
-                <option value="7d">7 days</option>
-                <option value="30d">30 days</option>
-                <option value="all">All time</option>
-              </select>
-              <div className="flex-1" />
-              <button className="bg-zinc-900 border border-zinc-800 text-zinc-400 px-6 py-3 font-black text-[10px] uppercase rounded-xl hover:bg-zinc-800">Clear History</button>
-            </div>
-
-            <div className="space-y-3">
-              {filteredSlips.map((slip: any) => {
-                const stake = amount(slip.stake);
-                const slipResult = slip.result || (slip.status === "settled" ? "pending" : slip.status);
-                const possibleWin = amount(slip.potentialPayout);
-                const settledPayout = slip.status === "settled" ? amount(slip.payout) : null;
-                const payoutToShow = settledPayout !== null ? settledPayout : possibleWin;
-                const odd = stake > 0 ? possibleWin / stake : 0;
-                return (
-                  <button
-                    key={slip.id}
-                    onClick={() => {
-                      setTicketId(slip.id);
-                      setSubmittedTicketId(slip.id);
-                      onTabChange("ticket");
-                    }}
-                    className={`w-full flex items-center justify-between px-6 py-4 border rounded-2xl transition-all ${ticketCardClass(slipResult)}`}
+          {tab === "bets" && (
+            <motion.div 
+              key="bets"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="p-6 space-y-6"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex bg-brand-dark p-1 rounded-xl border border-white/5 gap-1">
+                    {(["24h", "7d", "30d", "all"] as PeriodFilter[]).map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setPeriod(p)}
+                        className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                          period === p ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"
+                        }`}
+                      >
+                        {p === "all" ? "All Time" : p}
+                      </button>
+                    ))}
+                  </div>
+                  <button 
+                    onClick={() => refetchSlips()}
+                    className={`p-2 rounded-lg bg-brand-dark border border-white/5 text-gray-500 hover:text-brand-primary transition-all ${slipsFetching ? 'animate-spin text-brand-primary' : ''}`}
+                    title="Refresh bet history"
                   >
-                    <div className="flex items-center gap-6">
-                      <div className="text-zinc-500 font-black text-[10px] tracking-widest">{fmtDate(slip.placedAt)}</div>
-                      <div className="font-black text-white text-sm">MULTI BET</div>
-                    </div>
-                    <div className="flex items-center gap-8">
-                       <div className="text-right">
-                         <div className="text-[8px] uppercase font-black text-zinc-600 tracking-wider">Stake</div>
-                         <div className="text-xs font-bold text-white">{stake.toFixed(2)} ETB</div>
-                       </div>
-                       <div className="text-right">
-                         <div className="text-[8px] uppercase font-black text-zinc-600 tracking-wider">Payout</div>
-                         <div className="text-xs font-bold text-[#ccff00]">{payoutToShow.toFixed(2)} ETB</div>
-                       </div>
-                       <span className={`px-3 py-1 text-[8px] font-black border rounded-full uppercase tracking-widest ${statusBadgeClass(slipResult)}`}>
-                         {normalizeBetStatus(slipResult)}
-                       </span>
-                       <ChevronRight size={16} className="text-zinc-700" />
-                    </div>
+                    <RotateCw size={14} />
                   </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+                </div>
+                <button className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-red-400 transition-colors">
+                  Clear History
+                </button>
+              </div>
 
-        {tab === "ticket" && (
-          <div className="space-y-6">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
-                <input value={ticketId} onChange={(e) => setTicketId(e.target.value)} placeholder="ENTER TICKET ID..." className="w-full bg-[#0d1117] border border-zinc-800 px-12 py-4 text-white placeholder-zinc-700 outline-none rounded-2xl focus:border-[#ccff00] text-sm" />
-              </div>
-              <button onClick={() => setSubmittedTicketId(ticketId.trim())} className="bg-[#ccff00] text-black px-8 py-4 font-black text-xs uppercase rounded-2xl hover:bg-[#a8d100] transition-all italic">Check</button>
-            </div>
-            
-            {!ticket && !isError && <div className="text-center py-20 text-zinc-700 font-bold uppercase tracking-widest">Enter ticket id to view status</div>}
-            {isError && <div className="text-center py-20 text-rose-500 font-bold uppercase tracking-widest">Ticket not found</div>}
-            
-            {ticket && (
-              <div className={`border rounded-2xl overflow-hidden ${ticketCardClass(ticket.result || ticket.status)}`}>
-                <div className="px-6 py-4 bg-[#0d1117] flex items-center justify-between border-b border-zinc-800">
-                  <div className="text-white font-black text-sm uppercase tracking-widest italic">TICKET: #{ticket.id.slice(0, 8)}</div>
-                  <span className={`inline-flex items-center px-3 py-1 text-[8px] font-black border rounded-full uppercase tracking-widest ${statusBadgeClass(ticket.result || ticket.status)}`}>
-                    {normalizeBetStatus(ticket.result || ticket.status)}
-                  </span>
-                </div>
-                {(ticket.BetSelections || []).map((sel: any) => {
-                  const modelFx = sel.Outcome?.Market?.Fixture;
-                  const fx = sel.snapshot?.fixture || (modelFx ? {
-                    startsAt: modelFx.startsAt,
-                    leagueName: modelFx.League?.name,
-                    homeTeamName: modelFx.homeTeam?.name,
-                    awayTeamName: modelFx.awayTeam?.name,
-                    homeScore: modelFx.homeScore,
-                    awayScore: modelFx.awayScore,
-                    status: modelFx.status,
-                  } : null);
-                  const outcomeName = sel.snapshot?.outcome?.name || "-";
-                  const matchName = fx?.homeTeamName && fx?.awayTeamName ? `${fx.homeTeamName} v ${fx.awayTeamName}` : outcomeName;
-                  const selStatus = sel.result || "pending";
-                  return (
-                    <div key={sel.id} className="grid grid-cols-[1fr_auto] items-center px-6 py-5 border-b border-zinc-800 last:border-0 hover:bg-white/[0.02]">
-                       <div>
-                         <div className="font-bold text-white text-sm italic">{matchName}</div>
-                         <div className="text-[9px] uppercase text-zinc-500 font-black tracking-wider mt-1">{outcomeName}</div>
-                       </div>
-                       <div className="text-right">
-                         <div className="text-[#ccff00] font-black text-sm">{amount(sel.oddsAtPlacement).toFixed(2)}</div>
-                         <div className={`mt-1 text-[8px] font-black uppercase px-2 py-0.5 border rounded ${statusBadgeClass(selStatus)}`}>{selStatus}</div>
-                       </div>
+              {slipsLoading ? (
+                <BetHistorySkeleton />
+              ) : (
+                <div className="space-y-3">
+                  {filteredSlips.length === 0 ? (
+                    <div className="py-20 text-center flex flex-col items-center">
+                      <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
+                        <Activity className="w-8 h-8 text-white/10" />
+                      </div>
+                      <p className="text-gray-500 font-bold uppercase tracking-widest text-[11px]">No bet history found</p>
                     </div>
-                  );
-                })}
-                <div className="grid grid-cols-2 gap-4 px-6 py-6 bg-[#0d1117]/50 border-t border-zinc-800">
-                  <div><div className="text-[9px] font-black uppercase text-zinc-500 tracking-wider">Stake</div><div className="text-white font-black">{fmtMoney(ticket.stake)}</div></div>
-                  <div><div className="text-[9px] font-black uppercase text-zinc-500 tracking-wider">Total Odds</div><div className="text-white font-black">{(amount(ticket.potentialPayout) / Math.max(amount(ticket.stake), 1)).toFixed(2)}</div></div>
-                  <div><div className="text-[9px] font-black uppercase text-zinc-500 tracking-wider">Potential Win</div><div className="text-[#ccff00] font-black">{fmtMoney(ticket.potentialPayout)}</div></div>
-                  <div><div className="text-[9px] font-black uppercase text-zinc-500 tracking-wider">Tax (15%)</div><div className="text-rose-400 font-black">{fmtMoney(amount(ticket.potentialPayout) * 0.15)}</div></div>
+                  ) : (
+                    filteredSlips.map((slip: any) => {
+                      const stake = amount(slip.stake);
+                      const slipResult = slip.result || (slip.status === "settled" ? "pending" : slip.status);
+                      const possibleWin = amount(slip.potentialPayout);
+                      const settledPayout = slip.status === "settled" ? amount(slip.payout) : null;
+                      const payoutToShow = settledPayout !== null ? settledPayout : possibleWin;
+                      const config = statusConfig(slipResult);
+                      
+                      return (
+                        <button
+                          key={slip.id}
+                          onClick={() => {
+                            setTicketId(slip.id);
+                            setSubmittedTicketId(slip.id);
+                            onTabChange("ticket");
+                          }}
+                          className="w-full bg-brand-dark/40 border border-white/5 hover:border-white/10 rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4 transition-all group"
+                        >
+                          <div className="flex items-center gap-6 w-full md:w-auto">
+                            <div className="flex flex-col items-start">
+                              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">{fmtDate(slip.placedAt)}</span>
+                              <span className="text-sm font-black text-white mt-1">MULTI BET</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between md:justify-end gap-8 w-full md:w-auto">
+                             <div className="text-right">
+                               <div className="text-[8px] uppercase font-bold text-gray-600 tracking-wider mb-0.5">Stake</div>
+                               <div className="text-xs font-bold text-white">{stake.toFixed(2)} <span className="text-[9px] text-gray-500">ETB</span></div>
+                             </div>
+                             <div className="text-right">
+                               <div className="text-[8px] uppercase font-bold text-gray-600 tracking-wider mb-0.5">Payout</div>
+                               <div className="text-xs font-bold text-brand-primary">{payoutToShow.toFixed(2)} <span className="text-[9px] text-brand-primary/60">ETB</span></div>
+                             </div>
+                             <div className={`px-3 py-1.5 rounded-lg border ${config.bg} ${config.text} ${config.border} text-[9px] font-black tracking-widest`}>
+                               {config.label}
+                             </div>
+                             <ChevronRight size={16} className="text-white/10 group-hover:text-white transition-colors" />
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
                 </div>
+              )}
+            </motion.div>
+          )}
+
+          {tab === "ticket" && (
+            <motion.div 
+              key="ticket"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="p-6 space-y-6"
+            >
+              <div className="flex gap-3">
+                <div className="relative flex-1 group">
+                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 group-focus-within:text-brand-primary transition-colors" />
+                  <input 
+                    value={ticketId} 
+                    onChange={(e) => setTicketId(e.target.value)} 
+                    placeholder="ENTER TICKET ID..." 
+                    className="w-full bg-brand-dark/60 border border-white/5 px-14 py-4.5 text-white placeholder-gray-700 outline-none rounded-2xl focus:border-brand-primary/50 transition-all text-sm font-bold tracking-tight" 
+                  />
+                </div>
+                <button 
+                  onClick={() => setSubmittedTicketId(ticketId.trim())} 
+                  className="bg-brand-primary text-black px-10 py-4.5 font-black text-[11px] uppercase rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all tracking-widest shadow-lg shadow-brand-primary/10"
+                >
+                  Check
+                </button>
               </div>
-            )}
-          </div>
-        )}
+              
+              {isTicketSearching ? (
+                <TicketDetailsSkeleton />
+              ) : !ticket && !isError ? (
+                <div className="py-24 text-center">
+                  <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Ticket className="w-8 h-8 text-white/10" />
+                  </div>
+                  <p className="text-gray-500 font-bold uppercase tracking-widest text-[11px]">Enter your ticket id to see the status</p>
+                </div>
+              ) : isError ? (
+                <div className="py-24 text-center">
+                  <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Info className="w-8 h-8 text-rose-500/40" />
+                  </div>
+                  <p className="text-rose-400 font-bold uppercase tracking-widest text-[11px]">Ticket not found</p>
+                </div>
+              ) : ticket ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between px-6 py-4 bg-brand-dark/40 border border-white/5 rounded-2xl">
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Status Report</span>
+                        <button 
+                          onClick={() => refetchTicket()}
+                          className={`p-1 rounded bg-white/5 text-gray-500 hover:text-brand-primary transition-all ${ticketFetching ? 'animate-spin text-brand-primary' : ''}`}
+                        >
+                          <RotateCw size={10} />
+                        </button>
+                      </div>
+                      <div className="text-lg font-black text-white tracking-widest italic">TICKET: #{ticket.id.slice(0, 8).toUpperCase()}</div>
+                    </div>
+                    {(() => {
+                      const config = statusConfig(ticket.result || ticket.status);
+                      return (
+                        <div className={`px-4 py-2 rounded-xl border ${config.bg} ${config.text} ${config.border} text-[10px] font-black tracking-[0.2em]`}>
+                          {config.label}
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  <div className="bg-brand-dark/20 border border-white/5 rounded-3xl overflow-hidden">
+                    {(ticket.BetSelections || []).map((sel: any) => {
+                      const modelFx = sel.Outcome?.Market?.Fixture;
+                      const fx = sel.snapshot?.fixture || (modelFx ? {
+                        startsAt: modelFx.startsAt,
+                        leagueName: modelFx.League?.name,
+                        homeTeamName: modelFx.homeTeam?.name,
+                        awayTeamName: modelFx.awayTeam?.name,
+                        homeScore: modelFx.homeScore,
+                        awayScore: modelFx.awayScore,
+                        status: modelFx.status,
+                      } : null);
+                      const outcomeName = sel.snapshot?.outcome?.name || sel.Outcome?.name || "-";
+                      const marketName = sel.snapshot?.market?.name || sel.Outcome?.Market?.name || "-";
+                      const matchName = fx?.homeTeamName && fx?.awayTeamName ? `${fx.homeTeamName} v ${fx.awayTeamName}` : outcomeName;
+                      const selStatus = sel.result || "pending";
+                      const config = statusConfig(selStatus);
+
+                      return (
+                        <div key={sel.id} className="grid grid-cols-[1fr_auto] items-center px-8 py-6 border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
+                           <div>
+                             <div className="font-bold text-white text-[15px]">{matchName}</div>
+                             <div className="flex items-center gap-2 mt-1.5">
+                               <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">{marketName}</span>
+                               <div className="w-1 h-1 rounded-full bg-white/10" />
+                               <span className="text-[10px] font-bold text-brand-primary uppercase tracking-tight">{outcomeName}</span>
+                             </div>
+                           </div>
+                           <div className="text-right flex flex-col items-end gap-2">
+                             <div className="bg-white/5 text-white px-3 py-1.5 rounded-lg text-sm font-black tracking-tight border border-white/5">
+                               {amount(sel.oddsAtPlacement).toFixed(2)}
+                             </div>
+                             <div className={`text-[8px] font-black uppercase px-2 py-0.5 border rounded ${config.bg} ${config.text} ${config.border} tracking-widest`}>
+                               {config.label}
+                             </div>
+                           </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="bg-brand-dark/40 p-5 border border-white/5 rounded-2xl">
+                      <div className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Stake</div>
+                      <div className="text-white font-black text-lg">{fmtMoney(ticket.stake)}</div>
+                    </div>
+                    <div className="bg-brand-dark/40 p-5 border border-white/5 rounded-2xl">
+                      <div className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Total Odds</div>
+                      <div className="text-white font-black text-lg">{(amount(ticket.potentialPayout) / Math.max(amount(ticket.stake), 1)).toFixed(2)}</div>
+                    </div>
+                    <div className="bg-brand-dark/40 p-5 border border-brand-primary/10 rounded-2xl shadow-lg shadow-brand-primary/5">
+                      <div className="text-[9px] font-bold text-brand-primary/60 uppercase tracking-widest mb-1">Potential Win</div>
+                      <div className="text-brand-primary font-black text-lg">{fmtMoney(ticket.potentialPayout)}</div>
+                    </div>
+                    <div className="bg-brand-dark/40 p-5 border border-white/5 rounded-2xl">
+                      <div className="text-[9px] font-bold text-rose-500/60 uppercase tracking-widest mb-1">Tax (15%)</div>
+                      <div className="text-rose-400 font-black text-lg">{fmtMoney(amount(ticket.potentialPayout) * 0.15)}</div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

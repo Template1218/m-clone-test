@@ -81,8 +81,9 @@ export function useMe() {
       }
     },
     retry: false,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    refetchInterval: 10000,
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
   });
 }
