@@ -255,7 +255,7 @@ export default function Betslip({
       {/* Mobile Backdrop */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -265,118 +265,140 @@ export default function Betslip({
         )}
       </AnimatePresence>
 
-      <motion.aside 
+      <motion.aside
         initial={false}
-        animate={{ 
+        animate={{
           y: (isOpen || window.innerWidth >= 1024) ? 0 : '100%',
           opacity: 1
         }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="fixed inset-x-0 bottom-0 lg:sticky lg:top-0 lg:translate-y-0 w-full lg:w-[380px] bg-[#0a0a0a] flex flex-col shrink-0 border-t lg:border-t-0 lg:border-l border-brand-border z-[120] lg:z-10 h-[85vh] lg:h-full rounded-t-[2rem] lg:rounded-none overflow-hidden shadow-[0_-20px_50px_rgba(0,0,0,0.5)] lg:shadow-none"
+        className="fixed inset-x-0 bottom-0 lg:sticky lg:top-0 lg:translate-y-0 w-full lg:w-[380px] bg-[#0a0a0a] flex flex-col shrink-0 border-t lg:border-t-0 lg:border-l border-white/5 z-[150] lg:z-10 h-[90vh] lg:h-full rounded-t-3xl lg:rounded-none overflow-hidden shadow-2xl lg:shadow-none"
       >
         {/* Mobile Pull Handle */}
         <div className="lg:hidden flex justify-center py-3" onClick={onClose}>
-          <div className="w-12 h-1.5 bg-white/20 rounded-full" />
+          <div className="w-12 h-1 bg-white/10 rounded-full" />
         </div>
 
-        {/* Header Tabs with Close Button */}
-        <div className="flex bg-brand-dark overflow-hidden relative">
-          {([1, 2, 3] as const).map((slot) => {
-            const label = `BETSLIP ${slot}`;
-            const isActive = activeSlot === slot;
-            const count = slotCounts?.[slot] ?? null;
-            return (
-              <button
-                key={label}
-                type="button"
-                onClick={() => onChangeSlot(slot)}
-                className={`flex-1 py-4 text-[11px] font-black uppercase italic tracking-wider transition-all relative ${
-                  isActive ? "bg-brand-yellow text-black" : "text-gray-500 hover:text-white"
-                }`}
-              >
-                <span>{label}</span>
-                {typeof count === "number" && count > 0 ? (
-                  <span className={`ml-2 text-[10px] font-black ${isActive ? "text-black/80" : "text-white/50"}`}>
-                    {count}
-                  </span>
-                ) : null}
-                {isActive ? <div className="absolute top-0 left-0 w-full h-1 bg-black/10" /> : null}
-              </button>
-            );
-          })}
-        <button 
-          onClick={onClear}
-          className="px-4 text-gray-500 hover:text-red-500 transition-colors bg-brand-dark border-r border-white/5"
-        >
-          <Trash2 className="w-5 h-5 stroke-[2.5]" />
-        </button>
-        
-        {/* Close Button Mobile */}
-        <button 
-          onClick={onClose}
-          className="lg:hidden px-4 text-white hover:text-brand-primary transition-colors bg-brand-dark"
-        >
-          <X className="w-6 h-6 stroke-[3]" />
-        </button>
-      </div>
+        {/* Header Tabs */}
+        <div className="px-4 py-2 flex items-center justify-between border-b border-white/5 bg-[#111111]">
+          <div className="flex gap-1 bg-black/40 p-1 rounded-xl">
+            {([1, 2, 3] as const).map((slot) => {
+              const isActive = activeSlot === slot;
+              const count = slotCounts?.[slot] ?? 0;
+              return (
+                <button
+                  key={slot}
+                  type="button"
+                  onClick={() => onChangeSlot(slot)}
+                  className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-2 ${
+                    isActive
+                      ? "bg-brand-primary text-black shadow-lg shadow-brand-primary/10"
+                      : "text-gray-500 hover:text-white"
+                  }`}
+                >
+                  <span>SLIP {slot}</span>
+                  {count > 0 && (
+                    <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] ${
+                      isActive ? "bg-black/10 text-black" : "bg-white/5 text-gray-400"
+                    }`}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onClear}
+              className="p-2 text-gray-500 hover:text-red-500 transition-colors rounded-lg hover:bg-white/5"
+              title="Clear all bets"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={onClose}
+              className="lg:hidden p-2 text-white hover:text-brand-primary transition-colors rounded-lg hover:bg-white/5"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
 
       {/* Control Row */}
-      <div className="p-3 flex items-center justify-between border-b border-white/5 bg-black/20">
-        <div className="flex items-center gap-2 group cursor-pointer">
-          <div className="w-10 h-5 bg-[#7CBB3D] rounded-full relative">
-            <div className="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm" />
+      <div className="px-4 py-3 flex items-center justify-between border-b border-white/5 bg-black/20">
+        <button className="flex items-center gap-2 group">
+          <div className="w-8 h-4 bg-white/10 rounded-full relative transition-colors group-hover:bg-white/20">
+            <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-brand-primary rounded-full shadow-sm" />
           </div>
-          <span className="text-[10px] font-black text-white italic uppercase">Copy ticket</span>
-        </div>
-        <div className="flex items-center gap-2 group cursor-pointer">
-          <span className="text-[10px] font-black text-white/40 italic uppercase">Sort by Time</span>
-          <div className="w-10 h-5 bg-[#4B4B4B] rounded-full relative">
-            <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm" />
+          <span className="text-[10px] font-bold text-white/60 uppercase tracking-tight group-hover:text-white transition-colors">Copy ticket</span>
+        </button>
+        <button className="flex items-center gap-2 group">
+          <span className="text-[10px] font-bold text-white/40 uppercase tracking-tight group-hover:text-white transition-colors">Sort by Time</span>
+          <div className="w-8 h-4 bg-white/10 rounded-full relative transition-colors group-hover:bg-white/20">
+            <div className="absolute left-0.5 top-0.5 w-3 h-3 bg-white/40 rounded-full shadow-sm" />
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Inline error */}
       {inlineError ? (
-        <div className="px-3 py-2 border-b border-white/5 bg-black/30">
-          <div className="text-[11px] font-bold text-red-400">{inlineError}</div>
+        <div className="px-4 py-2 bg-red-500/10 border-b border-red-500/20">
+          <div className="text-[11px] font-bold text-red-400 flex items-center gap-2">
+            <div className="w-1 h-1 rounded-full bg-red-400" />
+            {inlineError}
+          </div>
         </div>
       ) : null}
       {localNotice ? (
-        <div className="px-3 py-2 border-b border-white/5 bg-black/30">
-          <div className="text-[11px] font-bold text-emerald-300">{localNotice}</div>
+        <div className="px-4 py-2 bg-emerald-500/10 border-b border-emerald-500/20">
+          <div className="text-[11px] font-bold text-emerald-400 flex items-center gap-2">
+            <div className="w-1 h-1 rounded-full bg-emerald-400" />
+            {localNotice}
+          </div>
         </div>
       ) : null}
 
       {/* Bets List */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-1 no-scrollbar">
+      <div className="flex-1 overflow-y-auto px-2 py-3 space-y-2 no-scrollbar">
         <AnimatePresence initial={false}>
           {selectedBets.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center opacity-20 py-20">
-              <Smartphone className="w-12 h-12 mb-4" />
-              <p className="text-xs font-black uppercase italic tracking-widest text-center">Betslip is<br />Empty</p>
+            <div className="h-full flex flex-col items-center justify-center py-20">
+              <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
+                <Smartphone className="w-8 h-8 text-white/20" />
+              </div>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-white/20 text-center">Betslip is Empty</p>
             </div>
           ) : (
             selectedBets.map((bet) => (
-              <motion.div 
+              <motion.div
                 key={`${bet.matchId}-${bet.market}-${bet.selection}`}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                className="bg-brand-surface/20 py-3 relative group flex items-start gap-3 px-1 border-b border-white/5"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-[#111111] rounded-xl p-3 relative group border border-white/5 hover:border-white/10 transition-all"
               >
-                <button 
-                  onClick={() => onRemoveBet(bet.matchId, bet.market, bet.selection)}
-                  className="text-red-500/80 hover:text-red-500 transition-colors pt-0.5"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[12px] text-white font-black uppercase italic leading-tight truncate tracking-tight">{bet.matchName}</div>
-                  <div className="text-[11px] font-bold text-gray-500 uppercase italic leading-tight tracking-tight mt-0.5">{bet.market} : {bet.selection}</div>
-                </div>
-                <div className="bg-[#7CBB3D] text-white px-3 py-1 rounded-full text-[11px] font-black min-w-[50px] text-center self-center shadow-lg">
-                  {bet.odd.toFixed(2)}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] text-white font-bold leading-tight truncate mb-1">{bet.matchName}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-medium text-gray-500 uppercase">{bet.market}</span>
+                      <span className="w-1 h-1 rounded-full bg-white/10" />
+                      <span className="text-[10px] font-bold text-brand-primary uppercase">{bet.selection}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <button
+                      onClick={() => onRemoveBet(bet.matchId, bet.market, bet.selection)}
+                      className="text-white/20 hover:text-red-500 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                    <div className="bg-brand-primary text-black px-2.5 py-1 rounded-lg text-[11px] font-bold shadow-lg shadow-brand-primary/10">
+                      {bet.odd.toFixed(2)}
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             ))
@@ -387,116 +409,148 @@ export default function Betslip({
       {/* Footer / Stake Section */}
       <AnimatePresence>
         {selectedBets.length > 0 && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="p-3 bg-black/40 border-t border-white/5 space-y-3 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]"
+            className="p-4 pb-32 lg:pb-6 bg-[#111111] border-t border-white/5 space-y-4 shadow-2xl"
           >
-            {/* Stake Controller */}
-            <div className="flex items-center bg-[#7CBB3D] rounded-full overflow-hidden p-0.5 h-9 shadow-[0_0_15px_rgba(124,187,61,0.2)]">
-              <button 
-                onClick={() => onStakeChange(Math.max(1, stake - 1))}
-                className="w-10 h-full flex items-center justify-center text-white hover:bg-black/10 transition-colors"
-              >
-                <div className="w-4 h-1 bg-white rounded-full" />
-              </button>
-              <div className="flex-1 h-full bg-black/90 flex items-center justify-center">
-                <input 
-                  type="number" 
-                  value={stake}
-                  onChange={(e) => onStakeChange(Number(e.target.value))}
-                  className="bg-transparent w-full text-center focus:outline-none text-white font-black text-lg h-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
+            {/* Summary Row */}
+            <div className="flex items-center justify-between px-1">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">Total Odds</span>
+                <span className="text-lg font-black text-brand-primary leading-none">{totalOdds.toFixed(2)}</span>
               </div>
-              <button 
-                onClick={() => onStakeChange(stake + 1)}
-                className="w-10 h-full flex items-center justify-center text-white hover:bg-black/10 transition-colors text-xl font-black pb-0.5"
-              >
-                +
-              </button>
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">Selections</span>
+                <span className="text-lg font-black text-white leading-none">{selectedBets.length}</span>
+              </div>
             </div>
 
-            {/* Totals */}
-            <div className="space-y-1.5 border-t border-white/10 pt-3">
-              <div className="flex justify-between items-center text-[10px] font-black text-white italic uppercase opacity-60">
-                <span>Total bet amount</span>
-                <span className="text-brand-primary">1</span>
+            {/* Stake Controller */}
+            <div className="bg-black/40 rounded-2xl p-2 border border-white/5">
+              <div className="flex items-center justify-between mb-2 px-2">
+                <span className="text-[10px] font-bold text-gray-400 uppercase">Stake Amount</span>
+                <span className="text-[10px] font-bold text-brand-primary uppercase">ETB</span>
               </div>
-              <div className="flex justify-between items-center text-[12px] font-black text-white pt-1 italic uppercase underline decoration-brand-primary decoration-2 underline-offset-4">
-                <span>Deposit</span>
-                <span className="text-brand-primary">{stake.toFixed(2)} ETB</span>
-              </div>
-
-              {/* Bonus */}
-              <div className="flex items-center justify-between bg-black/60 p-2 rounded-lg border border-white/5 my-2">
-                <Info className="w-3 h-3 text-brand-primary" />
-                <span className="text-[9px] font-black text-white/60 uppercase italic tracking-wider">Current bonus is 0%</span>
-                <X className="w-3 h-3 text-red-500/60 hover:text-red-500 cursor-pointer" />
-              </div>
-
-              <div className="flex justify-between items-center text-[10px] font-black text-[#86EFAC] uppercase italic relative h-5">
-                <span>Income Tax 15%</span>
-                <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-brand-primary text-black rounded px-1 py-0.5">
-                  <ChevronDown className="w-3.5 h-3.5" />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onStakeChange(Math.max(1, stake - 10))}
+                  className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl text-white hover:bg-white/10 transition-colors active:scale-90"
+                >
+                  <div className="w-3 h-0.5 bg-white" />
+                </button>
+                <div className="flex-1">
+                  <input
+                    type="number"
+                    value={stake}
+                    onChange={(e) => onStakeChange(Number(e.target.value))}
+                    className="w-full bg-transparent text-center focus:outline-none text-white font-bold text-xl [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
                 </div>
-                <span className="text-white">{incomeTax.toFixed(2)} ETB</span>
+                <button
+                  onClick={() => onStakeChange(stake + 10)}
+                  className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl text-white hover:bg-white/10 transition-colors active:scale-90 text-lg font-bold"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            {/* Totals Breakdown */}
+            <div className="space-y-2 px-1">
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] font-medium text-gray-400">Potential Payout</span>
+                <span className="text-[11px] font-bold text-white">{(totalOdds * stake).toFixed(2)} ETB</span>
               </div>
 
-              <div className="flex justify-between items-center pt-1.5 border-t border-white/10 mt-3">
-                <span className="text-[12px] font-black text-white uppercase italic">Net Win/Payout</span>
-                <span className="text-brand-primary text-[15px] font-black tabular-nums">{netWin.toLocaleString(undefined, { minimumFractionDigits: 2 })} ETB</span>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] font-medium text-gray-400">Income Tax</span>
+                  <span className="text-[9px] font-bold bg-white/5 px-1.5 py-0.5 rounded text-gray-500">15%</span>
+                </div>
+                <span className="text-[11px] font-bold text-red-400/80">-{incomeTax.toFixed(2)} ETB</span>
+              </div>
+
+              {/* Bonus Info */}
+              <div className="flex items-center justify-between bg-brand-primary/5 p-2 rounded-xl border border-brand-primary/10">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 bg-brand-primary/20 rounded-full flex items-center justify-center">
+                    <Info className="w-3 h-3 text-brand-primary" />
+                  </div>
+                  <span className="text-[10px] font-bold text-brand-primary uppercase tracking-tight">Bonus Applied</span>
+                </div>
+                <span className="text-[10px] font-black text-brand-primary uppercase italic">0%</span>
+              </div>
+
+              <div className="pt-2 mt-2 border-t border-white/5">
+                <div className="flex justify-between items-end">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase">Net Win</span>
+                    <span className="text-xl font-black text-brand-primary leading-tight tabular-nums">
+                      {netWin.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-bold text-brand-primary mb-1">ETB</span>
+                </div>
               </div>
             </div>
 
             {/* Buttons */}
-            <div className="space-y-2 pt-3">
-              <div className="flex justify-center gap-4">
+            <div className="space-y-3 pt-2">
+              <div className="flex justify-center">
                 {!isAuthenticated ? (
                   <button
                     onClick={handlePrintPreview}
                     disabled={busy || createOffline.isPending}
-                    className="text-white text-[10px] font-black uppercase underline-offset-4 border-b border-brand-primary italic hover:text-brand-primary transition-colors pb-0.5 disabled:opacity-60"
+                    className="text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-white transition-colors disabled:opacity-50"
                   >
                     {createOffline.isPending ? "Preparing..." : "Print Preview"}
                   </button>
                 ) : (
-                  <button onClick={() => setPreviewOpen(true)} className="text-white text-[10px] font-black uppercase underline-offset-4 border-b border-brand-primary italic hover:text-brand-primary transition-colors pb-0.5">
-                    Ticket Preview
+                  <button
+                    onClick={() => setPreviewOpen(true)}
+                    className="text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-white transition-colors"
+                  >
+                    Full Ticket Preview
                   </button>
                 )}
               </div>
-              {!isAuthenticated ? (
-                <div className="flex items-stretch gap-2">
-                  <button
-                    onClick={handlePrintPreview}
-                    disabled={busy || createOffline.isPending}
-                    className="flex-1 bg-black/30 text-white font-black py-2.5 rounded-full text-[12px] hover:bg-black/40 active:scale-95 transition-all uppercase italic border border-white/10 disabled:opacity-60"
-                  >
-                    {createOffline.isPending ? "Preparing..." : "Print"}
-                  </button>
+
+              <div className="flex flex-col gap-2">
+                {!isAuthenticated ? (
+                  <>
+                    <button
+                      onClick={handlePlaceOnline}
+                      disabled={busy || authLoading}
+                      className="w-full bg-brand-primary text-black font-black py-4 rounded-2xl text-[13px] uppercase tracking-wider hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_10px_20px_rgba(193,223,31,0.2)] disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {busy ? "Placing..." : "Place Bet Online"}
+                    </button>
+                    <button
+                      onClick={handlePrintPreview}
+                      disabled={busy || createOffline.isPending}
+                      className="w-full bg-white/5 text-white font-bold py-3 rounded-2xl text-[11px] uppercase tracking-wide hover:bg-white/10 active:scale-[0.98] transition-all border border-white/5 disabled:opacity-50"
+                    >
+                      {createOffline.isPending ? "Preparing..." : "Book Offline Ticket"}
+                    </button>
+                  </>
+                ) : (
                   <button
                     onClick={handlePlaceOnline}
-                    disabled={busy || authLoading}
-                    className="flex-[1.4] bg-brand-yellow text-black font-black py-2.5 rounded-full text-[12px] hover:scale-[1.01] active:scale-95 transition-all uppercase italic shadow-[0_5px_15px_rgba(250,204,21,0.1)] disabled:opacity-60"
+                    disabled={busy}
+                    className="w-full bg-brand-primary text-black font-black py-4 rounded-2xl text-[13px] uppercase tracking-wider hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_10px_20px_rgba(193,223,31,0.2)] disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    Place Bet Online
+                    {busy ? "Placing..." : "Place Bet Online"}
                   </button>
-                </div>
-              ) : (
-                <button
-                  onClick={handlePlaceOnline}
-                  disabled={busy}
-                  className="w-full bg-brand-yellow text-black font-black py-2.5 rounded-full text-[12px] hover:scale-[1.01] active:scale-95 transition-all uppercase italic shadow-[0_5px_15px_rgba(250,204,21,0.1)] disabled:opacity-60"
-                >
-                  Place Bet Online
-                </button>
-              )}
+                )}
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
     </motion.aside>
+
     <TicketPreview
       isOpen={previewOpen}
       onClose={() => setPreviewOpen(false)}
@@ -511,13 +565,45 @@ export default function Betslip({
       code={offlineCode}
       expiresAt={offlineExpiresAt}
     />
+
+    {/* Success Modal */}
     <AnimatePresence>
       {acceptedOpen && (
-        <div className="fixed inset-0 z-[170] flex items-center justify-center p-4">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/80" onClick={() => setAcceptedOpen(false)} />
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative z-10 bg-white w-full max-w-3xl min-h-[320px] flex items-center justify-center">
-            <button onClick={() => setAcceptedOpen(false)} className="absolute right-4 top-4 text-black"><X className="w-8 h-8" /></button>
-            <div className="text-black text-4xl font-medium tracking-wide">BET ACCEPTED</div>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/90 backdrop-blur-md"
+            onClick={() => setAcceptedOpen(false)}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="relative z-10 bg-[#111111] border border-brand-primary/20 p-10 rounded-[3rem] text-center max-w-sm w-full shadow-2xl"
+          >
+            <div className="w-20 h-20 bg-brand-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", delay: 0.2 }}
+              >
+                <div className="w-12 h-12 bg-brand-primary rounded-full flex items-center justify-center text-black">
+                  <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </motion.div>
+            </div>
+            <h3 className="text-2xl font-black text-white uppercase italic mb-2">Bet Accepted!</h3>
+            <p className="text-gray-400 text-sm mb-8">Your bet has been placed successfully. Good luck!</p>
+            <button
+              onClick={() => setAcceptedOpen(false)}
+              className="w-full bg-brand-primary text-black font-black py-4 rounded-2xl text-[12px] uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              Back to Games
+            </button>
           </motion.div>
         </div>
       )}

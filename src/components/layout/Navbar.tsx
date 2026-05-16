@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Home,
   Trophy,
@@ -16,22 +16,22 @@ interface NavbarProps {
 }
 
 const NAV_ITEMS = [
-  { icon: <Home className="w-5 h-5" />, label: "HOME", view: "home" },
-  { icon: <Trophy className="w-5 h-5" />, label: "SPORT", view: "home" },
-  { icon: <Activity className="w-5 h-5" />, label: "LIVE", view: "live" },
-  { icon: <Smartphone className="w-5 h-5" />, label: "GAMES", view: "games" },
+  { icon: <Home className="w-8 h-8" />, label: "HOME", view: "home" },
+  { icon: <Trophy className="w-8 h-8" />, label: "SPORT", view: "home" },
+  { icon: <Activity className="w-8 h-8" />, label: "LIVE", view: "live" },
+  { icon: <Smartphone className="w-8 h-8" />, label: "GAMES", view: "games" },
   {
-    icon: <Globe className="w-5 h-5" />,
+    icon: <Globe className="w-8 h-8" />,
     label: "LIVE GAMES",
     view: "live-games",
   },
   {
-    icon: <Clock className="w-5 h-5" />,
+    icon: <Clock className="w-8 h-8" />,
     label: "VIRTUAL SPORTS",
     view: "virtual",
   },
   {
-    icon: <CircleHelp className="w-5 h-5" />,
+    icon: <CircleHelp className="w-8 h-8" />,
     label: "PROMOTIONS",
     view: "promotions",
   },
@@ -55,8 +55,8 @@ export default function Navbar({ currentView, onViewChange }: NavbarProps) {
   }, []);
 
   return (
-    <nav className="bg-[#1a1a1a] lg:bg-brand-surface border-b border-brand-border h-[60px] lg:h-14 flex items-center justify-center shrink-0 sticky top-[60px] z-[90] overflow-x-auto no-scrollbar">
-      <div className="flex w-full lg:w-auto lg:gap-8 min-w-max">
+    <nav className="bg-[#050505] border-b border-zinc-800 h-16 flex items-center justify-center shrink-0 sticky top-[50px] z-[90] overflow-x-auto no-scrollbar shadow-lg">
+      <div className="flex w-full lg:w-auto lg:gap-8 min-w-max px-4">
         {NAV_ITEMS.map((item) => {
           const isActive = currentView === item.view;
           const isSport = item.label === "SPORT";
@@ -72,20 +72,21 @@ export default function Navbar({ currentView, onViewChange }: NavbarProps) {
                   onViewChange(item.view);
                 }
               }}
-              className={`flex-1 min-w-[70px] lg:min-w-0 flex flex-col items-center justify-center cursor-pointer group px-2 relative h-[60px] lg:h-14 transition-all ${isActive ? "bg-[#2a2a2a] lg:bg-transparent lg:text-brand-primary" : "text-gray-400 hover:text-white"}`}
+              className={`flex-1 min-w-[70px] lg:min-w-0 flex flex-col items-center justify-center cursor-pointer group px-2 relative h-16 transition-all ${isActive ? "text-[#ccff00]" : "text-zinc-500 hover:text-white"}`}
             >
               <div
-                className={`mb-0.5 transition-transform group-hover:scale-110 ${isActive ? "text-white lg:text-brand-primary scale-110" : ""}`}
+                className={`mb-1 transition-transform group-hover:scale-105 ${isActive ? "scale-105" : ""}`}
               >
-                {item.icon}
+                {/* Icons restored to moderate size */}
+                {React.cloneElement(item.icon as React.ReactElement, { className: 'w-5 h-5' })}
               </div>
               <span
-                className={`text-[9px] lg:text-[10px] font-black tracking-tight whitespace-nowrap ${isActive ? "text-white lg:text-brand-primary" : ""}`}
+                className={`text-[9px] font-black tracking-widest uppercase whitespace-nowrap ${isActive ? "text-[#ccff00]" : ""}`}
               >
                 {item.label}
               </span>
               {isActive && !isSportDropdownOpen && (
-                <div className="absolute bottom-0 h-0.5 w-full bg-brand-primary hidden lg:block animate-in fade-in slide-in-from-bottom-1" />
+                <div className="absolute bottom-0 h-0.5 w-full bg-[#ccff00] hidden lg:block animate-in fade-in slide-in-from-bottom-1" />
               )}
 
               {/* Sport Dropdown */}

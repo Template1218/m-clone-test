@@ -1,6 +1,6 @@
 import { Trophy, Activity, ChevronDown, ChevronRight, Globe, BarChart2 } from 'lucide-react';
 import { useState } from 'react';
-import { useFixtures } from '../../modules/betting/hooks';
+import { useActiveOddsProvider, useFixtures } from '../../modules/betting/hooks';
 
 const LIVE_MARKETS = ['Match result', 'Handicap', 'Total Goals', 'Both Teams To Score'];
 
@@ -57,6 +57,7 @@ const LIVE_MATCHES = [
 
 export default function LiveView() {
   const [activeMarket, setActiveMarket] = useState('Match result');
+  const { data: activeProvider = "apifootball" } = useActiveOddsProvider();
   const { data: allFixtures = [] } = useFixtures();
   
   // For demo, we consider fixtures starting within +/- 2 hours as "live" or use status if available

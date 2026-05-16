@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Activity, Smartphone } from "lucide-react";
 import { Match, BetSelection } from "./types";
-import { useFixtures, useFixturesInfinite, useRefreshVisibleOdds } from "./modules/betting/hooks";
+import { useActiveOddsProvider, useBanners, useFixtures, useFixturesInfinite, useMezzoTopEvents, usePissbetTopEventsStream, useRefreshVisibleOdds } from "./modules/betting/hooks";
 import { useMe } from "./modules/auth/hooks";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -45,8 +45,11 @@ export default function App() {
   const [user, setUser] = useState<any>(null);
   const [activeSport, setActiveSport] = useState<string | null>(null);
   const [activeLeague, setActiveLeague] = useState<string | null>(null);
+  const [activeLeagueId, setActiveLeagueId] = useState<string | null>(null);
+  const [activeApiFootballLeagueId, setActiveApiFootballLeagueId] = useState<string | null>(null);
   const [timeFilter, setTimeFilter] = useState<string>('All Time');
   const [fixturesTab, setFixturesTab] = useState<"upcoming" | "top">("top");
+
   const queryClient = useQueryClient();
   const refreshVisibleOdds = useRefreshVisibleOdds();
   const lastBulkRefreshAtRef = useRef<number>(0);
@@ -54,6 +57,11 @@ export default function App() {
   const { data: currentUser, isLoading: meLoading, isFetching: meFetching } = useMe();
   const hasToken = typeof window !== "undefined" && !!localStorage.getItem("accessToken");
   const authLoading = hasToken && (meLoading || meFetching);
+  const { data: activeProvider = "apifootball" } = useActiveOddsProvider();
+  const { data: remoteBanners = [] } = useBanners(true);
+  const pissbetStream = usePissbetTopEventsStream(activeProvider === "pissbet_socket");
+  const mezzoSportId = activeProvider === "mezzo" ? Number(activeSport ?? 501) : 501;
+  const mezzoTopEvents = useMezzoTopEvents({ enabled: activeProvider === "mezzo", sportId: mezzoSportId });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -167,7 +175,7 @@ export default function App() {
   };
 
   const [currentBanner, setCurrentBanner] = useState(0);
-  const banners = [
+  const defaultBanners = [
     {
       title: "Take Control Before",
       subtitle: "The Final Whistle,",
@@ -194,6 +202,16 @@ export default function App() {
     },
   ];
 
+  const banners = (remoteBanners || []).length
+    ? (remoteBanners as any[]).map((b: any) => ({
+        title: String(b?.title || ""),
+        subtitle: b?.subtitle ?? "",
+        highlight: b?.highlight ?? "",
+        image: String(b?.imageUrl || ""),
+        color: String(b?.color || "bg-brand-primary"),
+      }))
+    : defaultBanners;
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentBanner((prev) => (prev + 1) % banners.length);
@@ -202,6 +220,13 @@ export default function App() {
   }, []);
 
   const handleMatchClick = (matchId: string) => {
+    if (activeProvider === "pissbet_socket") {
+      const m = visibleFixtures.find((x: any) => String(x?.id) === String(matchId));
+      const eventId = Number((m as any)?.externalEventId ?? String(matchId).split(":")[1]);
+      if (Number.isFinite(eventId) && eventId > 0) {
+        pissbetStream.subscribeEvent(eventId);
+      }
+    }
     setSelectedMatchId(matchId);
     setView("detail");
   };
@@ -212,23 +237,36 @@ export default function App() {
     if (newView === 'home') {
       setActiveSport(null);
       setActiveLeague(null);
+      setActiveLeagueId(null);
+      setActiveApiFootballLeagueId(null);
     }
   };
 
-  const { 
-    data, 
-    fetchNextPage, 
-    hasNextPage, 
-    isFetchingNextPage,
-    status
-  } = useFixturesInfinite({
+
+  const apifbInfinite = useFixturesInfinite({
     sportId: activeSport,
     leagueName: activeLeague,
+    leagueId: activeLeagueId,
+    apiFootballLeagueId: activeApiFootballLeagueId,
     timeLimit: timeFilter,
-    tab: fixturesTab
+    tab: fixturesTab,
   });
 
-  const fixturesRaw = data?.pages.flatMap(page => page.fixtures) || [];
+  const data = apifbInfinite.data;
+  const fixturesQueryIsFetching = activeProvider === "mezzo" ? (mezzoTopEvents as any).isFetching : apifbInfinite.isFetching;
+  const fixturesQueryStatus = activeProvider === "mezzo" ? (mezzoTopEvents as any).status : apifbInfinite.status;
+
+  const fetchNextPage = activeProvider === "mezzo" ? (mezzoTopEvents as any).fetchNextPage : apifbInfinite.fetchNextPage;
+  const hasNextPage = activeProvider === "mezzo" ? (mezzoTopEvents as any).hasNextPage : apifbInfinite.hasNextPage;
+  const isFetchingNextPage = activeProvider === "mezzo" ? (mezzoTopEvents as any).isFetchingNextPage : apifbInfinite.isFetchingNextPage;
+
+
+  const fixturesRaw =
+    activeProvider === "pissbet_socket"
+      ? pissbetStream.matches
+      : activeProvider === "mezzo"
+        ? ((mezzoTopEvents as any).data?.matches || [])
+        : (data?.pages.flatMap(page => page.fixtures) || []);
   // Backend dedupes by canonical identity, but keep a client-side guard too.
   const normalizeText = (value: any) =>
     String(value || "")
@@ -264,16 +302,111 @@ export default function App() {
     return Array.from(map.values());
   })();
 
+  const providerFilteredFixtures = (() => {
+    // For Mezzo + Pissbet, filtering happens client-side (they don't use /betting/fixtures).
+    if (activeProvider === "mezzo") {
+      return fixtures.filter((f: any) => {
+        if (activeSport) {
+          const sportId = f?.sportId ?? null;
+          if (sportId != null && String(sportId) !== String(activeSport)) return false;
+        }
+        if (activeLeagueId) {
+          const leagueId = f?.leagueId ?? null;
+          if (leagueId != null && String(leagueId) !== String(activeLeagueId)) return false;
+        } else if (activeLeague) {
+          const leagueName = String(f?.league || "").trim();
+          if (leagueName && leagueName !== String(activeLeague)) return false;
+        }
+        return true;
+      });
+    }
+
+    if (activeProvider === "pissbet_socket") {
+      return fixtures.filter((f: any) => {
+        if (activeSport && String(activeSport) !== "football") return false;
+        if (activeLeagueId) return true; // pissbet doesn't have stable league ids in this mapping
+        if (activeLeague) {
+          const league = String(f?.league || "").trim();
+          if (league && league !== String(activeLeague)) return false;
+        }
+        return true;
+      });
+    }
+
+    // API-Football path is server-filtered via query params.
+    return fixtures;
+  })();
+
+  const tabSortedFixtures = (() => {
+    const items = [...providerFilteredFixtures];
+    const startsAtMs = (f: any) => {
+      const t = f?.startsAt ? new Date(f.startsAt).getTime() : 0;
+      return Number.isFinite(t) ? t : 0;
+    };
+
+    if (fixturesTab === "top") {
+      items.sort((a: any, b: any) => {
+        const aTop = a?.isTop ? 1 : 0;
+        const bTop = b?.isTop ? 1 : 0;
+        if (aTop !== bTop) return bTop - aTop;
+
+        const aPrices = Number(a?.pricesCount ?? 0) || 0;
+        const bPrices = Number(b?.pricesCount ?? 0) || 0;
+        if (aPrices !== bPrices) return bPrices - aPrices;
+
+        const aStart = startsAtMs(a);
+        const bStart = startsAtMs(b);
+        if (aStart && bStart && aStart !== bStart) return aStart - bStart;
+        if (aStart && !bStart) return -1;
+        if (!aStart && bStart) return 1;
+        return String(a?.id || "").localeCompare(String(b?.id || ""));
+      });
+      return items;
+    }
+
+    // Upcoming: nearest kickoff first.
+    items.sort((a: any, b: any) => {
+      const aStart = startsAtMs(a);
+      const bStart = startsAtMs(b);
+      if (aStart && bStart && aStart !== bStart) return aStart - bStart;
+      if (aStart && !bStart) return -1;
+      if (!aStart && bStart) return 1;
+      return String(a?.id || "").localeCompare(String(b?.id || ""));
+    });
+    return items;
+  })();
+
+  const isStartedOrCompleted = (f: any) => {
+    // IMPORTANT: avoid time-based filtering here (timezone/format issues can hide valid upcoming fixtures).
+    // Only hide fixtures that are explicitly live/started or completed/closed.
+    const status = String(f?.status || f?.matchStatus || f?.state || "").toLowerCase();
+    if (!status) return false;
+
+    // Started / in-play
+    if (["live", "inplay", "in_play", "1h", "2h", "ht", "et", "pen", "started"].includes(status)) return true;
+
+    // Completed / removed
+    return ["ft", "finished", "ended", "completed", "final", "closed", "settled", "canceled", "cancelled", "postponed"].includes(status);
+  };
+
+  const visibleFixtures = tabSortedFixtures.filter((f) => !isStartedOrCompleted(f));
+  const showFixturesSkeleton =
+    fixturesQueryStatus === "pending" ||
+    (fixturesQueryIsFetching && visibleFixtures.length === 0) ||
+    (activeProvider === "pissbet_socket" && !pissbetStream.hasData);
+
   // Bulk refresh visible fixtures (one call per chunk) so a page refresh updates odds "all at once".
   useEffect(() => {
-    if (!fixtures.length) return;
+    // Pissbet socket odds are live-streamed; there is no per-fixture refresh endpoint.
+    if (activeProvider === "pissbet_socket") return;
+    if (!visibleFixtures.length) return;
     if (bulkRefreshInFlightRef.current) return;
 
     const now = Date.now();
     // Client-side throttle; backend also has per-fixture locks.
     if (now - lastBulkRefreshAtRef.current < 20_000) return;
 
-    const staleFixtureIds = fixtures
+    const staleFixtureIds = visibleFixtures
       .filter((m) => {
         const markets = m.markets || [];
         const mainKeys = new Set(["1X2", "DC", "BTS"]);
@@ -303,7 +436,7 @@ export default function App() {
         bulkRefreshInFlightRef.current = false;
       }
     })();
-  }, [fixtures, refreshVisibleOdds, queryClient]);
+  }, [visibleFixtures, refreshVisibleOdds, queryClient]);
 
   const loaderRef = useRef<HTMLDivElement>(null);
 
@@ -323,10 +456,10 @@ export default function App() {
 
   useEffect(() => {
     console.log("Filters:", { activeSport, activeLeague, timeFilter });
-    console.log("Fixtures count:", fixtures.length);
-  }, [activeSport, activeLeague, timeFilter, fixtures.length]);
+    console.log("Fixtures count:", visibleFixtures.length);
+  }, [activeSport, activeLeague, timeFilter, visibleFixtures.length]);
 
-  const selectedMatch = fixtures.find((m) => m.id === selectedMatchId);
+  const selectedMatch = visibleFixtures.find((m) => m.id === selectedMatchId);
 
   const isLiveView = view === "live";
   const isGamesView = view === "games";
@@ -364,7 +497,11 @@ export default function App() {
             activeSport={activeSport} 
             onSportChange={setActiveSport}
             activeLeague={activeLeague}
-            onLeagueChange={setActiveLeague}
+            onLeagueChange={({ name, id, apiFootballLeagueId }) => {
+              setActiveLeague(name);
+              setActiveLeagueId(id);
+              setActiveApiFootballLeagueId(apiFootballLeagueId);
+            }}
             timeFilter={timeFilter}
             onTimeFilterChange={setTimeFilter}
             isHot={fixturesTab === "top"}
@@ -373,7 +510,7 @@ export default function App() {
         )}
 
         <main
-          className={`flex-1 overflow-y-auto ${isGamesView || isVirtualView ? "bg-[#0a0a0a]" : "p-0 lg:p-4"} pb-32 lg:pb-4`}
+          className={`flex-1 ${selectedMatchId ? "overflow-hidden" : "overflow-y-auto"} ${isGamesView || isVirtualView ? "bg-[#0a0a0a]" : "p-0 lg:p-4"} pb-32 lg:pb-4`}
         >
           {view === "account" ? (
             <div className="p-4 lg:p-0">
@@ -387,15 +524,15 @@ export default function App() {
             <VirtualSportsView />
           ) : (
             <div
-              className={`flex flex-col lg:flex-row lg:gap-6 transition-all duration-300 ${selectedMatchId ? "items-start" : ""} max-w-full`}
+              className={`flex flex-col lg:flex-row lg:gap-6 transition-all duration-300 ${selectedMatchId ? "items-start h-full" : ""} max-w-full`}
             >
               {/* Left Column: Match List */}
               <div
-                className={`transition-all duration-300 ${selectedMatchId ? "hidden lg:block lg:w-[45%]" : "w-full"} p-4 lg:p-0`}
+                className={`transition-all duration-300 ${selectedMatchId ? "hidden lg:block lg:w-[40%] h-full overflow-y-auto no-scrollbar" : "w-full"} p-2 lg:p-0`}
               >
                 {/* Banner Carousel */}
                 {!selectedMatchId && (
-                  <div className="relative w-full h-[200px] lg:h-[300px] lg:rounded-lg overflow-hidden mb-1 shadow-2xl -mx-4 lg:mx-0 w-[calc(100%+2rem)] lg:w-full group">
+                  <div className="relative w-full h-[180px] lg:h-[300px] lg:rounded-lg overflow-hidden mb-0.5 shadow-2xl -mx-2 lg:mx-0 w-[calc(100%+1rem)] lg:w-full group">
                     <AnimatePresence mode="wait">
                       <motion.div
                         key={currentBanner}
@@ -440,14 +577,14 @@ export default function App() {
                 )}
 
                 {/* Match Headers - Pill Shaped */}
-                <div className="flex bg-brand-surface rounded-full overflow-hidden mb-1 p-1 border border-white/5">
+                <div className="flex bg-brand-surface rounded-full overflow-hidden mb-0.5 p-0.5 border border-white/5">
                   <button
                     onClick={() => {
                       setFixturesTab("upcoming");
                       setTimeFilter("3 Hours");
                       setSelectedMatchId(null);
                     }}
-                    className={`px-6 py-3 font-normal transition-all flex-1 rounded-full ${selectedMatchId ? "text-[15px]" : "text-[16px]"} ${fixturesTab === "upcoming" ? "bg-brand-primary text-black shadow-lg shadow-green-500/20" : "text-gray-500 hover:text-white"}`}
+                    className={`px-4 py-2 font-normal transition-all flex-1 rounded-full ${selectedMatchId ? "text-[13px]" : "text-[14px]"} ${fixturesTab === "upcoming" ? "bg-brand-primary text-black shadow-lg shadow-green-500/20" : "text-gray-500 hover:text-white"}`}
                   >
                     Upcoming
                   </button>
@@ -456,33 +593,39 @@ export default function App() {
                       setFixturesTab("top");
                       setSelectedMatchId(null);
                     }}
-                    className={`px-6 py-3 font-normal flex-1 rounded-full transition-all ${fixturesTab === "top" ? "bg-brand-primary text-black shadow-lg shadow-green-500/20" : "text-gray-500 hover:text-white"} ${selectedMatchId ? "text-[15px]" : "text-[16px]"}`}
+                    className={`px-4 py-2 font-normal flex-1 rounded-full transition-all ${fixturesTab === "top" ? "bg-brand-primary text-black shadow-lg shadow-green-500/20" : "text-gray-500 hover:text-white"} ${selectedMatchId ? "text-[13px]" : "text-[14px]"}`}
                   >
                     Top Matches
                   </button>
                 </div>
 
                 {/* Matches List */}
-                <div className="bg-brand-surface rounded-4xl overflow-hidden border border-brand-border shadow-xl">
+                <div className="bg-brand-surface rounded-2xl overflow-hidden border border-brand-border shadow-xl">
                   {/* Header Grid - Rounded Header */}
                   <div
-                    className={`grid bg-[#111111] text-[9px] font-black text-gray-500 h-8 px-6 uppercase tracking-widest items-center border-b border-white/5 rounded-t-2xl ${selectedMatchId ? "grid-cols-[1.5fr_1.5fr_1fr]" : "grid-cols-[1.5fr_1.5fr_1fr]"}`}
+                    className={`bg-[#111111] text-[9px] font-black text-gray-500 h-8 px-6 uppercase tracking-widest items-center border-b border-white/5 rounded-t-2xl ${selectedMatchId ? "flex justify-between" : "grid grid-cols-[1.5fr_1.5fr_1fr]"}`}
                   >
-                    <div className="text-left font-bold opacity-80 border-r border-white/50 h-full flex items-center">
-                      Match Result
-                    </div>
-                    <div className=" font-bold text-center opacity-80 border-r border-white/50 h-full flex items-center justify-center">
-                      Double chance
-                    </div>
-                    <div className="text-right font-bold pr-2 opacity-80 h-full flex items-center justify-end">
-                      Both Score
-                    </div>
+                    {selectedMatchId ? (
+                      <span className="text-[10px] text-brand-primary">Match List</span>
+                    ) : (
+                      <>
+                        <div className="text-left font-bold opacity-80 border-r border-white/50 h-full flex items-center">
+                          Match Result
+                        </div>
+                        <div className=" font-bold text-center opacity-80 border-r border-white/50 h-full flex items-center justify-center">
+                          Double chance
+                        </div>
+                        <div className="text-right font-bold pr-2 opacity-80 h-full flex items-center justify-end">
+                          Both Score
+                        </div>
+                      </>
+                    )}
                   </div>
 
-                  {status === 'pending' ? (
+                  {showFixturesSkeleton ? (
                     <MatchCardSkeletonList count={10} isCompact={!!selectedMatchId} />
                   ) : (
-                    fixtures.map((match) => (
+                    visibleFixtures.map((match) => (
                       <MatchCard
                         key={canonicalKey(match)}
                         match={match}
@@ -511,13 +654,13 @@ export default function App() {
                     )}
                   </div>
                   
-                  {!hasNextPage && fixtures.length > 0 && (
+                  {!hasNextPage && visibleFixtures.length > 0 && (
                     <div className="p-8 text-center text-gray-600 text-[10px] font-black uppercase italic tracking-widest">
                       No more matches to show
                     </div>
                   )}
 
-                  {status === 'success' && fixtures.length === 0 && (
+                  {fixturesQueryStatus === 'success' && visibleFixtures.length === 0 && (
                     <div className="p-12 text-center">
                       <div className="text-gray-500 text-[11px] font-black uppercase italic mb-2">No matches found</div>
                       <button 
@@ -533,7 +676,7 @@ export default function App() {
 
               {/* Right Column: Match Detail */}
               {selectedMatch && (
-                <div className="lg:w-[55%] animate-in fade-in slide-in-from-right-4 duration-300 lg:sticky lg:top-0 p-4 lg:p-0">
+                <div className="w-full lg:w-[55%] h-full animate-in fade-in slide-in-from-right-4 duration-300 p-0 lg:p-0 overflow-hidden">
                   <MatchDetail
                     match={selectedMatch}
                     selectedBets={selectedBets}

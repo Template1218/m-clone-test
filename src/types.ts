@@ -73,6 +73,16 @@ export interface BetSelection {
   uiStatus?: "fresh" | "warning" | "expired" | "suspended" | "closed";
 }
 
+export interface Banner {
+  id: string;
+  title: string;
+  subtitle?: string | null;
+  highlight?: string | null;
+  imageUrl: string;
+  color: string;
+  sortOrder?: number;
+}
+
 export interface Country {
   name: string;
   count: number;

@@ -62,14 +62,16 @@ export function mapBackendFixtures(fixtures: any[]): Match[] {
   };
 
   const isRenderableOutcome = (o: any) => {
-    const name = String(o?.name ?? o?.key ?? '').trim();
+    const name = String(o?.label ?? o?.name ?? o?.outcomeKey ?? o?.key ?? '').trim();
     if (!name) return false;
     const status = String(o?.status ?? 'active').toLowerCase();
     if (status !== 'active') return false;
     if (o?.isActive === false) return false;
     const odds = getDisplayOdds(o);
-    return Number.isFinite(odds) && odds > 1;
+    // Allow any finite odds > 0 for display, even if backend marks as warning.
+    return Number.isFinite(odds) && odds > 0;
   };
+
 
   const getOutcomeOdds = (o: any) => getDisplayOdds(o);
 
@@ -142,17 +144,43 @@ export function mapBackendFixtures(fixtures: any[]): Match[] {
         : canonicalKey === 'DC'
           ? ['1X', '12', 'X2']
           : canonicalKey === 'BTS'
-            ? ['Yes', 'No']
+            ? ['YES', 'NO', 'Yes', 'No']
             : [];
 
     if (order.length === 0) return outcomes;
-    const index = new Map(order.map((n, i) => [n, i]));
+    const index = new Map(order.map((n, i) => [n.toUpperCase(), i]));
     return [...outcomes].sort((a, b) => {
-      const ai = index.get(String(a?.name ?? a?.key ?? '').trim()) ?? 999;
-      const bi = index.get(String(b?.name ?? b?.key ?? '').trim()) ?? 999;
+      const getVal = (x: any) => String(x?.label ?? x?.outcomeKey ?? x?.name ?? x?.key ?? '').trim().toUpperCase();
+      const ai = index.get(getVal(a)) ?? 999;
+      const bi = index.get(getVal(b)) ?? 999;
       return ai - bi;
     });
   };
+
+  const findOutcome = (outcomes: any[], wanted: string) => {
+    const normalize = (v: any) => String(v || "").trim().toUpperCase();
+    const target = normalize(wanted);
+    
+    return outcomes.find(o => {
+      const candidates = [
+        o.outcomeKey,
+        o.displayKey,
+        o.label,
+        o.name,
+        o.key
+      ].map(normalize);
+      
+      if (candidates.includes(target)) return true;
+      
+      // Fallback for APIfootball raw keys like apifootball:720965:DOUBLE_CHANCE:1X:
+      const raw = String(o.key || o.sourceSelectionId || "");
+      const parts = raw.split(":").filter(Boolean);
+      if (parts.length >= 4 && normalize(parts[3]) === target) return true;
+      
+      return false;
+    });
+  };
+
 
   return fixtures.map((f: any) => {
     const markets = f.Markets || [];
@@ -198,18 +226,21 @@ export function mapBackendFixtures(fixtures: any[]): Match[] {
     const dcPick = findBestMarketByKeys('DC', ['dc', 'double_chance', 'double chance', 'doublechance']);
     const btsPick = findBestMarketByKeys('BTS', ['bts', 'both_teams_to_score', 'both teams to score', 'both score', 'bothscore', 'btts']);
 
-    const mainOutcomes = sortOutcomeOrder('1X2', (mainPick?.renderable || []).map((o: any) => ({ ...o, name: String(o.name ?? o.key ?? '').trim(), odds: getOutcomeOdds(o) })));
-    const dcOutcomes = sortOutcomeOrder('DC', (dcPick?.renderable || []).map((o: any) => ({ ...o, name: String(o.name ?? o.key ?? '').trim(), odds: getOutcomeOdds(o) })));
-    const btsOutcomes = sortOutcomeOrder('BTS', (btsPick?.renderable || []).map((o: any) => ({ ...o, name: String(o.name ?? o.key ?? '').trim(), odds: getOutcomeOdds(o) })));
+    const mainOutcomes = (mainPick?.renderable || []).map((o: any) => ({ ...o, odds: getOutcomeOdds(o) }));
+    const dcOutcomes = (dcPick?.renderable || []).map((o: any) => ({ ...o, odds: getOutcomeOdds(o) }));
+    const btsOutcomes = (btsPick?.renderable || []).map((o: any) => ({ ...o, odds: getOutcomeOdds(o) }));
+    
+    const mainHome = findOutcome(mainOutcomes, '1');
+    const mainDraw = findOutcome(mainOutcomes, 'X');
+    const mainAway = findOutcome(mainOutcomes, '2');
+    
+    const dc1x = findOutcome(dcOutcomes, '1X');
+    const dc12 = findOutcome(dcOutcomes, '12');
+    const dcx2 = findOutcome(dcOutcomes, 'X2');
+    
+    const bYes = findOutcome(btsOutcomes, 'YES');
+    const bNo = findOutcome(btsOutcomes, 'NO');
 
-    const mainHome = mainOutcomes.find((o: any) => o.name === '1');
-    const mainDraw = mainOutcomes.find((o: any) => o.name === 'X');
-    const mainAway = mainOutcomes.find((o: any) => o.name === '2');
-    const dc1x = dcOutcomes.find((o: any) => o.name === '1X');
-    const dc12 = dcOutcomes.find((o: any) => o.name === '12');
-    const dcx2 = dcOutcomes.find((o: any) => o.name === 'X2');
-    const bYes = btsOutcomes.find((o: any) => o.name === 'Yes');
-    const bNo = btsOutcomes.find((o: any) => o.name === 'No');
 
     // Temporary debug: only for fixtures where Match Result would be blank.
     const matchResultBlank =

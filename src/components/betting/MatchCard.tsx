@@ -1,6 +1,7 @@
-import { Globe, Lock } from "lucide-react";
+import { Globe } from "lucide-react";
 import { Match, BetSelection } from "../../types";
 import { CountryFlag } from "../common/CountryFlag";
+import React from "react";
 
 function normalizeMarketKey(value?: string | null): string {
   const key = String(value || "").trim().toLowerCase();
@@ -59,14 +60,15 @@ export default function MatchCard({
     };
 
     const isRenderableOutcome = (o: any) => {
-      const name = String(o?.name ?? "").trim();
+      const name = String(o?.label ?? o?.name ?? o?.outcomeKey ?? o?.key ?? '').trim();
       if (!name) return false;
       const status = String(o?.status ?? "active").toLowerCase();
       if (status !== "active") return false;
       if (o?.isActive === false) return false;
-      const odds = Number(o?.odds ?? 0);
-      return Number.isFinite(odds) && odds > 1;
+      const odds = Number(o?.displayOdds ?? o?.odds ?? 0);
+      return Number.isFinite(odds) && odds > 0;
     };
+
 
     const scoreMarket = (m: any) => {
       const outcomes = (m?.outcomes || []).filter(isRenderableOutcome);
@@ -99,14 +101,33 @@ export default function MatchCard({
   const bestBtsMarket = pickBestMarket("BTS");
 
   const findOutcomeMeta = (outcomeId?: string, fallbackMarket?: any, selectionName?: string) => {
-    if (!outcomeId) return fallbackMarket?.outcomes?.find((o: any) => o.name === selectionName);
     const markets = (match.markets as any[]) || [];
-    for (const m of markets) {
-      const found = (m?.outcomes || []).find((o: any) => o?.id === outcomeId);
-      if (found) return found;
+    const normalize = (v: any) => String(v || "").trim().toUpperCase();
+    const target = selectionName ? normalize(selectionName) : null;
+
+    if (outcomeId) {
+      for (const m of markets) {
+        const found = (m?.outcomes || []).find((o: any) => o?.id === outcomeId);
+        if (found) return found;
+      }
     }
-    return fallbackMarket?.outcomes?.find((o: any) => o.name === selectionName);
+
+    if (target && fallbackMarket) {
+      return (fallbackMarket.outcomes || []).find((o: any) => {
+        const candidates = [
+          o.outcomeKey,
+          o.displayKey,
+          o.label,
+          o.name,
+          o.key
+        ].map(normalize);
+        return candidates.includes(target);
+      });
+    }
+
+    return null;
   };
+
 
   const outcomeOddsValue = (o: any, fallback = 0) => {
     const v = Number(o?.displayOdds ?? o?.display_odds ?? o?.odds ?? o?.rawOdds ?? o?.raw_odds ?? fallback ?? 0);
@@ -122,8 +143,9 @@ export default function MatchCard({
   const metaDc1x = findOutcomeMeta(match.outcomeIds?.dc1x, bestDoubleChanceMarket, "1X");
   const metaDc12 = findOutcomeMeta(match.outcomeIds?.dc12, bestDoubleChanceMarket, "12");
   const metaDcX2 = findOutcomeMeta(match.outcomeIds?.dcx2, bestDoubleChanceMarket, "X2");
-  const metaBtsYes = findOutcomeMeta(match.outcomeIds?.btsYes, bestBtsMarket, "Yes");
-  const metaBtsNo = findOutcomeMeta(match.outcomeIds?.btsNo, bestBtsMarket, "No");
+  const metaBtsYes = findOutcomeMeta(match.outcomeIds?.btsYes, bestBtsMarket, "YES");
+  const metaBtsNo = findOutcomeMeta(match.outcomeIds?.btsNo, bestBtsMarket, "NO");
+
 
   const OddsButton = ({
     market,
@@ -165,15 +187,12 @@ export default function MatchCard({
         ? "SUSPENDED"
         : normalizedStatus === "closed" || uiStatus === "closed"
           ? "CLOSED"
-          : isSelectable === false
-            ? "BACKEND_NOT_SELECTABLE"
-            : null;
+          : null;
     const blocked =
       normalizedStatus === "suspended" ||
       normalizedStatus === "closed" ||
       uiStatus === "suspended" ||
-      uiStatus === "closed" ||
-      isSelectable === false;
+      uiStatus === "closed";
 
     const hardDisabled =
       normalizedStatus === "suspended" ||
@@ -186,10 +205,10 @@ export default function MatchCard({
         <button
           type="button"
           disabled
-          className="relative flex items-center justify-between px-2 h-8 flex-1 text-[11px] font-bold rounded-[3px] transition-all border bg-[#0a0a0a] text-gray-300 border-white/[0.04] opacity-40 cursor-not-allowed"
+          className="relative flex items-center justify-between px-2 h-8 flex-1 text-[10px] font-bold rounded-lg transition-all border bg-[#0a0a0a] text-gray-500 border-white/[0.04] opacity-40"
         >
-          <span className="uppercase text-gray-200">{sel}</span>
-          <span className="text-gray-500 font-light text-[13px]">--</span>
+          <span className="uppercase text-gray-600">{sel}</span>
+          <span className="font-light text-[11px]">--</span>
         </button>
       );
     }
@@ -200,48 +219,30 @@ export default function MatchCard({
         onClick={(e) => {
           e.stopPropagation();
           if (blocked) {
-            // Temporary debug: help track cases where backend says selectable but UI is locked.
-            // eslint-disable-next-line no-console
-            console.debug("[odds-button][locked]", {
-              fixtureName: `${match.homeTeam} v ${match.awayTeam}`,
-              fixtureKey: String(match?.externalProvider && match?.externalEventId ? `${match.externalProvider}:${match.externalEventId}` : match?.id),
-              outcomeId: outcomeId || null,
-              outcomeKey: outcomeKey || null,
-              name: sel,
-              displayOdds: typeof displayOdds === "number" ? displayOdds : odd,
-              odds: odd,
-              rawOdds: typeof rawOdds === "number" ? rawOdds : null,
-              ageSeconds: typeof ageSeconds === "number" ? ageSeconds : null,
-              maxAgeSeconds: typeof maxAgeSeconds === "number" ? maxAgeSeconds : null,
-              isSelectable: isSelectable === true,
-              disabledReason: disabledReason ?? null,
-              frontendDisabled: blocked,
-              frontendDisabledReason,
-            });
             if (onRequestRefreshOdds) onRequestRefreshOdds(match.id);
             return;
           }
-          onToggleBet(match, market, sel, odd, outcomeId, acceptedOddsVersion, lastFetchedAt, status, uiStatus);
+          const version = acceptedOddsVersion ?? (outcomeId ? 1 : undefined);
+          onToggleBet(match, market, sel, odd, outcomeId, version, lastFetchedAt, status, uiStatus);
         }}
         disabled={hardDisabled}
         aria-disabled={blocked}
-        className={`relative flex items-center justify-between px-2 h-8 flex-1 text-[11px] font-bold rounded-[3px] transition-all border ${
+        className={`relative flex items-center justify-between px-2 h-8 flex-1 text-[10px] font-bold rounded-lg transition-all border ${
           isBetSelected(market, sel)
-            ? "bg-brand-primary text-black border-brand-primary"
-            : "bg-[#0a0a0a] text-gray-300 border-white/[0.04] hover:bg-white/[0.08] hover:border-white/10"
-        } ${blocked ? "opacity-50 cursor-not-allowed hover:bg-[#0a0a0a]" : ""}`}
+            ? "bg-brand-primary text-black border-brand-primary shadow-lg shadow-brand-primary/20 scale-[1.01]"
+            : "bg-[#161616] text-gray-300 border border-zinc-800 hover:bg-zinc-800 hover:border-zinc-700"
+        } ${blocked ? "opacity-40 hover:bg-transparent" : "active:scale-95"}`}
       >
-        {blocked && <Lock className="absolute top-1 left-1 w-3 h-3 text-gray-200/80" />}
         <span
-          className={`uppercase ${isBetSelected(market, sel) ? "text-black/60" : "text-gray-200"}`}
+          className={`uppercase tracking-tighter ${isBetSelected(market, sel) ? "text-black/60" : "text-gray-400"}`}
         >
           {sel}
         </span>
         <span
           className={
             isBetSelected(market, sel)
-              ? "text-black"
-              : "text-brand-primary font-light text-[13px]"
+              ? "text-black font-black text-[12px]"
+              : "text-white font-bold text-[12px]"
           }
         >
           {odd.toFixed(2)}
@@ -254,38 +255,48 @@ export default function MatchCard({
     <>
       {/* Mobile Card Layout */}
       <div
-        className="lg:hidden flex flex-col bg-[#1e1a2b] border border-white/5 rounded-xl p-1 px-4 mb-2 gap-2 cursor-pointer active:scale-[0.98] transition-transform"
+        className={`lg:hidden flex flex-col bg-[#111111] border rounded-xl p-3 mb-1.5 gap-3 cursor-pointer active:scale-[0.99] transition-all relative overflow-hidden ${
+          isSelected ? "border-brand-primary/40 shadow-lg shadow-brand-primary/5" : "border-white/5"
+        }`}
         onClick={() => onClick(match.id)}
       >
-        <div className="flex justify-between items-start">
-          <div className="flex flex-col gap-1">
-            <h3 className="text-[14px] font-black text-white italic uppercase tracking-tight">
+        {/* Subtle Glow Background */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/5 rounded-full blur-[40px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+        
+        <div className="flex justify-between items-start relative z-10">
+          <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+            <h3 className="text-[14px] font-bold text-white leading-tight truncate">
               {match.homeTeam}
             </h3>
-            <h3 className="text-[14px] font-black text-white italic uppercase tracking-tight">
+            <h3 className="text-[14px] font-bold text-white leading-tight truncate">
               {match.awayTeam}
             </h3>
           </div>
-          <div className="flex flex-col items-end gap-1">
-            <span className="text-[11px] font-black text-[#525252] tabular-nums tracking-wide">
-              {match.date} {match.time}
-            </span>
-            <div className="bg-[#facc15] text-black px-1 py-0.5 rounded-sm">
-              <span className="text-[10px] font-black italic">
+          <div className="flex flex-col items-end gap-1 ml-4">
+            <div className="flex flex-col items-end">
+               <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider tabular-nums">
+                {match.date}
+              </span>
+              <span className="text-[9px] font-bold text-brand-primary uppercase tabular-nums">
+                {match.time}
+              </span>
+            </div>
+            <div className="bg-white/5 px-1.5 py-0.5 rounded-md border border-white/5">
+              <span className="text-[8px] font-black text-white/60">
                 +{Number(match.pricesCount || 0)}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="flex gap-1.5 h-10">
+        <div className="flex gap-1.5 h-9 relative z-10">
           <OddsButton
             market="Match Result"
             sel="1"
             odd={outcomeOddsValue(metaHome, match.odds.home)}
-            outcomeId={match.outcomeIds?.home}
+            outcomeId={match.outcomeIds?.home ?? metaHome?.id}
             outcomeKey={metaHome?.outcomeKey ?? metaHome?.sourceSelectionId ?? metaHome?.key}
-            acceptedOddsVersion={metaHome?.oddsVersion}
+            acceptedOddsVersion={metaHome?.oddsVersion ?? (match.outcomeIds?.home ? 1 : undefined)}
             lastFetchedAt={metaHome?.lastFetchedAt}
             status={metaHome?.status}
             uiStatus={metaHome?.uiStatus}
@@ -300,9 +311,9 @@ export default function MatchCard({
             market="Match Result"
             sel="X"
             odd={outcomeOddsValue(metaDraw, match.odds.draw)}
-            outcomeId={match.outcomeIds?.draw}
+            outcomeId={match.outcomeIds?.draw ?? metaDraw?.id}
             outcomeKey={metaDraw?.outcomeKey ?? metaDraw?.sourceSelectionId ?? metaDraw?.key}
-            acceptedOddsVersion={metaDraw?.oddsVersion}
+            acceptedOddsVersion={metaDraw?.oddsVersion ?? (match.outcomeIds?.draw ? 1 : undefined)}
             lastFetchedAt={metaDraw?.lastFetchedAt}
             status={metaDraw?.status}
             uiStatus={metaDraw?.uiStatus}
@@ -317,9 +328,9 @@ export default function MatchCard({
             market="Match Result"
             sel="2"
             odd={outcomeOddsValue(metaAway, match.odds.away)}
-            outcomeId={match.outcomeIds?.away}
+            outcomeId={match.outcomeIds?.away ?? metaAway?.id}
             outcomeKey={metaAway?.outcomeKey ?? metaAway?.sourceSelectionId ?? metaAway?.key}
-            acceptedOddsVersion={metaAway?.oddsVersion}
+            acceptedOddsVersion={metaAway?.oddsVersion ?? (match.outcomeIds?.away ? 1 : undefined)}
             lastFetchedAt={metaAway?.lastFetchedAt}
             status={metaAway?.status}
             uiStatus={metaAway?.uiStatus}
@@ -335,203 +346,167 @@ export default function MatchCard({
 
       {/* Desktop Card Layout */}
       <div
-        className={`hidden lg:flex flex-col border-b border-white/[0.05] hover:bg-white/[0.01] transition-all cursor-pointer group/card p-1 px-6 relative ${
+        className={`hidden lg:flex flex-col border-b border-white/[0.03] hover:bg-white/[0.02] transition-all cursor-pointer group/card px-4 relative overflow-hidden ${
           isSelected
-            ? "bg-brand-primary/5 border-l-2 border-l-brand-primary"
-            : "border-l-2 border-l-transparent"
+            ? "bg-brand-primary/[0.03] border-l-4 border-l-brand-primary"
+            : "border-l-4 border-l-transparent"
         }`}
         onClick={() => onClick(match.id)}
       >
+        {/* Subtle Glow Background */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/5 rounded-full blur-[40px] -translate-y-1/2 translate-x-1/2 opacity-0 group-hover/card:opacity-100 transition-opacity pointer-events-none" />
+
         {match.isTop && (
-          <div className="absolute top-0 right-0 bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded-bl-md shadow-lg z-10">
-            HOT
+          <div className="absolute top-0 right-0 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-bl-lg shadow-lg z-10 uppercase tracking-widest">
+            Hot
           </div>
         )}
+        
         {/* Row 1: League & Time */}
-        {!isCompact && (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5 overflow-hidden">
-              <CountryFlag country={match.country || null} className="w-3.5 h-3.5 shrink-0 opacity-90" />
-              <span className="text-[11px] font-bold text-gray-400 uppercase truncate">
-                {(match.country ? `${match.country} - ` : "") + (match.league || "")}
-              </span>
-            </div>
-            <span className="text-[11px] font-bold tabular-nums text-gray-400">
-              {match.date} {match.time}
+        <div className="flex items-center justify-between pt-2 pb-0.5 relative z-10">
+          <div className="flex items-center gap-1.5 overflow-hidden">
+            <CountryFlag country={match.country || null} className="w-3.5 h-3.5 shrink-0" />
+            <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider truncate">
+              {(match.country ? `${match.country} - ` : "") + (match.league || "")}
             </span>
           </div>
-        )}
-
-        {/* Row 2: Teams & Info */}
-        <div className="flex items-center justify-between">
-          <div
-          className={`font-normal text-white truncate group-hover/card:text-brand-primary transition-all ${isCompact ? "text-[13px]" : "text-[15px]"}`}
-        >
-          {match.homeTeam} V {match.awayTeam}
+          <div className="flex items-center gap-1.5">
+              <span className="text-[9px] font-bold tabular-nums text-gray-500 uppercase">
+              {match.date}
+            </span>
+            <span className="w-0.5 h-0.5 rounded-full bg-white/10" />
+            <span className="text-[9px] font-bold tabular-nums text-brand-primary uppercase">
+              {match.time}
+            </span>
+          </div>
         </div>
+
+        {/* Row 2: Teams & Main Action */}
+        <div className="flex items-center justify-between py-1 relative z-10">
+          <div
+          className={`font-bold text-white truncate transition-all ${isCompact ? "text-[12px] flex-1" : "text-[14px]"}`}
+        >
+          {match.homeTeam} <span className="text-gray-600 font-medium px-0.5">v</span> {match.awayTeam}
+        </div>
+          
+          {/* Side-View compact odds: Only show Match Result row when compact */}
+          {isCompact && (
+            <div className="flex gap-1 ml-4 w-[160px] shrink-0">
+               <OddsButton
+                  market="Match Result" sel="1"
+                  odd={outcomeOddsValue(metaHome, match.odds.home)}
+                  outcomeId={match.outcomeIds?.home ?? metaHome?.id}
+                  outcomeKey={metaHome?.outcomeKey ?? metaHome?.sourceSelectionId ?? metaHome?.key}
+                  acceptedOddsVersion={metaHome?.oddsVersion}
+                />
+                <OddsButton
+                  market="Match Result" sel="X"
+                  odd={outcomeOddsValue(metaDraw, match.odds.draw)}
+                  outcomeId={match.outcomeIds?.draw ?? metaDraw?.id}
+                  outcomeKey={metaDraw?.outcomeKey ?? metaDraw?.sourceSelectionId ?? metaDraw?.key}
+                  acceptedOddsVersion={metaDraw?.oddsVersion}
+                />
+                <OddsButton
+                  market="Match Result" sel="2"
+                  odd={outcomeOddsValue(metaAway, match.odds.away)}
+                  outcomeId={match.outcomeIds?.away ?? metaAway?.id}
+                  outcomeKey={metaAway?.outcomeKey ?? metaAway?.sourceSelectionId ?? metaAway?.key}
+                  acceptedOddsVersion={metaAway?.oddsVersion}
+                />
+            </div>
+          )}
+
           {!isCompact && (
-            <div className="flex items-center gap-3">
-              <div className="bg-black/40 px-2 py-0.5 rounded border border-white/5 shadow-inner">
-                <span className="text-brand-primary text-[10px] font-black">
-                  +{Number(match.pricesCount || 0)} SIDE BETS
-                </span>
-              </div>
+            <div className="bg-white/[0.02] px-1.5 py-0.5 rounded-md border border-white/5">
+              <span className="text-white/30 text-[9px] font-bold uppercase tracking-tight">
+                +{Number(match.pricesCount || 0)}
+              </span>
             </div>
           )}
         </div>
 
-        {/* Row 3: Buttons Grid - Stretching to fill full width */}
-        <div
-          className={`grid items-center  border-t border-white/[0.03] ${isCompact ? "grid-cols-[1.5fr_1.5fr_1fr]" : "grid-cols-[1.5fr_1.5fr_1fr]"}`}
-        >
-          {/* Match Result Group */}
-          <div className="flex gap-0.5 w-full pr-3 border-r border-white/50 py-2">
-            <OddsButton
-              market="Match Result"
-              sel="1"
-              odd={outcomeOddsValue(metaHome, match.odds.home)}
-              outcomeId={match.outcomeIds?.home}
-              outcomeKey={metaHome?.outcomeKey ?? metaHome?.sourceSelectionId ?? metaHome?.key}
-              acceptedOddsVersion={metaHome?.oddsVersion}
-              lastFetchedAt={metaHome?.lastFetchedAt}
-              status={metaHome?.status}
-              uiStatus={metaHome?.uiStatus}
-              isSelectable={normalizeBool(metaHome?.isSelectable ?? metaHome?.is_selectable)}
-              ageSeconds={normalizeNumOrNull(metaHome?.ageSeconds ?? metaHome?.age_seconds)}
-              maxAgeSeconds={normalizeNumOrNull(metaHome?.maxAgeSeconds ?? metaHome?.max_age_seconds)}
-              disabledReason={metaHome?.disabledReason ?? metaHome?.disabled_reason ?? null}
-              displayOdds={normalizeNumOrNull(metaHome?.displayOdds ?? metaHome?.display_odds)}
-              rawOdds={normalizeNumOrNull(metaHome?.rawOdds ?? metaHome?.raw_odds)}
-            />
-            <OddsButton
-              market="Match Result"
-              sel="X"
-              odd={outcomeOddsValue(metaDraw, match.odds.draw)}
-              outcomeId={match.outcomeIds?.draw}
-              outcomeKey={metaDraw?.outcomeKey ?? metaDraw?.sourceSelectionId ?? metaDraw?.key}
-              acceptedOddsVersion={metaDraw?.oddsVersion}
-              lastFetchedAt={metaDraw?.lastFetchedAt}
-              status={metaDraw?.status}
-              uiStatus={metaDraw?.uiStatus}
-              isSelectable={normalizeBool(metaDraw?.isSelectable ?? metaDraw?.is_selectable)}
-              ageSeconds={normalizeNumOrNull(metaDraw?.ageSeconds ?? metaDraw?.age_seconds)}
-              maxAgeSeconds={normalizeNumOrNull(metaDraw?.maxAgeSeconds ?? metaDraw?.max_age_seconds)}
-              disabledReason={metaDraw?.disabledReason ?? metaDraw?.disabled_reason ?? null}
-              displayOdds={normalizeNumOrNull(metaDraw?.displayOdds ?? metaDraw?.display_odds)}
-              rawOdds={normalizeNumOrNull(metaDraw?.rawOdds ?? metaDraw?.raw_odds)}
-            />
-            <OddsButton
-              market="Match Result"
-              sel="2"
-              odd={outcomeOddsValue(metaAway, match.odds.away)}
-              outcomeId={match.outcomeIds?.away}
-              outcomeKey={metaAway?.outcomeKey ?? metaAway?.sourceSelectionId ?? metaAway?.key}
-              acceptedOddsVersion={metaAway?.oddsVersion}
-              lastFetchedAt={metaAway?.lastFetchedAt}
-              status={metaAway?.status}
-              uiStatus={metaAway?.uiStatus}
-              isSelectable={normalizeBool(metaAway?.isSelectable ?? metaAway?.is_selectable)}
-              ageSeconds={normalizeNumOrNull(metaAway?.ageSeconds ?? metaAway?.age_seconds)}
-              maxAgeSeconds={normalizeNumOrNull(metaAway?.maxAgeSeconds ?? metaAway?.max_age_seconds)}
-              disabledReason={metaAway?.disabledReason ?? metaAway?.disabled_reason ?? null}
-              displayOdds={normalizeNumOrNull(metaAway?.displayOdds ?? metaAway?.display_odds)}
-              rawOdds={normalizeNumOrNull(metaAway?.rawOdds ?? metaAway?.raw_odds)}
-            />
-          </div>
+        {/* Row 3: Buttons Grid - Only show when NOT compact */}
+        {!isCompact && (
+          <div
+            className="grid items-center gap-3 grid-cols-[1.5fr_1.5fr_1fr] pb-2 mt-1 relative z-10"
+          >
+            {/* Match Result Group */}
+            <div className="flex gap-1.5 w-full pr-4 border-r border-white/5 py-1">
+              <OddsButton
+                market="Match Result"
+                sel="1"
+                odd={outcomeOddsValue(metaHome, match.odds.home)}
+                outcomeId={match.outcomeIds?.home ?? metaHome?.id}
+                outcomeKey={metaHome?.outcomeKey ?? metaHome?.sourceSelectionId ?? metaHome?.key}
+                acceptedOddsVersion={metaHome?.oddsVersion}
+              />
+              <OddsButton
+                market="Match Result"
+                sel="X"
+                odd={outcomeOddsValue(metaDraw, match.odds.draw)}
+                outcomeId={match.outcomeIds?.draw ?? metaDraw?.id}
+                outcomeKey={metaDraw?.outcomeKey ?? metaDraw?.sourceSelectionId ?? metaDraw?.key}
+                acceptedOddsVersion={metaDraw?.oddsVersion}
+              />
+              <OddsButton
+                market="Match Result"
+                sel="2"
+                odd={outcomeOddsValue(metaAway, match.odds.away)}
+                outcomeId={match.outcomeIds?.away ?? metaAway?.id}
+                outcomeKey={metaAway?.outcomeKey ?? metaAway?.sourceSelectionId ?? metaAway?.key}
+                acceptedOddsVersion={metaAway?.oddsVersion}
+              />
+            </div>
 
-          {/* Double Chance Group */}
-          <div className="flex gap-0.5 w-full px-3 border-r border-white/50 py-2">
-            <OddsButton
-              market="Double Chance"
-              sel="1X"
-              odd={outcomeOddsValue(metaDc1x, match.odds.dc1x)}
-              outcomeId={match.outcomeIds?.dc1x}
-              outcomeKey={metaDc1x?.outcomeKey ?? metaDc1x?.sourceSelectionId ?? metaDc1x?.key}
-              acceptedOddsVersion={metaDc1x?.oddsVersion}
-              lastFetchedAt={metaDc1x?.lastFetchedAt}
-              status={metaDc1x?.status}
-              uiStatus={metaDc1x?.uiStatus}
-              isSelectable={normalizeBool(metaDc1x?.isSelectable ?? metaDc1x?.is_selectable)}
-              ageSeconds={normalizeNumOrNull(metaDc1x?.ageSeconds ?? metaDc1x?.age_seconds)}
-              maxAgeSeconds={normalizeNumOrNull(metaDc1x?.maxAgeSeconds ?? metaDc1x?.max_age_seconds)}
-              disabledReason={metaDc1x?.disabledReason ?? metaDc1x?.disabled_reason ?? null}
-              displayOdds={normalizeNumOrNull(metaDc1x?.displayOdds ?? metaDc1x?.display_odds)}
-              rawOdds={normalizeNumOrNull(metaDc1x?.rawOdds ?? metaDc1x?.raw_odds)}
-            />
-            <OddsButton
-              market="Double Chance"
-              sel="12"
-              odd={outcomeOddsValue(metaDc12, match.odds.dc12)}
-              outcomeId={match.outcomeIds?.dc12}
-              outcomeKey={metaDc12?.outcomeKey ?? metaDc12?.sourceSelectionId ?? metaDc12?.key}
-              acceptedOddsVersion={metaDc12?.oddsVersion}
-              lastFetchedAt={metaDc12?.lastFetchedAt}
-              status={metaDc12?.status}
-              uiStatus={metaDc12?.uiStatus}
-              isSelectable={normalizeBool(metaDc12?.isSelectable ?? metaDc12?.is_selectable)}
-              ageSeconds={normalizeNumOrNull(metaDc12?.ageSeconds ?? metaDc12?.age_seconds)}
-              maxAgeSeconds={normalizeNumOrNull(metaDc12?.maxAgeSeconds ?? metaDc12?.max_age_seconds)}
-              disabledReason={metaDc12?.disabledReason ?? metaDc12?.disabled_reason ?? null}
-              displayOdds={normalizeNumOrNull(metaDc12?.displayOdds ?? metaDc12?.display_odds)}
-              rawOdds={normalizeNumOrNull(metaDc12?.rawOdds ?? metaDc12?.raw_odds)}
-            />
-            <OddsButton
-              market="Double Chance"
-              sel="X2"
-              odd={outcomeOddsValue(metaDcX2, match.odds.dcx2)}
-              outcomeId={match.outcomeIds?.dcx2}
-              outcomeKey={metaDcX2?.outcomeKey ?? metaDcX2?.sourceSelectionId ?? metaDcX2?.key}
-              acceptedOddsVersion={metaDcX2?.oddsVersion}
-              lastFetchedAt={metaDcX2?.lastFetchedAt}
-              status={metaDcX2?.status}
-              uiStatus={metaDcX2?.uiStatus}
-              isSelectable={normalizeBool(metaDcX2?.isSelectable ?? metaDcX2?.is_selectable)}
-              ageSeconds={normalizeNumOrNull(metaDcX2?.ageSeconds ?? metaDcX2?.age_seconds)}
-              maxAgeSeconds={normalizeNumOrNull(metaDcX2?.maxAgeSeconds ?? metaDcX2?.max_age_seconds)}
-              disabledReason={metaDcX2?.disabledReason ?? metaDcX2?.disabled_reason ?? null}
-              displayOdds={normalizeNumOrNull(metaDcX2?.displayOdds ?? metaDcX2?.display_odds)}
-              rawOdds={normalizeNumOrNull(metaDcX2?.rawOdds ?? metaDcX2?.raw_odds)}
-            />
-          </div>
+            {/* Double Chance Group */}
+            <div className="flex gap-1.5 w-full px-4 border-r border-white/5 py-1">
+              <OddsButton
+                market="Double Chance"
+                sel="1X"
+                odd={outcomeOddsValue(metaDc1x, match.odds.dc1x)}
+                outcomeId={match.outcomeIds?.dc1x ?? metaDc1x?.id}
+                outcomeKey={metaDc1x?.outcomeKey ?? metaDc1x?.sourceSelectionId ?? metaDc1x?.key}
+                acceptedOddsVersion={metaDc1x?.oddsVersion}
+              />
+              <OddsButton
+                market="Double Chance"
+                sel="12"
+                odd={outcomeOddsValue(metaDc12, match.odds.dc12)}
+                outcomeId={match.outcomeIds?.dc12 ?? metaDc12?.id}
+                outcomeKey={metaDc12?.outcomeKey ?? metaDc12?.sourceSelectionId ?? metaDc12?.key}
+                acceptedOddsVersion={metaDc12?.oddsVersion}
+              />
+              <OddsButton
+                market="Double Chance"
+                sel="X2"
+                odd={outcomeOddsValue(metaDcX2, match.odds.dcx2)}
+                outcomeId={match.outcomeIds?.dcx2 ?? metaDcX2?.id}
+                outcomeKey={metaDcX2?.outcomeKey ?? metaDcX2?.sourceSelectionId ?? metaDcX2?.key}
+                acceptedOddsVersion={metaDcX2?.oddsVersion}
+              />
+            </div>
 
-          {/* Both Score Group */}
-          <div className="flex gap-0.5 w-full pl-3 py-2">
-            <OddsButton
-              market="Both Score"
-              sel="Yes"
-              odd={outcomeOddsValue(metaBtsYes, match.odds.btsYes)}
-              outcomeId={match.outcomeIds?.btsYes}
-              outcomeKey={metaBtsYes?.outcomeKey ?? metaBtsYes?.sourceSelectionId ?? metaBtsYes?.key}
-              acceptedOddsVersion={metaBtsYes?.oddsVersion}
-              lastFetchedAt={metaBtsYes?.lastFetchedAt}
-              status={metaBtsYes?.status}
-              uiStatus={metaBtsYes?.uiStatus}
-              isSelectable={normalizeBool(metaBtsYes?.isSelectable ?? metaBtsYes?.is_selectable)}
-              ageSeconds={normalizeNumOrNull(metaBtsYes?.ageSeconds ?? metaBtsYes?.age_seconds)}
-              maxAgeSeconds={normalizeNumOrNull(metaBtsYes?.maxAgeSeconds ?? metaBtsYes?.max_age_seconds)}
-              disabledReason={metaBtsYes?.disabledReason ?? metaBtsYes?.disabled_reason ?? null}
-              displayOdds={normalizeNumOrNull(metaBtsYes?.displayOdds ?? metaBtsYes?.display_odds)}
-              rawOdds={normalizeNumOrNull(metaBtsYes?.rawOdds ?? metaBtsYes?.raw_odds)}
-            />
-            <OddsButton
-              market="Both Score"
-              sel="No"
-              odd={outcomeOddsValue(metaBtsNo, match.odds.btsNo)}
-              outcomeId={match.outcomeIds?.btsNo}
-              outcomeKey={metaBtsNo?.outcomeKey ?? metaBtsNo?.sourceSelectionId ?? metaBtsNo?.key}
-              acceptedOddsVersion={metaBtsNo?.oddsVersion}
-              lastFetchedAt={metaBtsNo?.lastFetchedAt}
-              status={metaBtsNo?.status}
-              uiStatus={metaBtsNo?.uiStatus}
-              isSelectable={normalizeBool(metaBtsNo?.isSelectable ?? metaBtsNo?.is_selectable)}
-              ageSeconds={normalizeNumOrNull(metaBtsNo?.ageSeconds ?? metaBtsNo?.age_seconds)}
-              maxAgeSeconds={normalizeNumOrNull(metaBtsNo?.maxAgeSeconds ?? metaBtsNo?.max_age_seconds)}
-              disabledReason={metaBtsNo?.disabledReason ?? metaBtsNo?.disabled_reason ?? null}
-              displayOdds={normalizeNumOrNull(metaBtsNo?.displayOdds ?? metaBtsNo?.display_odds)}
-              rawOdds={normalizeNumOrNull(metaBtsNo?.rawOdds ?? metaBtsNo?.raw_odds)}
-            />
+            {/* Both Score Group */}
+            <div className="flex gap-1.5 w-full pl-4 py-1">
+              <OddsButton
+                market="Both Score"
+                sel="Yes"
+                odd={outcomeOddsValue(metaBtsYes, match.odds.btsYes)}
+                outcomeId={match.outcomeIds?.btsYes ?? metaBtsYes?.id}
+                outcomeKey={metaBtsYes?.outcomeKey ?? metaBtsYes?.sourceSelectionId ?? metaBtsYes?.key}
+                acceptedOddsVersion={metaBtsYes?.oddsVersion}
+              />
+              <OddsButton
+                market="Both Score"
+                sel="No"
+                odd={outcomeOddsValue(metaBtsNo, match.odds.btsNo)}
+                outcomeId={match.outcomeIds?.btsNo ?? metaBtsNo?.id}
+                outcomeKey={metaBtsNo?.outcomeKey ?? metaBtsNo?.sourceSelectionId ?? metaBtsNo?.key}
+                acceptedOddsVersion={metaBtsNo?.oddsVersion}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </>
   );
