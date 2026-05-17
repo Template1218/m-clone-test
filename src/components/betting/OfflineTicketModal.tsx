@@ -5,10 +5,10 @@ import { useEffect, useState } from "react";
 export default function OfflineTicketModal(props: { open: boolean; onClose: () => void; code: string; expiresAt?: string | null }) {
   const code = props.code || "";
   const expires = props.expiresAt ? new Date(props.expiresAt) : null;
-  const [copyHint, setCopyHint] = useState<string>("Copy");
+  const [copyHint, setCopyHint] = useState<string>("");
 
   useEffect(() => {
-    if (!props.open) setCopyHint("Copy");
+    if (!props.open) setCopyHint("");
   }, [props.open]);
 
   return (
@@ -56,23 +56,27 @@ export default function OfflineTicketModal(props: { open: boolean; onClose: () =
 
               <div className="mt-3 flex items-center gap-2">
                 <div className="text-white font-black text-3xl tracking-wider">{code}</div>
-                <button
-                  onClick={async () => {
-                    try {
-                      await navigator.clipboard.writeText(code);
-                      setCopyHint("Copied!");
-                      window.setTimeout(() => setCopyHint("Copy"), 1200);
-                    } catch {
-                      setCopyHint("Failed");
-                      window.setTimeout(() => setCopyHint("Copy"), 1200);
-                    }
-                  }}
-                  className="text-white/70 hover:text-white"
-                  aria-label="Copy code"
-                  title={copyHint}
-                >
-                  <Copy className="w-5 h-5" />
-                </button>
+                <div className="flex flex-col items-center">
+                  <button
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(code);
+                        setCopyHint("Copied!");
+                        window.setTimeout(() => setCopyHint(""), 1200);
+                      } catch {
+                        setCopyHint("Copy failed");
+                        window.setTimeout(() => setCopyHint(""), 1200);
+                      }
+                    }}
+                    className="text-white/70 hover:text-white"
+                    aria-label="Copy code"
+                  >
+                    <Copy className="w-5 h-5" />
+                  </button>
+                  <div className="h-4 mt-0.5 text-[10px] font-black uppercase tracking-widest text-brand-primary/90">
+                    {copyHint}
+                  </div>
+                </div>
               </div>
 
               <div className="mt-4 text-white/80 text-xs leading-relaxed">
