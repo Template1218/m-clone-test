@@ -525,7 +525,11 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 mt-2">
                       {outcomes.map((o: any) => {
                         const oName = o.label || o.priceName || o.name || o.outcomeKey || o.key;
-                        const isBetActive = isSelected(m.marketName || m.name, oName);
+                        // Some providers reuse generic outcome names like "Over"/"Under" with different handicapValue.
+                        // Include handicapValue in the selection key so selecting "Over 0.5" doesn't highlight all "Over X" rows.
+                        const handicapSuffix = Number(o.handicapValue || 0) ? ` ${Number(o.handicapValue)}` : "";
+                        const selectionKey = `${String(oName)}${handicapSuffix}`;
+                        const isBetActive = isSelected(m.marketName || m.name, selectionKey);
                         const selectable = outcomeSelectable(o);
 
                         return (
@@ -536,7 +540,7 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
                               onToggleBet(
                                 match,
                                 m.marketName || m.name,
-                                oName,
+                                selectionKey,
                                 outcomeOddsValue(o),
                                 o.outcomeId || o.id,
                                 Number(o.oddsVersion ?? o.odds_version ?? 1),
