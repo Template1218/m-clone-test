@@ -259,7 +259,8 @@ export function useCatalog() {
       if (data.provider) {
         const mapped = {
           ...data,
-          sports: mapBackendCatalog(data.sports || [])
+          sports: mapBackendCatalog(data.sports || []),
+          rawSports: data.sports || []
         };
         console.log("SIDEBAR SPORTS", mapped.sports);
         return mapped;

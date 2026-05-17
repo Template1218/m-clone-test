@@ -53,6 +53,7 @@ export default function Sidebar({
   
   const isStructured = catalog && !Array.isArray(catalog);
   const sports = isStructured ? (catalog as any).sports : (catalog || []);
+  const rawSports = isStructured ? (catalog as any).rawSports : null;
   const topLeagues = isStructured ? (catalog as any).topLeagues : TOP_LEAGUES;
   const isApiFootball = isStructured && (catalog as any).provider === "apifootball";
   const isPissbet = isStructured && (catalog as any).provider === "pissbet_socket";
@@ -75,11 +76,19 @@ export default function Sidebar({
     }))
     .filter((l: any) => l.id && l.name);
 
+  // If catalog doesn't provide a `topLeagues` list, derive it from raw league rows (so we preserve ids).
   const fallbackTopLeaguesFromCatalog =
-    Array.isArray(sports) && sports.length
-      ? sports
-          .flatMap((s: any) => (Array.isArray(s?.countries) ? s.countries : []))
+    Array.isArray(rawSports) && rawSports.length
+      ? rawSports
+          .flatMap((s: any) => (Array.isArray(s?.Leagues) ? s.Leagues : []))
           .filter((l: any) => Boolean(l?.isTop) || Boolean(l?.top) || Boolean(l?.is_top))
+          .map((l: any) => ({
+            id: String(l?.id || ""),
+            name: String(l?.name || "").trim(),
+            country: String(l?.country || "").trim(),
+            apiFootballLeagueId: l?.apiFootballLeagueId ?? l?.api_football_league_id ?? null,
+          }))
+          .filter((l: any) => l.id && l.name)
       : [];
 
   const effectiveTopLeagues = isPissbet
