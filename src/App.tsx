@@ -51,6 +51,7 @@ export default function App() {
   const [activeApiFootballLeagueId, setActiveApiFootballLeagueId] = useState<string | null>(null);
   const [timeFilter, setTimeFilter] = useState<string>('All Time');
   const [fixturesTab, setFixturesTab] = useState<"upcoming" | "top">("top");
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const queryClient = useQueryClient();
   const refreshVisibleOdds = useRefreshVisibleOdds();
@@ -527,6 +528,7 @@ export default function App() {
   const isGamesView = view === "games";
   const isVirtualView = view === "virtual";
   const isComingSoonView = view === "coming-soon";
+  const canShowSidebar = view === "home" || view === "detail" || view === "live";
 
   return (
     <div className="h-screen overflow-hidden flex flex-col bg-brand-dark">
@@ -557,27 +559,82 @@ export default function App() {
       />
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Only show sidebar on home/detail/live views */}
-        {(view === "home" || view === "detail" || view === "live") && (
-          <Sidebar 
-            activeSport={activeSport} 
-            onSportChange={setActiveSport}
-            activeLeague={activeLeague}
-            onLeagueChange={({ name, id, apiFootballLeagueId }) => {
-              setActiveLeague(name);
-              setActiveLeagueId(id);
-              setActiveApiFootballLeagueId(apiFootballLeagueId);
-            }}
-            timeFilter={timeFilter}
-            onTimeFilterChange={setTimeFilter}
-            isHot={fixturesTab === "top"}
-            onIsHotChange={(v) => setFixturesTab(v ? "top" : "upcoming")}
-          />
+        {/* Desktop sidebar */}
+        {canShowSidebar && (
+          <div className="hidden lg:block">
+            <Sidebar 
+              activeSport={activeSport} 
+              onSportChange={setActiveSport}
+              activeLeague={activeLeague}
+              onLeagueChange={({ name, id, apiFootballLeagueId }) => {
+                setActiveLeague(name);
+                setActiveLeagueId(id);
+                setActiveApiFootballLeagueId(apiFootballLeagueId);
+              }}
+              timeFilter={timeFilter}
+              onTimeFilterChange={setTimeFilter}
+              isHot={fixturesTab === "top"}
+              onIsHotChange={(v) => setFixturesTab(v ? "top" : "upcoming")}
+            />
+          </div>
         )}
+
+        {/* Mobile sidebar drawer */}
+        <AnimatePresence>
+          {canShowSidebar && mobileSidebarOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setMobileSidebarOpen(false)}
+                className="fixed inset-0 z-[140] bg-black/70 backdrop-blur-sm lg:hidden"
+              />
+              <motion.div
+                initial={{ x: -320 }}
+                animate={{ x: 0 }}
+                exit={{ x: -320 }}
+                transition={{ type: "spring", stiffness: 260, damping: 28 }}
+                className="fixed left-0 top-0 bottom-0 z-[150] w-[320px] max-w-[90vw] lg:hidden"
+              >
+                <div className="h-full bg-brand-dark border-r border-white/10 shadow-2xl overflow-y-auto no-scrollbar">
+                  <Sidebar 
+                    activeSport={activeSport} 
+                    onSportChange={setActiveSport}
+                    activeLeague={activeLeague}
+                    onLeagueChange={({ name, id, apiFootballLeagueId }) => {
+                      setActiveLeague(name);
+                      setActiveLeagueId(id);
+                      setActiveApiFootballLeagueId(apiFootballLeagueId);
+                      setMobileSidebarOpen(false);
+                    }}
+                    timeFilter={timeFilter}
+                    onTimeFilterChange={setTimeFilter}
+                    isHot={fixturesTab === "top"}
+                    onIsHotChange={(v) => setFixturesTab(v ? "top" : "upcoming")}
+                  />
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
         <main
           className={`flex-1 ${selectedMatchId ? "overflow-hidden" : "overflow-y-auto"} ${isGamesView || isVirtualView ? "bg-[#0a0a0a]" : "p-0 lg:p-4"} pb-32 lg:pb-4`}
         >
+          {/* Mobile open-filters button */}
+          {canShowSidebar && !mobileSidebarOpen && (
+            <div className="lg:hidden sticky top-0 z-[80] px-3 pt-3">
+              <button
+                type="button"
+                onClick={() => setMobileSidebarOpen(true)}
+                className="w-full bg-brand-primary text-black font-black uppercase italic tracking-tight py-3 rounded-xl shadow-lg"
+              >
+                Filters
+              </button>
+            </div>
+          )}
+
           {isComingSoonView ? (
             <ComingSoon title={comingSoonTitle} />
           ) : view === "account" ? (
