@@ -507,10 +507,15 @@ export default function App() {
 
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+      if (
+        entries[0].isIntersecting &&
+        hasNextPage &&
+        !isFetchingNextPage &&
+        typeof fetchNextPage === "function"
+      ) {
         fetchNextPage();
       }
-    }, { threshold: 1.0 });
+    }, { threshold: 0.1, rootMargin: "200px" });
 
     if (loaderRef.current) {
       observer.observe(loaderRef.current);
