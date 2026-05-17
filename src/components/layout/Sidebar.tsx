@@ -140,7 +140,7 @@ export default function Sidebar({
       : sports;
 
   return (
-    <aside className="w-64 border-r border-brand-border overflow-y-auto hidden lg:block bg-brand-dark h-full">
+    <aside className="w-64 border-r border-brand-border overflow-y-auto bg-brand-dark h-full">
       {isLoading ? (
         <SidebarSkeleton />
       ) : (
