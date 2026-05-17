@@ -628,8 +628,9 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setMobileSidebarOpen(true)}
-                className="w-full bg-brand-primary text-black font-black uppercase italic tracking-tight py-3 rounded-xl shadow-lg"
+                className="w-full flex items-center justify-center gap-2 bg-white/[0.04] hover:bg-white/[0.06] active:bg-white/[0.07] border border-white/10 text-white font-black uppercase italic tracking-tight py-2.5 rounded-lg shadow-md backdrop-blur-sm"
               >
+                <Globe className="w-4 h-4 text-brand-primary" />
                 Filters
               </button>
             </div>
