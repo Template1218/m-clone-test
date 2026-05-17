@@ -169,7 +169,7 @@ export default function Sidebar({
                      else if (isSelected) onSportChange(null);
                    }}
                    className={`sidebar-item group !py-1.5 border-b border-brand-border/10 last:border-0 hover:bg-white/[0.02] cursor-pointer ${activeLeague === league.name ? 'bg-brand-primary/10 text-brand-primary' : ''}`}
-                >
+                >update
                   <div className={`w-4 h-4 rounded-full bg-white/5 flex items-center justify-center flex-shrink-0 transition-colors border border-white/5 ${activeLeague === league.name ? 'bg-brand-primary/40 border-brand-primary' : 'group-hover:bg-brand-primary/20'}`}>
                     <span className="text-[10px] leading-none">⚽</span>
                   </div>

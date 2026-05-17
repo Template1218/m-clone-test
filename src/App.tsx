@@ -62,6 +62,7 @@ export default function App() {
   const authLoading = hasToken && (meLoading || meFetching);
   const { data: activeProvider } = useActiveOddsProvider();
   const { data: remoteBanners = [] } = useBanners(true);
+  const assetBase = (import.meta as any)?.env?.VITE_API_BASE_URL ? String((import.meta as any).env.VITE_API_BASE_URL).replace(/\/+$/, "") : "";
   const pissbetStream = usePissbetTopEventsStream(activeProvider === "pissbet_socket");
   const mezzoSportId = activeProvider === "mezzo" ? Number(activeSport ?? 501) : 501;
   const mezzoTopEvents = useMezzoTopEvents({
@@ -253,7 +254,12 @@ export default function App() {
     title: String(b?.title || ""),
     subtitle: b?.subtitle ?? "",
     highlight: b?.highlight ?? "",
-    image: String(b?.imageUrl || ""),
+    image: (() => {
+      const raw = String(b?.imageUrl || "").trim();
+      if (!raw) return "";
+      if (raw.startsWith("/") && assetBase) return `${assetBase}${raw}`;
+      return raw;
+    })(),
     color: String(b?.color || "bg-brand-primary"),
   }));
 
