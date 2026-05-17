@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Activity, Smartphone } from "lucide-react";
+import { Activity, Smartphone, X, Trophy, Globe, Clock, CircleHelp, FileText, Search, Phone } from "lucide-react";
 import { Match, BetSelection } from "./types";
 import { useActiveOddsProvider, useBanners, useFixtures, useFixturesInfinite, useMezzoTopEvents, usePissbetTopEventsStream, useRefreshVisibleOdds } from "./modules/betting/hooks";
 import { useMe } from "./modules/auth/hooks";
@@ -43,6 +43,7 @@ export default function App() {
   const [view, setView] = useState<string>("home");
   const [comingSoonTitle, setComingSoonTitle] = useState<string>("Coming Soon");
   const [isBetslipOpen, setIsBetslipOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [activeSport, setActiveSport] = useState<string | null>(null);
@@ -109,6 +110,7 @@ export default function App() {
         // Keep view as-is (home/detail/etc); betslip is an overlay.
         return;
       }
+      setIsBetslipOpen(false);
       if (p === "/user/profile" || p.startsWith("/user/profile/")) {
         setAccountPanelTab("deposit");
         setView("account");
@@ -203,6 +205,7 @@ export default function App() {
         },
       ];
       if (nextSlot.length === 1) setIsBetslipOpen(true);
+      if (nextSlot.length === 1) pushPath("/betslip");
       return { ...prevBySlot, [activeSlipSlot]: nextSlot };
     });
   };
@@ -537,6 +540,12 @@ export default function App() {
         authLoading={authLoading}
         onAuth={handleAuth}
         onSignOut={handleSignOut}
+        onLogoClick={() => {
+          setMobileMenuOpen(false);
+          setView("home");
+          setSelectedMatchId(null);
+          pushPath("/");
+        }}
         onOpenDeposit={() => {
           setAccountPanelTab("deposit");
           setView("account");
@@ -557,6 +566,97 @@ export default function App() {
         currentView={view === "detail" ? "home" : view}
         onViewChange={handleViewChange}
       />
+
+      {/* Mobile menu drawer */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 z-[160] bg-black/70 backdrop-blur-sm lg:hidden"
+            />
+            <motion.div
+              initial={{ x: -360 }}
+              animate={{ x: 0 }}
+              exit={{ x: -360 }}
+              transition={{ type: "spring", stiffness: 260, damping: 28 }}
+              className="fixed left-0 top-0 bottom-0 z-[170] w-[360px] max-w-[92vw] lg:hidden"
+            >
+              <div className="h-full bg-[#1e1a2b] border-r border-white/10 shadow-2xl overflow-y-auto no-scrollbar">
+                <div className="h-[54px] bg-brand-primary flex items-center justify-between px-4">
+                  <button type="button" onClick={() => setMobileMenuOpen(false)} className="text-black/80 hover:text-black">
+                    <X className="w-6 h-6" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setView("home");
+                      setSelectedMatchId(null);
+                      pushPath("/");
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <div className="flex flex-col items-center leading-none">
+                      <span className="text-base font-black text-black italic tracking-tighter">kings</span>
+                      <div className="bg-black text-[#a3e635] px-1 py-0.5 mt-[-1px] rounded-sm transform">
+                        <span className="text-[8px] font-black italic">bet</span>
+                      </div>
+                    </div>
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-2.5 bg-white/20 rounded-sm overflow-hidden border border-black/10">
+                      <img src="https://flagcdn.com/w20/gb.png" alt="EN" className="w-full h-full object-cover" />
+                    </div>
+                    <span className="text-black font-bold text-[11px] uppercase italic">EN</span>
+                  </div>
+                </div>
+
+                <div className="py-2">
+                  {[
+                    { label: "PROMOTIONS", icon: CircleHelp, view: "promotions" },
+                    { label: "SPORTS", icon: Trophy, view: "sport" },
+                    { label: "LIVE", icon: Activity, view: "live" },
+                    { label: "GAMES", icon: Smartphone, view: "games" },
+                    { label: "VIRTUAL SPORTS", icon: Clock, view: "virtual" },
+                    { label: "RESULTS", icon: FileText, view: "results" },
+                    { label: "CHECK TICKET", icon: Search, view: "check-ticket" },
+                    { label: "RULES", icon: Globe, view: "rules" },
+                    { label: "CONTACTS", icon: Phone, view: "contacts" },
+                  ].map((item) => (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        if (item.view === "check-ticket") {
+                          setAccountPanelTab("ticket");
+                          setView("account");
+                          pushPath("/user/ticket");
+                          return;
+                        }
+                        if (item.view === "results" || item.view === "rules" || item.view === "contacts") {
+                          setComingSoonTitle(`${item.label} (Coming Soon)`);
+                          setView("coming-soon");
+                          return;
+                        }
+                        handleViewChange(item.view);
+                      }}
+                      className="w-full px-4 py-4 border-b border-white/5 flex items-center gap-3 text-left"
+                    >
+                      <item.icon className="w-5 h-5 text-white/80" />
+                      <span className="text-white font-black uppercase italic tracking-tight text-sm">{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Desktop sidebar */}
@@ -810,6 +910,7 @@ export default function App() {
         onClose={() => {
           setIsBetslipOpen(false);
           setBetslipNotice(null);
+          pushPath("/");
         }}
         isAuthenticated={hasToken}
         authLoading={authLoading}
@@ -843,7 +944,11 @@ export default function App() {
       )}
 
       {/* Mobile Bottom Nav */}
-      <MobileBottomNav currentView={view} onViewChange={handleViewChange} />
+      <MobileBottomNav
+        currentView={view}
+        onViewChange={handleViewChange}
+        onMenuOpen={() => setMobileMenuOpen(true)}
+      />
 
       {/* Floating Chat Button */}
       <div className="fixed bottom-6 right-6 z-50 hidden lg:block">
