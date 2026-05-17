@@ -720,22 +720,9 @@ export default function App() {
                         <img
                           src={banners[currentBanner].image}
                           alt="Betting Banner"
-                          className="absolute right-0 top-0 h-full w-2/3 object-cover mix-blend-multiply opacity-30 lg:opacity-60"
+                          className="absolute inset-0 h-full w-full object-cover"
                           referrerPolicy="no-referrer"
                         />
-                        <div className="absolute inset-0 flex flex-col justify-center px-6 lg:px-12 z-10">
-                          <div className="flex flex-col">
-                            <h2 className="text-2xl lg:text-4xl font-black text-black italic leading-none uppercase">
-                              {banners[currentBanner].title}
-                            </h2>
-                            <h2 className="text-2xl lg:text-4xl font-black text-black italic leading-none uppercase mb-2 lg:mb-4">
-                              {banners[currentBanner].subtitle}
-                            </h2>
-                            <div className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] font-black text-2xl lg:text-4xl italic uppercase tracking-tighter">
-                              {banners[currentBanner].highlight}
-                            </div>
-                          </div>
-                        </div>
                       </motion.div>
                     </AnimatePresence>
 
