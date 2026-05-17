@@ -164,7 +164,9 @@ export default function Sidebar({
                        id: isSelected ? null : (league.id || null),
                        apiFootballLeagueId: isSelected ? null : (league.apiFootballLeagueId || null)
                      });
-                     onSportChange(null);
+                     // Mezzo top-events is keyed by sportId; keep sport in sync with the selected league.
+                     if (!isSelected && isMezzo && league?.sportId) onSportChange(String(league.sportId));
+                     else if (isSelected) onSportChange(null);
                    }}
                    className={`sidebar-item group !py-1.5 border-b border-brand-border/10 last:border-0 hover:bg-white/[0.02] cursor-pointer ${activeLeague === league.name ? 'bg-brand-primary/10 text-brand-primary' : ''}`}
                 >
