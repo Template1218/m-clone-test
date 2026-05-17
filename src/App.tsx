@@ -96,6 +96,49 @@ export default function App() {
   });
   const [accountPanelTab, setAccountPanelTab] = useState<"deposit" | "bets" | "ticket">("deposit");
 
+  // Basic URL routing (no react-router): allow direct links + back button.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const applyPath = (path: string) => {
+      const p = String(path || "/").toLowerCase();
+      if (p === "/betslip" || p.startsWith("/betslip/")) {
+        setIsBetslipOpen(true);
+        // Keep view as-is (home/detail/etc); betslip is an overlay.
+        return;
+      }
+      if (p === "/user/profile" || p.startsWith("/user/profile/")) {
+        setAccountPanelTab("deposit");
+        setView("account");
+        return;
+      }
+      if (p === "/user/bets" || p.startsWith("/user/bets/")) {
+        setAccountPanelTab("bets");
+        setView("account");
+        return;
+      }
+      if (p === "/user/ticket" || p.startsWith("/user/ticket/")) {
+        setAccountPanelTab("ticket");
+        setView("account");
+        return;
+      }
+      // Default route
+      setView("home");
+    };
+
+    applyPath(window.location.pathname);
+    const onPop = () => applyPath(window.location.pathname);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  const pushPath = (path: string) => {
+    if (typeof window === "undefined") return;
+    const next = path.startsWith("/") ? path : `/${path}`;
+    if (window.location.pathname === next) return;
+    window.history.pushState({}, "", next);
+  };
+
   const toggleBet = (
     match: Match,
     market: string,
@@ -244,7 +287,9 @@ export default function App() {
       setActiveLeague(null);
       setActiveLeagueId(null);
       setActiveApiFootballLeagueId(null);
+      pushPath("/");
     }
+    if (newView === "account") pushPath("/user/profile");
   };
 
 
@@ -470,14 +515,17 @@ export default function App() {
         onOpenDeposit={() => {
           setAccountPanelTab("deposit");
           setView("account");
+          pushPath("/user/profile");
         }}
         onOpenBetsHistory={() => {
           setAccountPanelTab("bets");
           setView("account");
+          pushPath("/user/bets");
         }}
         onOpenCheckTicket={() => {
           setAccountPanelTab("ticket");
           setView("account");
+          pushPath("/user/ticket");
         }}
       />
       <Navbar
@@ -725,7 +773,10 @@ export default function App() {
       {selectedBets.length > 0 && !isBetslipOpen && (
         <div className="fixed bottom-24 right-4 z-[95] lg:hidden">
           <button
-            onClick={() => setIsBetslipOpen(true)}
+            onClick={() => {
+              setIsBetslipOpen(true);
+              pushPath("/betslip");
+            }}
             className="w-16 h-16 bg-brand-yellow text-black rounded-full shadow-[0_10px_30px_rgba(250,204,21,0.4)] flex flex-col items-center justify-center border-4 border-brand-dark active:scale-90 transition-all group"
           >
             <div className="relative">

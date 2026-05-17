@@ -264,7 +264,13 @@ export default function MatchCard({
         <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/5 rounded-full blur-[40px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
         
         <div className="flex justify-between items-start relative z-10">
-          <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 overflow-hidden">
+              <CountryFlag country={match.country || null} className="w-3.5 h-3.5 shrink-0" />
+              <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider truncate">
+                {(match.country ? `${match.country} - ` : "") + (match.league || "")}
+              </span>
+            </div>
             <h3 className="text-[14px] font-bold text-white leading-tight truncate">
               {match.homeTeam}
             </h3>
