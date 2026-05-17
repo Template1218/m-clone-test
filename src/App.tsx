@@ -70,6 +70,7 @@ export default function App() {
     sportId: mezzoSportId,
     tab: fixturesTab,
     leagueId: activeLeagueId,
+    leagueName: activeLeague,
   });
 
   useEffect(() => {

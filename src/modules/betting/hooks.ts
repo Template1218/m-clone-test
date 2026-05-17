@@ -392,12 +392,13 @@ function mapMezzoTopEventsToMatches(payload: any): Match[] {
 }
 
 export function useMezzoTopEvents(
-  args: { enabled?: boolean; sportId?: number; tab?: "top" | "upcoming"; leagueId?: string | null } = {}
+  args: { enabled?: boolean; sportId?: number; tab?: "top" | "upcoming"; leagueId?: string | null; leagueName?: string | null } = {}
 ) {
   const enabled = args.enabled ?? true;
   const sportId = Number(args.sportId ?? 501);
   const tab = (args.tab === "top" || args.tab === "upcoming") ? args.tab : "upcoming";
   const leagueId = String(args.leagueId || "").trim();
+  const leagueName = String(args.leagueName || "").trim();
   const pageSize = 10;
 
   const q = useInfiniteQuery({
@@ -406,7 +407,7 @@ export function useMezzoTopEvents(
     queryFn: async ({ pageParam = 0 }) => {
       const offset = Number(pageParam || 0);
       const { data } = await api.get('/odds/mezzo/top-events', {
-        params: { sportId, tab, leagueId: leagueId || undefined, limit: pageSize, offset },
+        params: { sportId, tab, leagueId: leagueId || undefined, leagueName: leagueName || undefined, limit: pageSize, offset },
       });
       const fixtures = Array.isArray((data as any)?.fixtures) ? (data as any).fixtures : [];
       const count = Number((data as any)?.count ?? 0) || 0;
