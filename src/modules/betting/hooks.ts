@@ -411,13 +411,16 @@ export function useMezzoTopEvents(
       });
       const fixtures = Array.isArray((data as any)?.fixtures) ? (data as any).fixtures : [];
       const count = Number((data as any)?.count ?? 0) || 0;
+      const nextOffset = offset + pageSize;
       return {
         raw: data,
         matches: mapBackendFixtures(fixtures as any),
         offset,
         count,
-        nextOffset: offset + fixtures.length,
-        hasMore: offset + fixtures.length < count,
+        nextOffset,
+        // Avoid infinite loops when backend returns 0 rows for an offset.
+        // Continue paging only when we actually received a full page.
+        hasMore: fixtures.length === pageSize && nextOffset < count,
       };
     },
     getNextPageParam: (lastPage) => (lastPage?.hasMore ? lastPage.nextOffset : undefined),
