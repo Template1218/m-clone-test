@@ -91,10 +91,12 @@ export default function Sidebar({
           .filter((l: any) => l.id && l.name)
       : [];
 
+  // NOTE: In Mezzo mode, only show Mezzo-derived leagues (competitionId-based).
+  // Mixing in DB catalog leagues breaks filtering because /odds/mezzo expects Mezzo competition ids.
   const effectiveTopLeagues = isPissbet
     ? pissbetTopLeagues
     : isMezzo
-      ? (mezzoTopLeagues.length ? mezzoTopLeagues : fallbackTopLeaguesFromCatalog)
+      ? mezzoTopLeagues
       : (isStructured && Array.isArray(fallbackTopLeaguesFromCatalog) && fallbackTopLeaguesFromCatalog.length
         ? fallbackTopLeaguesFromCatalog
         : topLeagues);
@@ -175,9 +177,7 @@ export default function Sidebar({
                        id: isSelected ? null : (league.id || null),
                        apiFootballLeagueId: isSelected ? null : (league.apiFootballLeagueId || null)
                      });
-                     // Mezzo top-events is keyed by sportId; keep sport in sync with the selected league.
-                     if (!isSelected && isMezzo && league?.sportId) onSportChange(String(league.sportId));
-                     else if (isSelected) onSportChange(null);
+                     // Keep sport filter unchanged; Mezzo endpoint is keyed by sportId in App state.
                    }}
                    className={`sidebar-item group !py-1.5 border-b border-brand-border/10 last:border-0 hover:bg-white/[0.02] cursor-pointer ${activeLeague === league.name ? 'bg-brand-primary/10 text-brand-primary' : ''}`}
                
