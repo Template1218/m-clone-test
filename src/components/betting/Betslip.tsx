@@ -272,7 +272,7 @@ export default function Betslip({
           opacity: 1
         }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="fixed inset-x-0 bottom-0 lg:sticky lg:top-0 lg:translate-y-0 w-full lg:w-[380px] bg-[#0a0a0a] flex flex-col shrink-0 border-t lg:border-t-0 lg:border-l border-white/5 z-[150] lg:z-10 h-[90vh] lg:h-full rounded-t-3xl lg:rounded-none overflow-hidden shadow-2xl lg:shadow-none"
+        className="fixed inset-x-0 bottom-0 lg:sticky lg:top-0 lg:translate-y-0 w-full lg:w-[380px] bg-[#0a0a0a] flex flex-col shrink-0 border-t lg:border-t-0 lg:border-l border-white/5 z-[150] lg:z-10 h-[90vh] lg:h-full rounded-t-3xl lg:rounded-none overflow-hidden shadow-2xl lg:shadow-none min-h-0"
       >
         {/* Mobile Pull Handle */}
         <div className="lg:hidden flex justify-center py-3" onClick={onClose}>
@@ -361,7 +361,7 @@ export default function Betslip({
       ) : null}
 
       {/* Bets List */}
-      <div className="flex-1 overflow-y-auto px-2 py-3 space-y-2 no-scrollbar">
+      <div className="flex-1 min-h-0 overflow-y-auto px-2 py-3 space-y-2 no-scrollbar">
         <AnimatePresence initial={false}>
           {selectedBets.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center py-20">
@@ -518,32 +518,21 @@ export default function Betslip({
               </div>
 
               <div className="flex flex-col gap-2">
-                {!isAuthenticated ? (
-                  <>
-                    <button
-                      onClick={handlePlaceOnline}
-                      disabled={busy || authLoading}
-                      className="w-full bg-brand-primary text-black font-black py-4 rounded-2xl text-[13px] uppercase tracking-wider hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_10px_20px_rgba(193,223,31,0.2)] disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      {busy ? "Placing..." : "Place Bet Online"}
-                    </button>
-                    <button
-                      onClick={handlePrintPreview}
-                      disabled={busy || createOffline.isPending}
-                      className="w-full bg-white/5 text-white font-bold py-3 rounded-2xl text-[11px] uppercase tracking-wide hover:bg-white/10 active:scale-[0.98] transition-all border border-white/5 disabled:opacity-50"
-                    >
-                      {createOffline.isPending ? "Preparing..." : "Book Offline Ticket"}
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={handlePlaceOnline}
-                    disabled={busy}
-                    className="w-full bg-brand-primary text-black font-black py-4 rounded-2xl text-[13px] uppercase tracking-wider hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_10px_20px_rgba(193,223,31,0.2)] disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {busy ? "Placing..." : "Place Bet Online"}
-                  </button>
-                )}
+                <button
+                  onClick={handlePlaceOnline}
+                  disabled={busy || (!isAuthenticated && authLoading)}
+                  className="w-full bg-brand-primary text-black font-black py-4 rounded-2xl text-[13px] uppercase tracking-wider hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_10px_20px_rgba(193,223,31,0.2)] disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {busy ? "Placing..." : "Place Bet Online"}
+                </button>
+
+                <button
+                  onClick={handlePrintPreview}
+                  disabled={busy || createOffline.isPending}
+                  className="w-full bg-white/5 text-white font-bold py-3 rounded-2xl text-[11px] uppercase tracking-wide hover:bg-white/10 active:scale-[0.98] transition-all border border-white/5 disabled:opacity-50"
+                >
+                  {createOffline.isPending ? "Preparing..." : "Book Offline Ticket"}
+                </button>
               </div>
             </div>
           </motion.div>
