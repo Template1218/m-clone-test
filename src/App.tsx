@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Activity, Smartphone } from "lucide-react";
+import { Activity, Smartphone, Globe } from "lucide-react";
 import { Match, BetSelection } from "./types";
 import { useActiveOddsProvider, useBanners, useFixtures, useFixturesInfinite, useMezzoTopEvents, usePissbetTopEventsStream, useRefreshVisibleOdds } from "./modules/betting/hooks";
 import { useMe } from "./modules/auth/hooks";
