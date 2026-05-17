@@ -504,6 +504,7 @@ export default function App() {
   }, [visibleFixtures, refreshVisibleOdds, queryClient]);
 
   const loaderRef = useRef<HTMLDivElement>(null);
+  const mainScrollRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
@@ -515,7 +516,7 @@ export default function App() {
       ) {
         fetchNextPage();
       }
-    }, { threshold: 0.1, rootMargin: "200px" });
+    }, { threshold: 0.1, rootMargin: "200px", root: mainScrollRef.current });
 
     if (loaderRef.current) {
       observer.observe(loaderRef.current);
@@ -685,6 +686,9 @@ export default function App() {
         )}
 
         <main
+          ref={(el) => {
+            mainScrollRef.current = el;
+          }}
           className={`flex-1 ${selectedMatchId ? "overflow-hidden" : "overflow-y-auto"} ${isGamesView || isVirtualView ? "bg-[#0a0a0a]" : "p-0 lg:p-4"} pb-32 lg:pb-4`}
         >
           {isSportFiltersView ? (
