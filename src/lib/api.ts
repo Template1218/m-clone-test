@@ -8,12 +8,16 @@ export const api = axios.create({
   baseURL: apiBaseURL,
 });
 
-// Serialize HTTP requests to avoid flooding the backend (concurrency = 1).
+// Serialize only non-GET requests to avoid flooding the backend with mutations,
+// but keep GETs concurrent (pagination/infinite scroll should not be "one by one").
 // NOTE: Do NOT implement this via `config.adapter` inside a request interceptor:
 // aborted/cancelled requests can skip the adapter and permanently deadlock the queue.
 let tail: Promise<unknown> = Promise.resolve();
 const baseRequest = api.request.bind(api);
-(api as any).request = async function queuedRequest(config: any) {
+(api as any).request = async function queuedMutations(config: any) {
+  const method = String(config?.method || "get").toLowerCase();
+  if (method === "get") return baseRequest(config);
+
   const prev = tail;
   let release!: () => void;
   tail = new Promise((resolve) => {
