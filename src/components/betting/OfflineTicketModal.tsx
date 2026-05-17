@@ -1,9 +1,15 @@
 import { Copy, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { useEffect, useState } from "react";
 
 export default function OfflineTicketModal(props: { open: boolean; onClose: () => void; code: string; expiresAt?: string | null }) {
   const code = props.code || "";
   const expires = props.expiresAt ? new Date(props.expiresAt) : null;
+  const [copyHint, setCopyHint] = useState<string>("Copy");
+
+  useEffect(() => {
+    if (!props.open) setCopyHint("Copy");
+  }, [props.open]);
 
   return (
     <AnimatePresence>
@@ -20,8 +26,26 @@ export default function OfflineTicketModal(props: { open: boolean; onClose: () =
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            className="relative z-10 w-full max-w-sm bg-[#1f1a2d] border border-white/10 shadow-2xl p-6 rounded-md"
+            className="relative z-10 w-full max-w-sm bg-[#1f1a2d] border border-white/10 shadow-2xl p-6 rounded-md overflow-hidden"
           >
+            {/* Zig-zag "ticket" border */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-0 h-3 opacity-80"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(-45deg, rgba(204,255,0,0.65) 0 6px, rgba(204,255,0,0.0) 6px 12px)",
+              }}
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-3 opacity-80"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(45deg, rgba(204,255,0,0.65) 0 6px, rgba(204,255,0,0.0) 6px 12px)",
+              }}
+            />
+
             <button onClick={props.onClose} className="absolute right-3 top-3 text-white/70 hover:text-white">
               <X className="w-6 h-6" />
             </button>
@@ -36,12 +60,16 @@ export default function OfflineTicketModal(props: { open: boolean; onClose: () =
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(code);
+                      setCopyHint("Copied!");
+                      window.setTimeout(() => setCopyHint("Copy"), 1200);
                     } catch {
-                      // ignore
+                      setCopyHint("Failed");
+                      window.setTimeout(() => setCopyHint("Copy"), 1200);
                     }
                   }}
                   className="text-white/70 hover:text-white"
                   aria-label="Copy code"
+                  title={copyHint}
                 >
                   <Copy className="w-5 h-5" />
                 </button>
@@ -58,4 +86,3 @@ export default function OfflineTicketModal(props: { open: boolean; onClose: () =
     </AnimatePresence>
   );
 }
-

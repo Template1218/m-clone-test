@@ -393,40 +393,41 @@ function mapMezzoTopEventsToMatches(payload: any): Match[] {
 export function useMezzoTopEvents(
   args: { enabled?: boolean; sportId?: number; tab?: "top" | "upcoming"; leagueId?: string | null } = {}
 ) {
+  // NOTE: keep this as a single-page query (limit=10) so the UI doesn't auto-fetch
+  // the entire list via the app-level infinite-scroll observer.
   const enabled = args.enabled ?? true;
   const sportId = Number(args.sportId ?? 501);
   const tab = (args.tab === "top" || args.tab === "upcoming") ? args.tab : "upcoming";
   const leagueId = String(args.leagueId || "").trim();
   const pageSize = 10;
-  const q = useInfiniteQuery({
-    queryKey: ['mezzo-top-events', 'infinite', sportId, tab, leagueId || "all"],
+
+  const q = useQuery({
+    queryKey: ['mezzo-top-events', sportId, tab, leagueId || "all", pageSize],
     enabled,
-    queryFn: async ({ pageParam = 0 }) => {
-      const offset = Number(pageParam || 0);
+    queryFn: async () => {
       const { data } = await api.get('/odds/mezzo/top-events', {
-        params: { sportId, tab, leagueId: leagueId || undefined, limit: pageSize, offset },
+        params: { sportId, tab, leagueId: leagueId || undefined, limit: pageSize, offset: 0 },
       });
       const fixtures = Array.isArray((data as any)?.fixtures) ? (data as any).fixtures : [];
       const count = Number((data as any)?.count ?? 0) || 0;
       return {
         raw: data,
         matches: mapBackendFixtures(fixtures as any),
-        offset,
         count,
-        nextOffset: offset + fixtures.length,
-        hasMore: offset + fixtures.length < count,
       };
     },
-    getNextPageParam: (lastPage) => (lastPage?.hasMore ? lastPage.nextOffset : undefined),
-    initialPageParam: 0,
     staleTime: 60 * 1000,
     refetchInterval: false,
     refetchOnWindowFocus: false,
   });
 
-  const matches = q.data?.pages.flatMap((p) => p.matches) || [];
-  const count = q.data?.pages?.[0]?.count ?? 0;
-  return { ...q, data: { matches, count } } as any;
+  return {
+    ...q,
+    fetchNextPage: undefined,
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    data: { matches: (q.data as any)?.matches || [], count: (q.data as any)?.count || 0 },
+  } as any;
 }
 
 export function useMezzoTopLeagues(enabled: boolean = true) {
