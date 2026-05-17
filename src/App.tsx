@@ -100,8 +100,8 @@ export default function App() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const applyPath = (path: string) => {
-      const p = String(path || "/").toLowerCase();
+    const applyPath = (rawPath: string) => {
+      const p = String(rawPath || "/").toLowerCase();
       if (p === "/betslip" || p.startsWith("/betslip/")) {
         setIsBetslipOpen(true);
         // Keep view as-is (home/detail/etc); betslip is an overlay.
@@ -126,17 +126,25 @@ export default function App() {
       setView("home");
     };
 
-    applyPath(window.location.pathname);
-    const onPop = () => applyPath(window.location.pathname);
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
+    const getPath = () => {
+      // Use hash routing so reloads on Vercel don't 404 (/#/user/bets, /#/betslip, etc).
+      const h = String(window.location.hash || "");
+      const cleaned = h.startsWith("#") ? h.slice(1) : h;
+      return cleaned.startsWith("/") ? cleaned : cleaned ? `/${cleaned}` : "/";
+    };
+
+    applyPath(getPath());
+    const onHash = () => applyPath(getPath());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
   const pushPath = (path: string) => {
     if (typeof window === "undefined") return;
     const next = path.startsWith("/") ? path : `/${path}`;
-    if (window.location.pathname === next) return;
-    window.history.pushState({}, "", next);
+    const nextHash = `#${next}`;
+    if (window.location.hash === nextHash) return;
+    window.location.hash = next;
   };
 
   const toggleBet = (
