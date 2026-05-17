@@ -65,7 +65,7 @@ export default function Navbar({ currentView, onViewChange }: NavbarProps) {
 
   return (
     <nav className="bg-[#050505] border-b border-zinc-800 h-16 flex items-center justify-center shrink-0 sticky top-[50px] z-[90] overflow-x-auto no-scrollbar shadow-lg">
-      <div className="flex w-full lg:w-auto lg:gap-8 min-w-max px-4">
+      <div className="flex w-full lg:w-auto lg:gap-8 px-2 lg:px-4 lg:min-w-max justify-start">
         {NAV_ITEMS.map((item) => {
           const isActive = currentView === item.view;
           const isSport = item.label === "SPORT";

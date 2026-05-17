@@ -583,7 +583,7 @@ export default function App() {
           className={`flex-1 ${selectedMatchId ? "overflow-hidden" : "overflow-y-auto"} ${isGamesView || isVirtualView ? "bg-[#0a0a0a]" : "p-0 lg:p-4"} pb-32 lg:pb-4`}
         >
           {isSportFiltersView ? (
-            <div className="p-3 lg:hidden">
+            <div className="p-0 lg:hidden h-full">
               <Sidebar
                 activeSport={activeSport}
                 onSportChange={setActiveSport}
@@ -600,6 +600,7 @@ export default function App() {
                 onTimeFilterChange={setTimeFilter}
                 isHot={fixturesTab === "top"}
                 onIsHotChange={(v) => setFixturesTab(v ? "top" : "upcoming")}
+                className="w-full border-r-0"
               />
             </div>
           ) : isComingSoonView ? (

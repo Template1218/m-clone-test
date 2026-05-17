@@ -13,6 +13,7 @@ interface SidebarProps {
   onTimeFilterChange: (filter: string) => void;
   isHot: boolean;
   onIsHotChange: (val: boolean) => void;
+  className?: string;
 }
 
 export default function Sidebar({ 
@@ -23,7 +24,8 @@ export default function Sidebar({
   timeFilter, 
   onTimeFilterChange,
   isHot,
-  onIsHotChange
+  onIsHotChange,
+  className
 }: SidebarProps) {
   const [expandedSports, setExpandedSports] = useState<string[]>([]);
   const [isTimeDropdownOpen, setIsTimeDropdownOpen] = useState(false);
@@ -140,7 +142,7 @@ export default function Sidebar({
       : sports;
 
   return (
-    <aside className="w-64 border-r border-brand-border overflow-y-auto bg-brand-dark h-full">
+    <aside className={`w-64 border-r border-brand-border overflow-y-auto bg-brand-dark h-full ${className || ""}`}>
       {isLoading ? (
         <SidebarSkeleton />
       ) : (
