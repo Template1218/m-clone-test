@@ -60,6 +60,7 @@ export default function Betslip({
   const [inlineError, setInlineError] = useState<string | null>(null);
   const [balanceModalOpen, setBalanceModalOpen] = useState(false);
   const [localNotice, setLocalNotice] = useState<string | null>(null);
+  const [mobileDetailsOpen, setMobileDetailsOpen] = useState(false);
 
   useEffect(() => {
     if (!notice) return;
@@ -83,6 +84,7 @@ export default function Betslip({
     if (!isOpen) {
       setInlineError(null);
       setBalanceModalOpen(false);
+      setMobileDetailsOpen(false);
     }
   }, [isOpen]);
 
@@ -458,7 +460,7 @@ export default function Betslip({
             </div>
 
             {/* Totals Breakdown */}
-            <div className="space-y-2 px-1">
+            <div className={`space-y-2 px-1 ${mobileDetailsOpen ? "" : "hidden lg:block"}`}>
               <div className="flex justify-between items-center">
                 <span className="text-[11px] font-medium text-gray-400">Potential Payout</span>
                 <span className="text-[11px] font-bold text-white">{(totalOdds * stake).toFixed(2)} ETB</span>
@@ -494,6 +496,17 @@ export default function Betslip({
                   <span className="text-[10px] font-bold text-brand-primary mb-1">ETB</span>
                 </div>
               </div>
+            </div>
+
+            {/* Mobile details toggle (keeps selections visible) */}
+            <div className="lg:hidden pt-1">
+              <button
+                type="button"
+                onClick={() => setMobileDetailsOpen((v) => !v)}
+                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2 text-[10px] font-black uppercase tracking-widest text-white/70 hover:text-white"
+              >
+                {mobileDetailsOpen ? "Hide Details" : "Show Details"}
+              </button>
             </div>
 
             {/* Buttons */}

@@ -236,49 +236,23 @@ export default function App() {
   };
 
   const [currentBanner, setCurrentBanner] = useState(0);
-  const defaultBanners = [
-    {
-      title: "Take Control Before",
-      subtitle: "The Final Whistle,",
-      highlight: "Early Cashout",
-      image:
-        "https://images.unsplash.com/photo-1543351611-58f69d7c1781?auto=format&fit=crop&q=80&w=1200",
-      color: "bg-brand-primary",
-    },
-    {
-      title: "Champions League",
-      subtitle: "Final Countdown,",
-      highlight: "Boosted Odds",
-      image:
-        "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&q=80&w=1200",
-      color: "bg-brand-yellow",
-    },
-    {
-      title: "Weekend Special",
-      subtitle: "Accumulator Bonus,",
-      highlight: "20% Extra Win",
-      image:
-        "https://images.unsplash.com/photo-1504450758481-7338eba7524a?auto=format&fit=crop&q=80&w=1200",
-      color: "bg-white",
-    },
-  ];
+  const defaultBanners: any[] = [];
 
-  const banners = (remoteBanners || []).length
-    ? (remoteBanners as any[]).map((b: any) => ({
-        title: String(b?.title || ""),
-        subtitle: b?.subtitle ?? "",
-        highlight: b?.highlight ?? "",
-        image: String(b?.imageUrl || ""),
-        color: String(b?.color || "bg-brand-primary"),
-      }))
-    : defaultBanners;
+  const banners = (remoteBanners as any[]).map((b: any) => ({
+    title: String(b?.title || ""),
+    subtitle: b?.subtitle ?? "",
+    highlight: b?.highlight ?? "",
+    image: String(b?.imageUrl || ""),
+    color: String(b?.color || "bg-brand-primary"),
+  }));
 
   useEffect(() => {
+    if (!banners.length) return;
     const timer = setInterval(() => {
       setCurrentBanner((prev) => (prev + 1) % banners.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [banners.length]);
 
   const handleMatchClick = (matchId: string) => {
     if (activeProvider === "pissbet_socket") {
@@ -607,7 +581,7 @@ export default function App() {
                     className="flex items-center gap-2"
                   >
                     <div className="flex flex-col items-center leading-none">
-                      <span className="text-base font-black text-black italic tracking-tighter">kings</span>
+                      <span className="text-base font-black text-black italic tracking-tighter">king5</span>
                       <div className="bg-black text-[#a3e635] px-1 py-0.5 mt-[-1px] rounded-sm transform">
                         <span className="text-[8px] font-black italic">bet</span>
                       </div>
@@ -733,7 +707,7 @@ export default function App() {
                 className={`transition-all duration-300 ${selectedMatchId ? "hidden lg:block lg:w-[40%] h-full overflow-y-auto no-scrollbar" : "w-full"} p-2 lg:p-0`}
               >
                 {/* Banner Carousel */}
-                {!selectedMatchId && (
+                {!selectedMatchId && banners.length > 0 && (
                   <div className="relative w-full h-[180px] lg:h-[300px] lg:rounded-lg overflow-hidden mb-0.5 shadow-2xl -mx-2 lg:mx-0 w-[calc(100%+1rem)] lg:w-full group">
                     <AnimatePresence mode="wait">
                       <motion.div

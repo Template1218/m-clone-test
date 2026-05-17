@@ -63,7 +63,7 @@ export default function Header({
       <div className="flex items-center justify-between w-full lg:hidden">
         <button type="button" onClick={onLogoClick} className="flex items-center gap-1 cursor-pointer">
           <div className="flex flex-col items-center leading-none">
-            <span className="text-lg font-black text-black italic tracking-tighter">kings</span>
+            <span className="text-lg font-black text-black italic tracking-tighter">king5</span>
             <div className="bg-black text-[#a3e635] px-1 py-0.5 mt-[-1px] rounded-sm transform">
               <span className="text-[8px] font-black italic">bet</span>
             </div>

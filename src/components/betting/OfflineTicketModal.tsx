@@ -51,7 +51,7 @@ export default function OfflineTicketModal(props: { open: boolean; onClose: () =
             </button>
 
             <div className="flex flex-col items-center text-center">
-              <div className="text-brand-primary font-black text-2xl uppercase italic">KINGSbet</div>
+              <div className="text-brand-primary font-black text-2xl uppercase italic">KING5bet</div>
               <div className="mt-4 text-white font-black text-sm uppercase tracking-wide">Fast Bet Code</div>
 
               <div className="mt-3 flex items-center gap-2">
@@ -80,7 +80,7 @@ export default function OfflineTicketModal(props: { open: boolean; onClose: () =
               </div>
 
               <div className="mt-4 text-white/80 text-xs leading-relaxed">
-                This is a temporary ticket. Give this code to a cashier to place it in any KINGSbet shop.
+                This is a temporary ticket. Give this code to a cashier to place it in any KING5bet shop.
                 {expires ? <div className="mt-2 text-white/60">Valid until {expires.toLocaleString()}</div> : null}
               </div>
             </div>
