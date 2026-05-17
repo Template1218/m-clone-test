@@ -17,7 +17,7 @@ interface NavbarProps {
 
 const NAV_ITEMS = [
   { icon: <Home className="w-8 h-8" />, label: "HOME", view: "home" },
-  { icon: <Trophy className="w-8 h-8" />, label: "SPORT", view: "home" },
+  { icon: <Trophy className="w-8 h-8" />, label: "SPORT", view: "sport" },
   { icon: <Activity className="w-8 h-8" />, label: "LIVE", view: "live" },
   { icon: <Smartphone className="w-8 h-8" />, label: "GAMES", view: "games" },
   {
@@ -39,6 +39,7 @@ const NAV_ITEMS = [
 
 export default function Navbar({ currentView, onViewChange }: NavbarProps) {
   const [isSportDropdownOpen, setIsSportDropdownOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,6 +55,14 @@ export default function Navbar({ currentView, onViewChange }: NavbarProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)"); // lg
+    const apply = () => setIsDesktop(!!mq.matches);
+    apply();
+    mq.addEventListener?.("change", apply);
+    return () => mq.removeEventListener?.("change", apply);
+  }, []);
+
   return (
     <nav className="bg-[#050505] border-b border-zinc-800 h-16 flex items-center justify-center shrink-0 sticky top-[50px] z-[90] overflow-x-auto no-scrollbar shadow-lg">
       <div className="flex w-full lg:w-auto lg:gap-8 min-w-max px-4">
@@ -67,8 +76,14 @@ export default function Navbar({ currentView, onViewChange }: NavbarProps) {
               ref={isSport ? dropdownRef : null}
               onClick={() => {
                 if (isSport) {
-                  setIsSportDropdownOpen(!isSportDropdownOpen);
+                  if (isDesktop) {
+                    setIsSportDropdownOpen(!isSportDropdownOpen);
+                  } else {
+                    setIsSportDropdownOpen(false);
+                    onViewChange(item.view);
+                  }
                 } else {
+                  setIsSportDropdownOpen(false);
                   onViewChange(item.view);
                 }
               }}
@@ -90,7 +105,7 @@ export default function Navbar({ currentView, onViewChange }: NavbarProps) {
               )}
 
               {/* Sport Dropdown */}
-              {isSport && isSportDropdownOpen && (
+              {isSport && isDesktop && isSportDropdownOpen && (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-60 bg-[#1e1a2b] border border-white/5 shadow-2xl rounded-sm py-4 z-50 animate-in fade-in zoom-in-95 origin-top">
                   <div className="flex flex-col items-center mb-4">
                     <div className="w-10 h-10 rounded-full border border-brand-primary/30 flex items-center justify-center mb-2">
