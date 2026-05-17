@@ -157,7 +157,7 @@ export default function Header({
       <div className="hidden lg:flex items-center gap-6 flex-1">
         <div className="flex items-center gap-1 cursor-pointer" onClick={() => (window.location.href = "/")}>
           <div className="flex flex-col items-center leading-none">
-            <span className="text-xl font-black text-black italic tracking-tighter">king</span>
+            <span className="text-xl font-black text-black italic tracking-tighter">king5</span>
             <div className="bg-black text-brand-primary px-1.5 py-0.5 mt-[-1px] rounded-sm transform">
               <span className="text-[10px] font-black italic">bet</span>
             </div>

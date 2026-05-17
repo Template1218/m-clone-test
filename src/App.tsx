@@ -151,6 +151,17 @@ export default function App() {
     window.location.hash = next;
   };
 
+  const replacePath = (path: string) => {
+    if (typeof window === "undefined") return;
+    const next = path.startsWith("/") ? path : `/${path}`;
+    const nextHash = `#${next}`;
+    try {
+      window.history.replaceState(null, "", nextHash);
+    } catch {
+      window.location.hash = next;
+    }
+  };
+
   const toggleBet = (
     match: Match,
     market: string,
@@ -764,26 +775,24 @@ export default function App() {
 
                 {/* Matches List */}
                 <div className="bg-brand-surface rounded-2xl overflow-hidden border border-brand-border shadow-xl">
-                  {/* Header Grid - Rounded Header */}
-                  <div
-                    className={`bg-[#111111] text-[9px] font-black text-gray-500 h-8 px-6 uppercase tracking-widest items-center border-b border-white/5 rounded-t-2xl ${selectedMatchId ? "flex justify-between" : "grid grid-cols-[1.5fr_1.5fr_1fr]"}`}
-                  >
-                    {selectedMatchId ? (
+                  {/* Header Grid (desktop only) */}
+                  {selectedMatchId ? (
+                    <div className="hidden lg:flex bg-[#111111] text-[9px] font-black text-gray-500 h-8 px-6 uppercase tracking-widest items-center border-b border-white/5 rounded-t-2xl justify-between">
                       <span className="text-[10px] text-brand-primary">Match List</span>
-                    ) : (
-                      <>
-                        <div className="text-left font-bold opacity-80 border-r border-white/50 h-full flex items-center">
-                          Match Result
-                        </div>
-                        <div className=" font-bold text-center opacity-80 border-r border-white/50 h-full flex items-center justify-center">
-                          Double chance
-                        </div>
-                        <div className="text-right font-bold pr-2 opacity-80 h-full flex items-center justify-end">
-                          Both Score
-                        </div>
-                      </>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="hidden lg:grid bg-[#111111] text-[9px] font-black text-gray-500 h-8 px-6 uppercase tracking-widest items-center border-b border-white/5 rounded-t-2xl grid-cols-[1.5fr_1.5fr_1fr]">
+                      <div className="text-left font-bold opacity-80 border-r border-white/50 h-full flex items-center">
+                        Match Result
+                      </div>
+                      <div className=" font-bold text-center opacity-80 border-r border-white/50 h-full flex items-center justify-center">
+                        Double chance
+                      </div>
+                      <div className="text-right font-bold pr-2 opacity-80 h-full flex items-center justify-end">
+                        Both Score
+                      </div>
+                    </div>
+                  )}
 
                   {showFixturesSkeleton ? (
                     <MatchCardSkeletonList count={10} isCompact={!!selectedMatchId} />
@@ -880,7 +889,7 @@ export default function App() {
         onClose={() => {
           setIsBetslipOpen(false);
           setBetslipNotice(null);
-          pushPath("/");
+          replacePath("/");
         }}
         isAuthenticated={hasToken}
         authLoading={authLoading}
