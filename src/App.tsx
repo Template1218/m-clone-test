@@ -64,7 +64,8 @@ export default function App() {
   const { data: remoteBanners = [] } = useBanners(true);
   const assetBase = (import.meta as any)?.env?.VITE_API_BASE_URL ? String((import.meta as any).env.VITE_API_BASE_URL).replace(/\/+$/, "") : "";
   const pissbetStream = usePissbetTopEventsStream(activeProvider === "pissbet_socket");
-  const mezzoSportId = activeProvider === "mezzo" ? Number(activeSport ?? 501) : 501;
+  // Mezzo: when no sport is selected, show all sports (sportId=0 disables sport filter server-side).
+  const mezzoSportId = activeProvider === "mezzo" ? (activeSport ? Number(activeSport) : 0) : 501;
   const mezzoTopEvents = useMezzoTopEvents({
     enabled: activeProvider === "mezzo",
     sportId: mezzoSportId,

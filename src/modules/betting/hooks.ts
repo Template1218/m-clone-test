@@ -395,7 +395,8 @@ export function useMezzoTopEvents(
   args: { enabled?: boolean; sportId?: number; tab?: "top" | "upcoming"; leagueId?: string | null; leagueName?: string | null } = {}
 ) {
   const enabled = args.enabled ?? true;
-  const sportId = Number(args.sportId ?? 501);
+  // sportId=0 means "all sports" for Mezzo (no sport filter).
+  const sportId = Number(args.sportId ?? 0);
   const tab = (args.tab === "top" || args.tab === "upcoming") ? args.tab : "upcoming";
   const leagueId = String(args.leagueId || "").trim();
   const leagueName = String(args.leagueName || "").trim();
