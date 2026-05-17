@@ -362,11 +362,7 @@ export default function MatchCard({
         {/* Subtle Glow Background */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/5 rounded-full blur-[40px] -translate-y-1/2 translate-x-1/2 opacity-0 group-hover/card:opacity-100 transition-opacity pointer-events-none" />
 
-        {match.isTop && (
-          <div className="absolute top-0 right-0 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-bl-lg shadow-lg z-10 uppercase tracking-widest">
-            Hot
-          </div>
-        )}
+        {/* HOT badge removed */}
         
         {/* Row 1: League & Time */}
         <div className="flex items-center justify-between pt-2 pb-0.5 relative z-10">
@@ -423,8 +419,8 @@ export default function MatchCard({
           )}
 
           {!isCompact && (
-            <div className="bg-white/[0.02] px-1.5 py-0.5 rounded-md border border-white/5">
-              <span className="text-white/30 text-[9px] font-bold uppercase tracking-tight">
+            <div className="bg-brand-primary/15 px-1.5 py-0.5 rounded-md border border-brand-primary/30 shadow-sm">
+              <span className="text-brand-primary text-[9px] font-black uppercase tracking-tight">
                 +{Number(match.pricesCount || 0)}
               </span>
             </div>

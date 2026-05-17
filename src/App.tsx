@@ -21,6 +21,7 @@ import { MatchCardSkeletonList } from "./components/betting/MatchCardSkeleton";
 import GamesView from "./components/games/GamesView";
 import LiveView from "./components/live/LiveView";
 import VirtualSportsView from "./components/virtual/VirtualSportsView";
+import ComingSoon from "./components/common/ComingSoon";
 
 export default function App() {
   const getInitialSlipSlot = (): 1 | 2 | 3 => {
@@ -40,6 +41,7 @@ export default function App() {
   const [betslipNotice, setBetslipNotice] = useState<string | null>(null);
   const [stake, setStake] = useState<number>(20);
   const [view, setView] = useState<string>("home");
+  const [comingSoonTitle, setComingSoonTitle] = useState<string>("Coming Soon");
   const [isBetslipOpen, setIsBetslipOpen] = useState(false);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
@@ -288,6 +290,18 @@ export default function App() {
   };
 
   const handleViewChange = (newView: string) => {
+    if (newView === "live" || newView === "live-games" || newView === "virtual" || newView === "promotions") {
+      const label =
+        newView === "live" ? "Live (Coming Soon)" :
+        newView === "live-games" ? "Live Games (Coming Soon)" :
+        newView === "virtual" ? "Virtual Sports (Coming Soon)" :
+        "Promotions (Coming Soon)";
+      setComingSoonTitle(label);
+      setView("coming-soon");
+      setSelectedMatchId(null);
+      return;
+    }
+
     setView(newView);
     setSelectedMatchId(null);
     if (newView === 'home') {
@@ -512,6 +526,7 @@ export default function App() {
   const isLiveView = view === "live";
   const isGamesView = view === "games";
   const isVirtualView = view === "virtual";
+  const isComingSoonView = view === "coming-soon";
 
   return (
     <div className="h-screen overflow-hidden flex flex-col bg-brand-dark">
@@ -563,7 +578,9 @@ export default function App() {
         <main
           className={`flex-1 ${selectedMatchId ? "overflow-hidden" : "overflow-y-auto"} ${isGamesView || isVirtualView ? "bg-[#0a0a0a]" : "p-0 lg:p-4"} pb-32 lg:pb-4`}
         >
-          {view === "account" ? (
+          {isComingSoonView ? (
+            <ComingSoon title={comingSoonTitle} />
+          ) : view === "account" ? (
             <div className="p-4 lg:p-0">
               <AccountPanelPage tab={accountPanelTab} onTabChange={setAccountPanelTab} user={user} />
             </div>
