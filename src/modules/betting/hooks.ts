@@ -403,7 +403,7 @@ export function useMezzoTopEvents(
   const pageSize = 10;
 
   const q = useInfiniteQuery({
-    queryKey: ['mezzo-top-events', 'infinite', sportId, tab, leagueId || "all", pageSize],
+    queryKey: ['mezzo-top-events', 'infinite', sportId, tab, leagueId || "all", leagueName || "none", pageSize],
     enabled,
     queryFn: async ({ pageParam = 0 }) => {
       const offset = Number(pageParam || 0);
