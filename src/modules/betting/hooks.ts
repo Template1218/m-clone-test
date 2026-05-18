@@ -99,14 +99,15 @@ async function getActiveOddsProviderFromCatalog(): Promise<string> {
 }
 
 export function useActiveOddsProvider() {
-  return useQuery({
-    queryKey: ['active-odds-provider'],
-    queryFn: getActiveOddsProviderFromCatalog,
-    staleTime: 5 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
-  });
+  // Avoid a second `/betting/catalog` request: derive provider from the catalog query.
+  const catalog = useCatalog();
+  const provider = String((catalog.data as any)?.provider || '').trim().toLowerCase();
+  return {
+    data: provider || 'apifootball',
+    isLoading: catalog.isLoading,
+    isFetching: catalog.isFetching,
+    refetch: catalog.refetch,
+  } as any;
 }
 
 function toWsBaseUrl(httpBaseUrl: string) {
@@ -255,18 +256,15 @@ export function useCatalog() {
     queryKey: ['catalog'],
     queryFn: async () => {
       const { data } = await api.get('/betting/catalog');
-      console.log("CATALOG RESPONSE", data);
       if (data.provider) {
         const mapped = {
           ...data,
           sports: mapBackendCatalog(data.sports || []),
           rawSports: data.sports || []
         };
-        console.log("SIDEBAR SPORTS", mapped.sports);
         return mapped;
       }
       const sports = mapBackendCatalog(data.sports || []);
-      console.log("SIDEBAR SPORTS (legacy)", sports);
       return sports;
     },
 
@@ -408,7 +406,7 @@ export function useMezzoTopEvents(
     queryFn: async ({ pageParam = 0 }) => {
       const offset = Number(pageParam || 0);
       const { data } = await api.get('/odds/mezzo/top-events', {
-        params: { sportId, tab, leagueId: leagueId || undefined, leagueName: leagueName || undefined, limit: pageSize, offset },
+        params: { sportId, tab, leagueId: leagueId || undefined, leagueName: leagueName || undefined, lite: 1, limit: pageSize, offset },
       });
       const fixtures = Array.isArray((data as any)?.fixtures) ? (data as any).fixtures : [];
       const count = Number((data as any)?.count ?? 0) || 0;
@@ -441,7 +439,7 @@ export function useMezzoTopLeagues(enabled: boolean = true) {
     queryKey: ['mezzo-top-leagues'],
     enabled,
     queryFn: async () => {
-      const { data } = await api.get('/odds/mezzo/top-leagues');
+      const { data } = await api.get('/odds/mezzo/top-leagues', { params: { lite: 1 } });
       // Normalize to { data: topLeagueList[], sportList: [], fetchedAt }
       if (Array.isArray(data)) {
         return {

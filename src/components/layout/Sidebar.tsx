@@ -59,10 +59,10 @@ export default function Sidebar({
   const isPissbet = isStructured && (catalog as any).provider === "pissbet_socket";
   const isMezzo = isStructured && (catalog as any).provider === "mezzo";
 
-  const { data: pissbetTopLeaguesResp } = usePissbetTopLeagues(isPissbet);
+  const { data: pissbetTopLeaguesResp } = usePissbetTopLeagues(Boolean(isPissbet && !isMezzo));
   const pissbetTopLeagues = Array.isArray((pissbetTopLeaguesResp as any)?.data) ? (pissbetTopLeaguesResp as any).data : [];
 
-  const { data: mezzoTopLeaguesResp } = useMezzoTopLeagues(isMezzo);
+  const { data: mezzoTopLeaguesResp } = useMezzoTopLeagues(Boolean(isMezzo));
   const mezzoTopLeaguesRaw = Array.isArray((mezzoTopLeaguesResp as any)?.data) ? (mezzoTopLeaguesResp as any).data : [];
   const mezzoTopLeagues = mezzoTopLeaguesRaw
     .map((l: any) => ({

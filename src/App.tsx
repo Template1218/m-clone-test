@@ -52,6 +52,23 @@ export default function App() {
   const [activeApiFootballLeagueId, setActiveApiFootballLeagueId] = useState<string | null>(null);
   const [timeFilter, setTimeFilter] = useState<string>('All Time');
   const [fixturesTab, setFixturesTab] = useState<"upcoming" | "top">("top");
+  const [isDesktop, setIsDesktop] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(min-width: 1024px)").matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(min-width: 1024px)");
+    const onChange = () => setIsDesktop(mql.matches);
+    onChange();
+    if ("addEventListener" in mql) mql.addEventListener("change", onChange);
+    else (mql as any).addListener(onChange);
+    return () => {
+      if ("removeEventListener" in mql) mql.removeEventListener("change", onChange);
+      else (mql as any).removeListener(onChange);
+    };
+  }, []);
 
   const queryClient = useQueryClient();
   const refreshVisibleOdds = useRefreshVisibleOdds();
@@ -660,7 +677,7 @@ export default function App() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Desktop sidebar */}
-        {canShowSidebar && (
+        {canShowSidebar && isDesktop && (
           <div className="hidden lg:block">
             <Sidebar 
               activeSport={activeSport} 

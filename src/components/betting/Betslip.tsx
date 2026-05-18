@@ -415,7 +415,7 @@ export default function Betslip({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="p-4 pb-32 lg:pb-6 bg-[#111111] border-t border-white/5 space-y-4 shadow-2xl"
+            className="p-4 pb-12 lg:pb-6 bg-[#111111] border-t border-white/5 space-y-3 shadow-2xl"
           >
             {/* Summary Row */}
             <div className="flex items-center justify-between px-1">
@@ -430,8 +430,8 @@ export default function Betslip({
             </div>
 
             {/* Stake Controller */}
-            <div className="bg-black/40 rounded-2xl p-2 border border-white/5">
-              <div className="flex items-center justify-between mb-2 px-2">
+            <div className="bg-black/40 rounded-2xl p-1.5 border border-white/5">
+              <div className="flex items-center justify-between mb-1 px-2">
                 <span className="text-[10px] font-bold text-gray-400 uppercase">Stake Amount</span>
                 <span className="text-[10px] font-bold text-brand-primary uppercase">ETB</span>
               </div>
@@ -460,7 +460,7 @@ export default function Betslip({
             </div>
 
             {/* Totals Breakdown */}
-            <div className={`space-y-2 px-1 ${mobileDetailsOpen ? "" : "hidden lg:block"}`}>
+            <div className={`space-y-1.5 px-1 ${mobileDetailsOpen ? "" : "hidden lg:block"}`}>
               <div className="flex justify-between items-center">
                 <span className="text-[11px] font-medium text-gray-400">Potential Payout</span>
                 <span className="text-[11px] font-bold text-white">{(totalOdds * stake).toFixed(2)} ETB</span>
@@ -475,17 +475,17 @@ export default function Betslip({
               </div>
 
               {/* Bonus Info */}
-              <div className="flex items-center justify-between bg-brand-primary/5 p-2 rounded-xl border border-brand-primary/10">
+              <div className="flex items-center justify-between bg-brand-primary/5 p-1.5 rounded-xl border border-brand-primary/10">
                 <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 bg-brand-primary/20 rounded-full flex items-center justify-center">
-                    <Info className="w-3 h-3 text-brand-primary" />
+                  <div className="w-4 h-4 bg-brand-primary/20 rounded-full flex items-center justify-center">
+                    <Info className="w-2.5 h-2.5 text-brand-primary" />
                   </div>
                   <span className="text-[10px] font-bold text-brand-primary uppercase tracking-tight">Bonus Applied</span>
                 </div>
                 <span className="text-[10px] font-black text-brand-primary uppercase italic">0%</span>
               </div>
 
-              <div className="pt-2 mt-2 border-t border-white/5">
+              <div className="pt-1.5 mt-1.5 border-t border-white/5">
                 <div className="flex justify-between items-end">
                   <div className="flex flex-col">
                     <span className="text-[10px] font-bold text-gray-500 uppercase">Net Win</span>
@@ -499,18 +499,18 @@ export default function Betslip({
             </div>
 
             {/* Mobile details toggle (keeps selections visible) */}
-            <div className="lg:hidden pt-1">
+            <div className="lg:hidden pt-0.5">
               <button
                 type="button"
                 onClick={() => setMobileDetailsOpen((v) => !v)}
-                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2 text-[10px] font-black uppercase tracking-widest text-white/70 hover:text-white"
+                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-1.5 text-[10px] font-black uppercase tracking-widest text-white/70 hover:text-white"
               >
                 {mobileDetailsOpen ? "Hide Details" : "Show Details"}
               </button>
             </div>
 
             {/* Buttons */}
-            <div className="space-y-3 pt-2">
+            <div className="space-y-2 pt-1">
               <div className="flex justify-center">
                 {!isAuthenticated ? (
                   <button
@@ -530,11 +530,11 @@ export default function Betslip({
                 )}
               </div>
 
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5">
                 <button
                   onClick={handlePlaceOnline}
                   disabled={busy || (!isAuthenticated && authLoading)}
-                  className="w-full bg-brand-primary text-black font-black py-4 rounded-2xl text-[13px] uppercase tracking-wider hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_10px_20px_rgba(193,223,31,0.2)] disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full bg-brand-primary text-black font-black py-3.5 rounded-2xl text-[13px] uppercase tracking-wider hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_10px_20px_rgba(193,223,31,0.2)] disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {busy ? "Placing..." : "Place Bet Online"}
                 </button>
@@ -542,7 +542,7 @@ export default function Betslip({
                 <button
                   onClick={handlePrintPreview}
                   disabled={busy || createOffline.isPending}
-                  className="w-full bg-white/5 text-white font-bold py-3 rounded-2xl text-[11px] uppercase tracking-wide hover:bg-white/10 active:scale-[0.98] transition-all border border-white/5 disabled:opacity-50"
+                  className="w-full bg-white/5 text-white font-bold py-2.5 rounded-2xl text-[11px] uppercase tracking-wide hover:bg-white/10 active:scale-[0.98] transition-all border border-white/5 disabled:opacity-50"
                 >
                   {createOffline.isPending ? "Preparing..." : "Book Offline Ticket"}
                 </button>
