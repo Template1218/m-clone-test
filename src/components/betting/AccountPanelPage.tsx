@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMyUserBetslips, useTicketDetails } from "../../modules/betslips/hooks";
 import { Activity, CreditCard, Ticket, ChevronRight, Search, Clock, Wallet, Info, RotateCw } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -96,6 +96,8 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
   const [period, setPeriod] = useState<PeriodFilter>("24h");
   const [ticketId, setTicketId] = useState("");
   const [submittedTicketId, setSubmittedTicketId] = useState("");
+  const [slipPage, setSlipPage] = useState(1);
+  const slipsPerPage = 6;
   
   const { data: slips = [], isLoading: slipsLoading, refetch: refetchSlips, isFetching: slipsFetching } = useMyUserBetslips(tab === "bets" || tab === "ticket");
   const { data: ticket, isError, isLoading: ticketLoading, isFetching: ticketFetching, refetch: refetchTicket } = useTicketDetails(submittedTicketId, tab === "ticket" && !!submittedTicketId);
@@ -114,6 +116,30 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
       return now - new Date(s.placedAt || s.createdAt).getTime() <= maxAgeMs;
     });
   }, [slips, period]);
+
+  const totalSlipPages = Math.max(1, Math.ceil(filteredSlips.length / slipsPerPage));
+  const pagedSlips = useMemo(() => {
+    const safePage = Math.min(Math.max(1, slipPage), totalSlipPages);
+    const start = (safePage - 1) * slipsPerPage;
+    return filteredSlips.slice(start, start + slipsPerPage);
+  }, [filteredSlips, slipPage, totalSlipPages]);
+
+  useEffect(() => {
+    setSlipPage(1);
+  }, [period]);
+
+  useEffect(() => {
+    if (slipPage > totalSlipPages) setSlipPage(totalSlipPages);
+  }, [slipPage, totalSlipPages]);
+
+  const slipPagesToShow = useMemo(() => {
+    if (totalSlipPages <= 7) return Array.from({ length: totalSlipPages }, (_, i) => i + 1);
+    const pages = new Set<number>([1, totalSlipPages]);
+    const start = Math.max(2, slipPage - 1);
+    const end = Math.min(totalSlipPages - 1, slipPage + 1);
+    for (let p = start; p <= end; p++) pages.add(p);
+    return Array.from(pages).sort((a, b) => a - b);
+  }, [slipPage, totalSlipPages]);
 
   return (
     <div className="max-w-5xl mx-auto space-y-4">
@@ -230,7 +256,7 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
                       <p className="text-gray-500 font-bold uppercase tracking-widest text-[11px]">No bet history found</p>
                     </div>
                   ) : (
-                    filteredSlips.map((slip: any) => {
+                    pagedSlips.map((slip: any) => {
                       const stake = amount(slip.stake);
                       const slipResult = slip.result || (slip.status === "settled" ? "pending" : slip.status);
                       const possibleWin = amount(slip.potentialPayout);
@@ -272,6 +298,51 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
                         </button>
                       );
                     })
+                  )}
+
+                  {filteredSlips.length > slipsPerPage && (
+                    <div className="flex flex-col gap-2 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest text-center sm:text-left">
+                        Page {Math.min(Math.max(1, slipPage), totalSlipPages)} of {totalSlipPages}
+                      </div>
+                      <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2">
+                        <button
+                          onClick={() => setSlipPage((p) => Math.max(1, p - 1))}
+                          disabled={slipPage <= 1}
+                          className="px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-brand-dark/60 border border-white/5 text-gray-400 disabled:opacity-40 disabled:cursor-not-allowed hover:text-white hover:border-white/10 transition-all"
+                        >
+                          Prev
+                        </button>
+                        <div className="flex items-center gap-1 max-w-full overflow-x-auto whitespace-nowrap px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                          {slipPagesToShow.map((p, idx) => {
+                            const prev = slipPagesToShow[idx - 1];
+                            const showGap = idx > 0 && prev !== undefined && p - prev > 1;
+                            return (
+                              <div key={p} className="flex items-center gap-1">
+                                {showGap && <span className="px-1 text-gray-700 text-[12px] font-black">…</span>}
+                                <button
+                                  onClick={() => setSlipPage(p)}
+                                  className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl text-[10px] font-black border transition-all shrink-0 ${
+                                    p === slipPage
+                                      ? "bg-brand-primary text-black border-brand-primary shadow-lg shadow-brand-primary/10"
+                                      : "bg-brand-dark/60 text-gray-400 border-white/5 hover:text-white hover:border-white/10"
+                                  }`}
+                                >
+                                  {p}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <button
+                          onClick={() => setSlipPage((p) => Math.min(totalSlipPages, p + 1))}
+                          disabled={slipPage >= totalSlipPages}
+                          className="px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-brand-dark/60 border border-white/5 text-gray-400 disabled:opacity-40 disabled:cursor-not-allowed hover:text-white hover:border-white/10 transition-all"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { X, Search, Activity, CreditCard, Ticket, ChevronRight, Clock, Wallet, Info, RotateCw } from "lucide-react";
 import { useMyUserBetslips, useTicketDetails } from "../../modules/betslips/hooks";
@@ -64,10 +64,28 @@ function SkeletonRow() {
 export default function AccountPanelModal({ isOpen, tab, onClose, onTabChange, user }: AccountPanelModalProps) {
   const [ticketId, setTicketId] = useState("");
   const [submittedTicketId, setSubmittedTicketId] = useState("");
+  const [slipPage, setSlipPage] = useState(1);
+  const slipsPerPage = 5;
   const { data: slips = [], isLoading: slipsLoading, refetch: refetchSlips, isFetching: slipsFetching } = useMyUserBetslips(isOpen && (tab === "bets" || tab === "ticket"));
   const { data: ticket, isError: isTicketError, isLoading: ticketLoading, isFetching: ticketFetching, refetch: refetchTicket } = useTicketDetails(submittedTicketId, isOpen && tab === "ticket" && !!submittedTicketId);
 
   const isTicketSearching = ticketLoading || (ticketFetching && !!submittedTicketId);
+
+  const totalSlipPages = Math.max(1, Math.ceil(slips.length / slipsPerPage));
+  const pagedSlips = useMemo(() => {
+    const safePage = Math.min(Math.max(1, slipPage), totalSlipPages);
+    const start = (safePage - 1) * slipsPerPage;
+    return slips.slice(start, start + slipsPerPage);
+  }, [slips, slipPage, totalSlipPages]);
+
+  useEffect(() => {
+    if (!isOpen || tab !== "bets") return;
+    setSlipPage(1);
+  }, [isOpen, tab]);
+
+  useEffect(() => {
+    if (slipPage > totalSlipPages) setSlipPage(totalSlipPages);
+  }, [slipPage, totalSlipPages]);
 
   return (
     <AnimatePresence>
@@ -153,7 +171,7 @@ export default function AccountPanelModal({ isOpen, tab, onClose, onTabChange, u
                   ) : slips.length === 0 ? (
                     <div className="py-20 text-center text-gray-500 font-bold uppercase tracking-widest text-[11px]">No bets found</div>
                   ) : (
-                    slips.map((slip: any) => {
+                    pagedSlips.map((slip: any) => {
                       const config = statusConfig(slip.result || slip.status);
                       return (
                         <div 
@@ -176,6 +194,30 @@ export default function AccountPanelModal({ isOpen, tab, onClose, onTabChange, u
                         </div>
                       )
                     })
+                  )}
+
+                  {slips.length > slipsPerPage && (
+                    <div className="flex items-center justify-between pt-2 px-1">
+                      <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">
+                        Page {Math.min(Math.max(1, slipPage), totalSlipPages)} of {totalSlipPages}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setSlipPage((p) => Math.max(1, p - 1))}
+                          disabled={slipPage <= 1}
+                          className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-brand-dark border border-white/5 text-gray-400 disabled:opacity-40 disabled:cursor-not-allowed hover:text-white hover:border-white/10 transition-all"
+                        >
+                          Prev
+                        </button>
+                        <button
+                          onClick={() => setSlipPage((p) => Math.min(totalSlipPages, p + 1))}
+                          disabled={slipPage >= totalSlipPages}
+                          className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-brand-dark border border-white/5 text-gray-400 disabled:opacity-40 disabled:cursor-not-allowed hover:text-white hover:border-white/10 transition-all"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
