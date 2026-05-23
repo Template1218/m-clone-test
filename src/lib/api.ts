@@ -60,7 +60,7 @@ const baseRequest = api.request.bind(api);
   }
 
   const prev = tail;
-  let release!: () => void;
+  let release!: (value?: unknown) => void;
   tail = new Promise((resolve) => {
     release = resolve;
   });

@@ -466,14 +466,7 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-brand-primary/5 rounded-full blur-[60px]" />
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-black/10 to-black/50 z-1" />
         
-        <div className="relative z-10 h-full flex flex-col justify-center p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex flex-col items-center gap-1.5 flex-1 text-center min-w-0">
-              <div className="w-10 h-10 rounded-full bg-black/40 border border-white/10 flex items-center justify-center shadow-xl transition-transform group-hover:scale-105">
-                 <div className="text-lg opacity-80">🛡️</div>
-              </div>
-              <span className="text-[12px] lg:text-[14px] font-bold text-white uppercase tracking-tight leading-tight w-full drop-shadow-md truncate">{match.homeTeam}</span>
-            </div>
+        
 
             <div className="flex flex-col items-center gap-0.5 min-w-[50px]">
               <div className="text-[8px] font-bold text-gray-500 uppercase tracking-[0.2em]">VS</div>
