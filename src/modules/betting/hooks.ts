@@ -562,9 +562,72 @@ export function useFixturesInfinite(filters: any = {}) {
   });
 }
 
-export function useFixtureDetails(fixtureId?: string) {
+const SPORT_NAME_TO_MEZZO_SPORT_ID: Record<string, number> = {
+  football: 501,
+  soccer: 501,
+  "ice hockey": 502,
+  tennis: 503,
+  basketball: 504,
+  volleyball: 505,
+};
+
+function inferMezzoSportIdFromName(sportName?: string | null) {
+  const k = String(sportName || "")
+    .trim()
+    .toLowerCase();
+  if (!k) return 501;
+  return SPORT_NAME_TO_MEZZO_SPORT_ID[k] || 501;
+}
+
+function mapMezzoEventDetailsToCollections(raw: any) {
+  const event =
+    Array.isArray(raw) &&
+    raw?.[0]?.data?.eventList?.[0]?.data?.eventList?.[0]?.competitions?.[0]?.events?.[0]
+      ? raw[0].data.eventList[0].data.eventList[0].competitions[0].events[0]
+      : Array.isArray(raw) && raw?.[0]?.data?.eventList?.[0]?.competitions?.[0]?.events?.[0]
+        ? raw[0].data.eventList[0].competitions[0].events[0]
+        : null;
+
+  const collections = Array.isArray(event?.collections) ? event.collections : [];
+  return collections.map((c: any) => ({
+    collectionId: String(c?.collectionId ?? ""),
+    collectionName: String(c?.collectionName ?? "Markets"),
+    markets: (Array.isArray(c?.markets) ? c.markets : []).map((m: any) => ({
+      id: String(m?.marketId ?? ""),
+      code: String(m?.marketCode ?? ""),
+      marketCode: String(m?.marketCode ?? ""),
+      marketName: String(m?.marketName ?? ""),
+      name: String(m?.marketName ?? ""),
+      outcomes: (Array.isArray(m?.prices) ? m.prices : []).map((p: any) => {
+        const odds = Number(p?.rate);
+        const okOdds = Number.isFinite(odds) ? odds : 0;
+        const blocked = Boolean(p?.blocked);
+        return {
+          id: String(p?.referenceId ?? ""),
+          priceName: String(p?.priceName ?? "").trim(),
+          name: String(p?.priceName ?? "").trim(),
+          odds: okOdds,
+          displayOdds: okOdds,
+          rawOdds: okOdds,
+          status: blocked ? "suspended" : "active",
+          uiStatus: blocked ? "suspended" : "fresh",
+          isSelectable: !blocked && okOdds > 0,
+          handicapValue: p?.handicapValue ?? null,
+          selectionKey: p?.selectionKey ?? p?.referenceId ?? null,
+          oddsVersion: p?.oddsVersion ?? null,
+          lastFetchedAt: p?.lastFetchedAt ?? null,
+        };
+      }),
+    })),
+  }));
+}
+
+export function useFixtureDetails(
+  fixtureId?: string,
+  opts?: { externalProvider?: string | null; externalEventId?: any; sportName?: string | null }
+) {
   return useQuery({
-    queryKey: ['fixture-details', fixtureId],
+    queryKey: ['fixture-details', fixtureId, opts?.externalProvider ?? null, opts?.externalEventId ?? null],
     queryFn: async () => {
       const id = String(fixtureId || "");
       if (id.startsWith("pissbet:")) {
@@ -584,43 +647,7 @@ export function useFixtureDetails(fixtureId?: string) {
         if (!eventId) throw new Error("Invalid mezzo fixtureId");
         const { data } = await api.get(`/odds/mezzo/event-details`, { params: { sportId, eventId } });
         const raw = (data as any)?.data ?? null;
-
-        const event =
-          Array.isArray(raw) &&
-          raw?.[0]?.data?.eventList?.[0]?.competitions?.[0]?.events?.[0]
-            ? raw[0].data.eventList[0].competitions[0].events[0]
-            : null;
-
-        const collections = Array.isArray(event?.collections) ? event.collections : [];
-        const mappedCollections = collections.map((c: any) => ({
-          collectionId: String(c?.collectionId ?? ""),
-          collectionName: String(c?.collectionName ?? "Markets"),
-          markets: (Array.isArray(c?.markets) ? c.markets : []).map((m: any) => ({
-            id: String(m?.marketId ?? ""),
-            code: String(m?.marketCode ?? ""),
-            marketCode: String(m?.marketCode ?? ""),
-            marketName: String(m?.marketName ?? ""),
-            name: String(m?.marketName ?? ""),
-            outcomes: (Array.isArray(m?.prices) ? m.prices : []).map((p: any) => {
-              const odds = Number(p?.rate);
-              const okOdds = Number.isFinite(odds) ? odds : 0;
-              const blocked = Boolean(p?.blocked);
-              return {
-                id: String(p?.referenceId ?? ""),
-                outcomeId: String(p?.referenceId ?? ""),
-                priceName: String(p?.priceName ?? "").trim(),
-                name: String(p?.priceName ?? "").trim(),
-                odds: okOdds,
-                displayOdds: okOdds,
-                rawOdds: okOdds,
-                status: blocked ? "suspended" : "active",
-                uiStatus: blocked ? "suspended" : "fresh",
-                isSelectable: !blocked && okOdds > 0,
-                handicapValue: p?.handicapValue ?? null,
-              };
-            }),
-          })),
-        }));
+        const mappedCollections = mapMezzoEventDetailsToCollections(raw);
 
         return {
           provider: "mezzo",
@@ -630,6 +657,31 @@ export function useFixtureDetails(fixtureId?: string) {
           cached: Boolean((data as any)?.cached),
           data: {
             eventId,
+            collections: mappedCollections,
+            raw,
+          },
+        };
+      }
+
+      // Fixtures coming from Mezzo are stored with UUID fixture ids, but the "full" market list is only
+      // available via the Mezzo event-details snapshots (keyed by externalEventId). If we don’t use it,
+      // the UI will only show the ingested DB markets (often just 1X2/DC/BTS).
+      const provider = String(opts?.externalProvider || "").trim().toLowerCase();
+      const externalEventId = String(opts?.externalEventId ?? "").trim();
+      if (provider === "mezzo" && externalEventId) {
+        const sportId = inferMezzoSportIdFromName(opts?.sportName ?? null);
+        // Use the "king5" alias route for nicer URLs; provider still stays "mezzo" internally.
+        const { data } = await api.get(`/odds/king5/event-details`, { params: { sportId, eventId: externalEventId } });
+        const raw = (data as any)?.data ?? null;
+        const mappedCollections = mapMezzoEventDetailsToCollections(raw);
+        return {
+          provider: "mezzo",
+          eventId: externalEventId,
+          sportId,
+          fetchedAt: (data as any)?.fetchedAt ?? null,
+          cached: Boolean((data as any)?.cached),
+          data: {
+            eventId: externalEventId,
             collections: mappedCollections,
             raw,
           },

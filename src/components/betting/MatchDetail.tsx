@@ -64,7 +64,11 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
   const isUuid = (v: any) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(v || "").trim());
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ MAIN: true });
-  const { data: detailResp, isLoading: detailLoading } = useFixtureDetails(match.id);
+  const { data: detailResp, isLoading: detailLoading } = useFixtureDetails(match.id, {
+    externalProvider: match.externalProvider ?? null,
+    externalEventId: match.externalEventId ?? null,
+    sportName: match.sportName ?? null,
+  });
 
   const preferSocketMarkets = String(match?.externalProvider || "").toLowerCase() === "pissbet_socket";
   const { data: pissbetTemplateResp } = usePissbetMarketsTemplate(50, preferSocketMarkets);
@@ -553,9 +557,14 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
                         const isBetActive = isSelected(m.marketName || m.name, selectionKey);
                         // Only allow selecting outcomes that have a persisted outcomeId.
                         // Detail-only rows (no outcomeId) are not placeable with the current backend contract.
-                        const maybeOutcomeId = String(o.outcomeId || (isUuid(o.id) ? o.id : "") || "").trim();
+                        const maybeOutcomeId = String(
+                          (isUuid(o.outcomeId) ? o.outcomeId : "") ||
+                            (isUuid(o.id) ? o.id : "") ||
+                            ""
+                        ).trim();
+                        const rawSelectionKey = String(o.selectionKey || o.referenceId || o.selection_key || "").trim();
                         const hasOutcomeId = !!maybeOutcomeId;
-                        const selectable = outcomeSelectable(o) && hasOutcomeId;
+                        const selectable = outcomeSelectable(o) && (hasOutcomeId || !!rawSelectionKey);
 
                         return (
                           <button
@@ -563,7 +572,6 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
                             onClick={() => {
                               if (!selectable || o.uiStatus === "suspended" || o.uiStatus === "closed") return;
                               const rawOutcomeId = maybeOutcomeId;
-                              const rawSelectionKey = String(o.selectionKey || o.referenceId || o.selection_key || "").trim();
                               onToggleBet(
                                 match,
                                 m.marketName || m.name,

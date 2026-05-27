@@ -198,12 +198,12 @@ export default function App() {
     // Some detail markets may render odds without a resolvable outcomeId.
     // We still allow adding them to the betslip for UX, but placement may fail until odds are refreshed.
     const safeOutcomeId = outcomeId == null ? "" : String(outcomeId).trim();
-    if (!safeOutcomeId) {
+    const safeSelectionKey = selectionKey == null ? "" : String(selectionKey).trim();
+    if (!safeOutcomeId && !safeSelectionKey) {
       setBetslipNotice("This selection is not available right now.");
       setTimeout(() => setBetslipNotice(null), 2000);
       return;
     }
-    const safeSelectionKey = selectionKey == null ? "" : String(selectionKey).trim();
     const safeOddsVersion = Number.isFinite(Number(acceptedOddsVersion)) ? Number(acceptedOddsVersion) : 1;
     setSelectedBetsBySlot((prevBySlot) => {
       const prev = prevBySlot[activeSlipSlot];
@@ -240,8 +240,8 @@ export default function App() {
           market,
           selection,
           odd,
-          outcomeId: safeOutcomeId,
-          selectionKey: safeSelectionKey,
+          outcomeId: safeOutcomeId || undefined,
+          selectionKey: safeOutcomeId ? undefined : (safeSelectionKey || undefined),
           acceptedOddsVersion: safeOddsVersion,
           lastFetchedAt,
           status,

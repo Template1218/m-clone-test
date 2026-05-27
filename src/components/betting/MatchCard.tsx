@@ -21,6 +21,7 @@ interface MatchCardProps {
     selection: string,
     odd: number,
     outcomeId?: string,
+    selectionKey?: string,
     acceptedOddsVersion?: number,
     lastFetchedAt?: string,
     status?: string,
@@ -213,7 +214,8 @@ export default function MatchCard({
             return;
           }
           const version = acceptedOddsVersion ?? (outcomeId ? 1 : undefined);
-          onToggleBet(match, market, sel, odd, outcomeId, version, lastFetchedAt, status, uiStatus);
+          const selectionKey = String(outcomeKey ?? outcomeId ?? "").trim();
+          onToggleBet(match, market, sel, odd, outcomeId, selectionKey || undefined, version, lastFetchedAt, status, uiStatus);
         }}
         disabled={hardDisabled || !hasOdd}
         aria-disabled={blocked}
