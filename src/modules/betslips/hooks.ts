@@ -15,7 +15,7 @@ export function useBulkUpsertSlipSelections() {
     mutationFn: async (payload: {
       slipId: string;
       slotNumber: 1 | 2 | 3;
-      selections: Array<{ outcomeId: string; acceptedOdds: number; acceptedOddsVersion: number }>;
+      selections: Array<{ outcomeId?: string; selectionKey?: string; acceptedOdds: number; acceptedOddsVersion: number }>;
     }) => {
       const { data } = await api.post("/betslips/user/selections/bulk", payload);
       return data.data;

@@ -7,7 +7,7 @@ import { CountryFlag } from '../common/CountryFlag';
 interface MatchDetailProps {
   match: Match;
   selectedBets: BetSelection[];
-  onToggleBet: (match: Match, market: string, selection: string, odd: number, outcomeId?: string, acceptedOddsVersion?: number, lastFetchedAt?: string, status?: string, uiStatus?: "fresh" | "warning" | "expired" | "suspended" | "closed") => void;
+  onToggleBet: (match: Match, market: string, selection: string, odd: number, outcomeId?: string, selectionKey?: string, acceptedOddsVersion?: number, lastFetchedAt?: string, status?: string, uiStatus?: "fresh" | "warning" | "expired" | "suspended" | "closed") => void;
   onBack: () => void;
 }
 
@@ -61,7 +61,9 @@ function DetailLoadingSkeleton() {
 }
 
 export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }: MatchDetailProps) {
+  const isUuid = (v: any) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(v || "").trim());
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ MAIN: true });
   const { data: detailResp, isLoading: detailLoading } = useFixtureDetails(match.id);
 
   const preferSocketMarkets = String(match?.externalProvider || "").toLowerCase() === "pissbet_socket";
@@ -69,6 +71,11 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const toggleCategory = (key: string) => {
+    const k = String(key || "").trim().toUpperCase() || "OTHER";
+    setExpandedCategories(prev => ({ ...prev, [k]: !(prev?.[k] ?? false) }));
   };
 
   const isSelected = (market: string, selection: string) => 
@@ -503,11 +510,23 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
         
         {!detailLoading && categories.map((cat) => (
           <div key={cat.key} className="space-y-2">
-            <div className="flex items-center gap-2 mb-3 px-1 sticky top-0 z-10 bg-[#0a0a0a]/80 backdrop-blur-sm py-2">
+            <button
+              type="button"
+              onClick={() => toggleCategory(cat.key)}
+              className="w-full text-left flex items-center gap-2 mb-2 px-1 sticky top-0 z-10 bg-[#0a0a0a]/80 backdrop-blur-sm py-2"
+            >
               <div className="w-1 h-4 bg-brand-primary rounded-full shadow-[0_0_8px_rgba(193,223,31,0.5)]" />
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{cat.key}</span>
-            </div>
+              <div className="ml-auto w-6 h-6 rounded-full bg-white/5 flex items-center justify-center">
+                {(expandedCategories[String(cat.key || "").toUpperCase()] ?? (String(cat.key || "").toUpperCase() === "MAIN")) ? (
+                  <ChevronUp className="w-3.5 h-3.5 text-gray-400" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                )}
+              </div>
+            </button>
 
+            {(expandedCategories[String(cat.key || "").toUpperCase()] ?? (String(cat.key || "").toUpperCase() === "MAIN")) ? (
             <div className="grid gap-1.5">
               {cat.markets.map((m: any) => {
                 const marketTitle = displayMarketTitle(m);
@@ -532,19 +551,26 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
                         const handicapSuffix = Number(o.handicapValue || 0) ? ` ${Number(o.handicapValue)}` : "";
                         const selectionKey = `${String(oName)}${handicapSuffix}`;
                         const isBetActive = isSelected(m.marketName || m.name, selectionKey);
-                        const selectable = outcomeSelectable(o);
+                        // Only allow selecting outcomes that have a persisted outcomeId.
+                        // Detail-only rows (no outcomeId) are not placeable with the current backend contract.
+                        const maybeOutcomeId = String(o.outcomeId || (isUuid(o.id) ? o.id : "") || "").trim();
+                        const hasOutcomeId = !!maybeOutcomeId;
+                        const selectable = outcomeSelectable(o) && hasOutcomeId;
 
                         return (
                           <button
                             key={o.id}
                             onClick={() => {
                               if (!selectable || o.uiStatus === "suspended" || o.uiStatus === "closed") return;
+                              const rawOutcomeId = maybeOutcomeId;
+                              const rawSelectionKey = String(o.selectionKey || o.referenceId || o.selection_key || "").trim();
                               onToggleBet(
                                 match,
                                 m.marketName || m.name,
                                 selectionKey,
                                 outcomeOddsValue(o),
-                                o.outcomeId || o.id,
+                                rawOutcomeId || undefined,
+                                rawSelectionKey || undefined,
                                 Number(o.oddsVersion ?? o.odds_version ?? 1),
                                 o.lastFetchedAt,
                                 o.status,
@@ -572,6 +598,7 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
                 );
               })}
             </div>
+            ) : null}
           </div>
         ))}
 

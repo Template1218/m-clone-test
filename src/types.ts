@@ -67,6 +67,9 @@ export interface BetSelection {
   selection: string;
   odd: number;
   outcomeId?: string;
+  // Provider selection identifier (e.g. Mezzo `selectionKey` / `referenceId`).
+  // Used when the outcome has not been persisted locally yet.
+  selectionKey?: string;
   acceptedOddsVersion?: number;
   lastFetchedAt?: string;
   status?: string;

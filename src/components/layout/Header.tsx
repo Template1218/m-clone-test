@@ -37,6 +37,12 @@ export default function Header({
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const balanceText = (() => {
+    const n = Number(user?.balance ?? 0);
+    if (!Number.isFinite(n)) return "0.00";
+    return n.toFixed(2);
+  })();
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -73,6 +79,12 @@ export default function Header({
         <div className="flex items-center gap-2">
           {user ? (
             <>
+              <div className="flex items-center gap-1.5 bg-black/10 border border-black/10 rounded-full h-7 px-2.5">
+                <span className="text-[9px] font-black text-black/70 uppercase italic tracking-wide">Bal</span>
+                <span className="text-[10px] font-black text-black tabular-nums">{balanceText}</span>
+                <span className="text-[9px] font-black text-black/70 uppercase italic">ETB</span>
+              </div>
+
               <button
                 type="button"
                 onClick={onOpenDeposit}

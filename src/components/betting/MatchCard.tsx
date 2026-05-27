@@ -180,7 +180,7 @@ export default function MatchCard({
     displayOdds?: number | null;
     rawOdds?: number | null;
   }) => {
-    const hasOdd = !!odd && odd > 0;
+    const hasOdd = Number.isFinite(Number(odd)) && Number(odd) > 0;
     const normalizedStatus = String(status ?? "").toLowerCase();
     const frontendDisabledReason =
       normalizedStatus === "suspended" || uiStatus === "suspended"
@@ -200,24 +200,14 @@ export default function MatchCard({
       uiStatus === "suspended" ||
       uiStatus === "closed";
 
-    if (!hasOdd) {
-      return (
-        <button
-          type="button"
-          disabled
-          className="relative flex items-center justify-between px-2 h-8 flex-1 text-[10px] font-bold rounded-lg transition-all border bg-[#0a0a0a] text-gray-500 border-white/[0.04] opacity-40"
-        >
-          <span className="uppercase text-gray-600">{sel}</span>
-          <span className="font-light text-[11px]">--</span>
-        </button>
-      );
-    }
-    
+    const displayOddText = hasOdd ? Number(odd).toFixed(2) : "-";
+
     return (
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation();
+          if (!hasOdd) return;
           if (blocked) {
             if (onRequestRefreshOdds) onRequestRefreshOdds(match.id);
             return;
@@ -225,13 +215,13 @@ export default function MatchCard({
           const version = acceptedOddsVersion ?? (outcomeId ? 1 : undefined);
           onToggleBet(match, market, sel, odd, outcomeId, version, lastFetchedAt, status, uiStatus);
         }}
-        disabled={hardDisabled}
+        disabled={hardDisabled || !hasOdd}
         aria-disabled={blocked}
         className={`relative flex items-center justify-between px-2 h-8 flex-1 text-[10px] font-bold rounded-lg transition-all border ${
           isBetSelected(market, sel)
             ? "bg-brand-primary text-black border-brand-primary shadow-lg shadow-brand-primary/20 scale-[1.01]"
             : "bg-[#161616] text-gray-300 border border-zinc-800 hover:bg-zinc-800 hover:border-zinc-700"
-        } ${blocked ? "opacity-40 hover:bg-transparent" : "active:scale-95"}`}
+        } ${(blocked || !hasOdd) ? "opacity-60 hover:bg-transparent" : "active:scale-95"}`}
       >
         <span
           className={`uppercase tracking-tighter ${isBetSelected(market, sel) ? "text-black/60" : "text-gray-400"}`}
@@ -245,7 +235,7 @@ export default function MatchCard({
               : "text-white font-bold text-[12px]"
           }
         >
-          {odd.toFixed(2)}
+          {displayOddText}
         </span>
       </button>
     );

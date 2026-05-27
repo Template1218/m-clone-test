@@ -189,20 +189,22 @@ export default function App() {
     selection: string,
     odd: number,
     outcomeId?: string,
+    selectionKey?: string,
     acceptedOddsVersion?: number,
     lastFetchedAt?: string,
     status?: string,
     uiStatus?: "fresh" | "warning" | "expired" | "suspended" | "closed",
   ) => {
-    // Guard: some detail markets may render odds without a resolvable outcomeId.
-    // Without outcomeId the betslip cannot be placed, so don't add it.
+    // Some detail markets may render odds without a resolvable outcomeId.
+    // We still allow adding them to the betslip for UX, but placement may fail until odds are refreshed.
     const safeOutcomeId = outcomeId == null ? "" : String(outcomeId).trim();
-    const safeOddsVersion = Number.isFinite(Number(acceptedOddsVersion)) ? Number(acceptedOddsVersion) : 1;
     if (!safeOutcomeId) {
-      setBetslipNotice("This selection is no longer available.");
+      setBetslipNotice("This selection is not available right now.");
       setTimeout(() => setBetslipNotice(null), 2000);
       return;
     }
+    const safeSelectionKey = selectionKey == null ? "" : String(selectionKey).trim();
+    const safeOddsVersion = Number.isFinite(Number(acceptedOddsVersion)) ? Number(acceptedOddsVersion) : 1;
     setSelectedBetsBySlot((prevBySlot) => {
       const prev = prevBySlot[activeSlipSlot];
       const exists = prev.find((b) => b.matchId === match.id && b.market === market && b.selection === selection);
@@ -239,6 +241,7 @@ export default function App() {
           selection,
           odd,
           outcomeId: safeOutcomeId,
+          selectionKey: safeSelectionKey,
           acceptedOddsVersion: safeOddsVersion,
           lastFetchedAt,
           status,
