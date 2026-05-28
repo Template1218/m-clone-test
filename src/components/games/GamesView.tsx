@@ -9,7 +9,7 @@ const SAMPLE_GAMES: Game[] = [
   { 
     id: 'keno', 
     name: 'Fast Keno', 
-    image: 'https://images.unsplash.com/photo-1518623489648-a173ef7824f3?auto=format&fit=crop&q=80&w=600', 
+    image: '/games/Fast keno.jpg', 
     provider: 'Spribe', 
     isNew: true, 
     fairness: true 
@@ -17,21 +17,21 @@ const SAMPLE_GAMES: Game[] = [
   { 
     id: 'rocket', 
     name: 'Crazy Rocket', 
-    image: 'https://images.unsplash.com/photo-1635326445020-22101e4a194e?auto=format&fit=crop&q=80&w=600', 
+    image: '/games/crazy_rocket.png', 
     provider: 'Atlas-V', 
     fairness: true 
   },
   { 
     id: 'aviator', 
     name: 'Aviator', 
-    image: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&q=80&w=600', 
+    image: '/games/Aviator.png', 
     provider: 'Spribe', 
     fairness: true 
   },
   { 
     id: 'plinko', 
     name: 'Plinko', 
-    image: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&q=80&w=600', 
+    image: '/games/Planko.jpg', 
     provider: 'Spribe', 
     isNew: true, 
     fairness: true 
@@ -39,28 +39,28 @@ const SAMPLE_GAMES: Game[] = [
   { 
     id: 'ball', 
     name: 'Crazy Ball', 
-    image: 'https://images.unsplash.com/photo-1544006659-f0b21f04cb1d?auto=format&fit=crop&q=80&w=600', 
+    image: '/games/crazyball.webp', 
     provider: 'Atlas-V', 
     fairness: true 
   },
   { 
     id: 'mine', 
     name: 'Mines', 
-    image: 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&q=80&w=600', 
+    image: '/games/mines.webp', 
     provider: 'Spribe', 
     fairness: true 
   },
   { 
     id: 'dice', 
     name: 'Dice', 
-    image: 'https://images.unsplash.com/photo-1551355738-16345dc337c7?auto=format&fit=crop&q=80&w=600', 
+    image: '/games/Dice.jpg', 
     provider: 'Spribe', 
     fairness: true 
   },
   { 
     id: 'limbo', 
     name: 'Limbo', 
-    image: 'https://images.unsplash.com/photo-1596742572439-d8190520025a?auto=format&fit=crop&q=80&w=600', 
+    image: '/games/limbo.jpg', 
     provider: 'Spribe', 
     fairness: true 
   },
