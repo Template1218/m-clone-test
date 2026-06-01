@@ -374,6 +374,22 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
       }
     }
 
+    // Non-socket providers (Mezzo / API-Football) often provide market codes that are
+    // more reliable than the human market title for category grouping.
+    // Example: "Total Corners" contains "total" which would otherwise fall into GOALS.
+    const codeU = String(marketCode || "").trim().toUpperCase();
+    if (codeU) {
+      if (codeU === "RCARD" || codeU.startsWith("RCARD_")) return "STATISTIC";
+      if (codeU.startsWith("CK_") || codeU.startsWith("COR_")) return "CORNERS";
+      if (codeU.startsWith("YC_")) return "YELLOW CARDS";
+      if (codeU.startsWith("CARDS_") || codeU.startsWith("CARD_")) return "STATISTIC";
+      if (codeU.startsWith("SHOTS_")) return "SHOTS";
+      if (codeU.includes("SHOT") && !codeU.includes("TARGET")) return "SHOTS";
+      if (codeU.includes("SHOT") && codeU.includes("TARGET")) return "SHOTS ON TARGET";
+      if (codeU === "DC" || codeU.includes("DOUBLE")) return "DOUBLE BETS";
+      if (codeU === "HTFT") return "MAIN";
+    }
+
     const n = String(name || "").toLowerCase();
 
     // Basketball-ish
@@ -384,13 +400,10 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
       if (n.includes("4th")) return "4TH QUARTER";
       return "1ST QUARTER";
     }
-    if (n.includes("total") || n.includes("over/under") || n.includes("odd/even")) return isBasketball ? "TOTALS" : "GOALS";
-    if (n.includes("handicap") || n.includes("spread")) return "HANDICAP";
-    if (n.includes("half") && n.includes("1st")) return "1ST HALF";
-    if (n.includes("half") && n.includes("2nd")) return "2ND HALF";
 
     // Football-ish
     if (n.includes("corner")) return "CORNERS";
+    if (n.includes("card")) return n.includes("yellow") ? "YELLOW CARDS" : "STATISTIC";
     if (n.includes("yellow")) return "YELLOW CARDS";
     if (n.includes("foul")) return "FOULS";
     if (n.includes("offside")) return "OFFSIDES";
@@ -406,6 +419,11 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
     if (n.includes("stat")) return "STATISTIC";
     if (n.includes("double")) return "DOUBLE BETS";
     if (n.includes("special")) return "SPECIALS";
+    if (n.includes("handicap") || n.includes("spread")) return "HANDICAP";
+    if (n.includes("half") && n.includes("1st")) return "1ST HALF";
+    if (n.includes("half") && n.includes("2nd")) return "2ND HALF";
+    // Keep this late: many stat markets contain "Total ..." (e.g. Total Corners / Cards / Shots).
+    if (n.includes("total") || n.includes("over/under") || n.includes("odd/even")) return isBasketball ? "TOTALS" : "GOALS";
 
     return "MAIN";
   }

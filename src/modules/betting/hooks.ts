@@ -668,23 +668,35 @@ export function useFixtureDetails(
       // the UI will only show the ingested DB markets (often just 1X2/DC/BTS).
       const provider = String(opts?.externalProvider || "").trim().toLowerCase();
       const externalEventId = String(opts?.externalEventId ?? "").trim();
-      if (provider === "mezzo" && externalEventId) {
-        const sportId = inferMezzoSportIdFromName(opts?.sportName ?? null);
+      const sportId = inferMezzoSportIdFromName(opts?.sportName ?? null);
+      const canUseMezzoDetails = !!externalEventId && Number.isFinite(Number(externalEventId)) && sportId > 0;
+      if (canUseMezzoDetails && provider !== "pissbet_socket") {
         // Use the "king5" alias route for nicer URLs; provider still stays "mezzo" internally.
-        const { data } = await api.get(`/odds/king5/event-details`, { params: { sportId, eventId: externalEventId } });
-        const raw = (data as any)?.data ?? null;
-        const mappedCollections = mapMezzoEventDetailsToCollections(raw);
+        const fetchDetails = async (force: boolean) => {
+          const { data } = await api.get(`/odds/king5/event-details`, {
+            params: { sportId, eventId: externalEventId, ...(force ? { force: 1, ttlSeconds: 0 } : {}) },
+          });
+          return data as any;
+        };
+
+        const first = await fetchDetails(false);
+        const raw1 = first?.data ?? null;
+        let mappedCollections = mapMezzoEventDetailsToCollections(raw1);
+
+        const marketCount = Array.isArray(mappedCollections)
+          ? mappedCollections.reduce((n: number, c: any) => n + (Array.isArray(c?.markets) ? c.markets.length : 0), 0)
+          : 0;
+
+        const data = marketCount === 0 ? await fetchDetails(true) : first;
+        const raw = data?.data ?? null;
+        mappedCollections = marketCount === 0 ? mapMezzoEventDetailsToCollections(raw) : mappedCollections;
         return {
           provider: "mezzo",
           eventId: externalEventId,
           sportId,
-          fetchedAt: (data as any)?.fetchedAt ?? null,
-          cached: Boolean((data as any)?.cached),
-          data: {
-            eventId: externalEventId,
-            collections: mappedCollections,
-            raw,
-          },
+          fetchedAt: data?.fetchedAt ?? null,
+          cached: Boolean(data?.cached),
+          data: { eventId: externalEventId, collections: mappedCollections, raw },
         };
       }
 
