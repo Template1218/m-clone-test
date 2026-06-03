@@ -101,9 +101,12 @@ export interface Sport {
 
 export interface Game {
   id: string;
+  uid?: string;
   name: string;
   image: string;
   provider: string;
+  providerId?: string;
   isNew?: boolean;
   fairness?: boolean;
+  raw?: any;
 }
