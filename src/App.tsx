@@ -742,7 +742,7 @@ export default function App() {
               <AccountPanelPage tab={accountPanelTab} onTabChange={setAccountPanelTab} user={user} />
             </div>
           ) : isGamesView ? (
-            <GamesView />
+            <GamesView user={user} onLoginRequired={() => handleAuth("login")} />
           ) : isLiveView ? (
             <LiveView />
           ) : isVirtualView ? (

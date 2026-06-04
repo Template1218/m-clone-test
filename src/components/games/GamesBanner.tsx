@@ -1,4 +1,4 @@
-export default function GamesBanner() {
+export default function GamesBanner({ onPlay }: { onPlay?: () => void }) {
   return (
     <div className="relative w-full h-[400px] rounded-[32px] overflow-hidden mb-12 border border-brand-primary/10 shadow-2xl group animate-in zoom-in-95 duration-700">
       <img 
@@ -15,7 +15,11 @@ export default function GamesBanner() {
           <span className="text-white drop-shadow-2xl">WIN 4000%</span><br />
           <span className="text-brand-primary drop-shadow-[0_0_20px_rgba(232,225,12,0.4)]">CASHBACK</span>
         </h1>
-        <button className="bg-white text-black font-black px-12 h-16 rounded-full text-lg uppercase italic shadow-2xl transition-all hover:scale-105 hover:bg-brand-primary active:scale-95 animate-in slide-in-from-left duration-700 delay-500">
+        <button
+          type="button"
+          onClick={onPlay}
+          className="bg-white text-black font-black px-12 h-16 rounded-full text-lg uppercase italic shadow-2xl transition-all hover:scale-105 hover:bg-brand-primary active:scale-95 animate-in slide-in-from-left duration-700 delay-500"
+        >
           PLAY NOW
         </button>
       </div>
