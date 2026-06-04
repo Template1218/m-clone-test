@@ -61,7 +61,10 @@ export default function GamesView({ user, onLoginRequired }: { user?: any; onLog
 
   return (
     <div className="max-w-[1400px] mx-auto py-6 lg:py-8 px-4 sm:px-6">
-      <GamesBanner />
+      <GamesBanner onPlay={() => {
+        const firstGame = filteredGames[0];
+        if (firstGame) handleLaunch(firstGame as any);
+      }} />
       <WinnersSection />
 
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 md:gap-6 mb-8 lg:mb-10">
