@@ -1,9 +1,9 @@
-const SILENT_API_LAUNCH_URL = "https://silentapi.sbs/api/GetGameUrl.php";
-const SILENT_API_TOKEN = "5fd878e1243de12c8ba83449da229eeb";
+import { api } from "../../lib/api";
 
 export type GameProvider = {
   id: string;
   name: string;
+  catalog?: string;
   raw?: any;
 };
 
@@ -19,23 +19,32 @@ export type LiveGame = {
   raw?: any;
 };
 
-const SILENT_PROVIDER: GameProvider = { id: "spribe", name: "SPRIBE" };
+const GAME_PROVIDERS: GameProvider[] = [
+  { id: "all", name: "All" },
+  { id: "spribe", name: "SPRIBE", catalog: "/games/silent-spribe.json" },
+  { id: "smartsoft", name: "SmartSoft", catalog: "/games/silent-smartsoft.json" },
+  { id: "evolution", name: "Evolution", catalog: "/games/silent-evolution.json" },
+  { id: "galaxsys", name: "Galaxsys", catalog: "/games/silent-galaxsys.json" },
+  { id: "inout", name: "InOut", catalog: "/games/silent-inout.json" },
+];
 
 type SilentCatalogGame = {
   gameNameEn?: string;
   gameID?: string;
   vendorCode?: number | string;
+  vendorId?: number | string;
   img?: string;
+  imgUrl2?: string;
 };
 
 export async function fetchGameProviders(): Promise<GameProvider[]> {
-  return [SILENT_PROVIDER];
+  return GAME_PROVIDERS;
 }
 
-export async function fetchProviderGames(provider: GameProvider): Promise<LiveGame[]> {
-  if (provider.id !== SILENT_PROVIDER.id) return [];
+async function fetchCatalog(provider: GameProvider): Promise<LiveGame[]> {
+  if (!provider.catalog) return [];
 
-  const res = await fetch("/games/silent-spribe.json");
+  const res = await fetch(provider.catalog);
   if (!res.ok) throw new Error("Unable to load game catalog.");
 
   const catalog = (await res.json()) as SilentCatalogGame[];
@@ -47,14 +56,22 @@ export async function fetchProviderGames(provider: GameProvider): Promise<LiveGa
         id: `${provider.id}:${uid || index}`,
         uid,
         name,
-        image: String(game.img || "").trim() || "/games/Aviator.png",
+        image: String(game.img || game.imgUrl2 || "").trim(),
         provider: provider.name,
         providerId: provider.id,
-        fairness: true,
+        isNew: provider.id === "spribe",
+        fairness: provider.id === "spribe" || provider.id === "smartsoft" || provider.id === "galaxsys" || provider.id === "inout",
         raw: game,
       };
     })
     .filter((game) => game.uid);
+}
+
+export async function fetchProviderGames(provider: GameProvider): Promise<LiveGame[]> {
+  if (provider.id !== "all") return fetchCatalog(provider);
+
+  const catalogs = await Promise.all(GAME_PROVIDERS.filter((item) => item.catalog).map(fetchCatalog));
+  return catalogs.flat();
 }
 
 export async function ensureGameMember(user: any) {
@@ -76,22 +93,10 @@ export function extractLaunchUrl(result: any) {
 export async function launchLiveGame(game: LiveGame, user: any) {
   if (!user?.id) throw new Error("Please log in to play live games.");
 
-  const res = await fetch(SILENT_API_LAUNCH_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${SILENT_API_TOKEN}`,
-    },
-    body: JSON.stringify({
-      member_account: String(user.id),
-      game_uid: game.uid,
-      balance: Number(user?.balance || 0),
-      home_url: window.location.origin,
-    }),
+  const { data } = await api.post("/games/launch", {
+    game_uid: game.uid,
+    home_url: window.location.origin,
   });
-
-  const data = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(data?.msg || data?.message || "Game launch failed.");
 
   const url = extractLaunchUrl(data);
   if (!url) throw new Error(data?.msg || data?.message || "Game launch failed.");
