@@ -78,6 +78,7 @@ export default function Navbar({ currentView, onViewChange }: NavbarProps) {
                 if (isSport) {
                   if (isDesktop) {
                     setIsSportDropdownOpen(!isSportDropdownOpen);
+                    onViewChange(item.view);
                   } else {
                     setIsSportDropdownOpen(false);
                     onViewChange(item.view);
