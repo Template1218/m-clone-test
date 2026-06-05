@@ -41,6 +41,7 @@ export default function App() {
   const [betslipNotice, setBetslipNotice] = useState<string | null>(null);
   const [stake, setStake] = useState<number>(20);
   const [view, setView] = useState<string>("home");
+  const [activeNavView, setActiveNavView] = useState<string>("home");
   const [comingSoonTitle, setComingSoonTitle] = useState<string>("Coming Soon");
   const [isBetslipOpen, setIsBetslipOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -120,34 +121,97 @@ export default function App() {
   });
   const [accountPanelTab, setAccountPanelTab] = useState<"deposit" | "bets" | "ticket">("deposit");
 
+  const getMatchRoute = (matchId: string) => `/match/${encodeURIComponent(matchId)}`;
+
+  const tabRoutes: Record<string, string> = {
+    home: "/",
+    sport: "/sport",
+    live: "/live",
+    games: "/games",
+    "live-games": "/live-games",
+    virtual: "/virtual-sports",
+    promotions: "/promotions",
+  };
+
+  const comingSoonTitles: Record<string, string> = {
+    live: "Live (Coming Soon)",
+    "live-games": "Live Games (Coming Soon)",
+    virtual: "Virtual Sports (Coming Soon)",
+    promotions: "Promotions (Coming Soon)",
+  };
+
   // Basic URL routing (no react-router): allow direct links + back button.
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const applyPath = (rawPath: string) => {
-      const p = String(rawPath || "/").toLowerCase();
+      const raw = String(rawPath || "/");
+      const p = raw.toLowerCase();
       if (p === "/betslip" || p.startsWith("/betslip/")) {
         setIsBetslipOpen(true);
         // Keep view as-is (home/detail/etc); betslip is an overlay.
         return;
       }
       setIsBetslipOpen(false);
+      if (p === "/match" || p.startsWith("/match/")) {
+        const encodedId = raw.split("/").slice(2).join("/");
+        let matchId = "";
+        try {
+          matchId = encodedId ? decodeURIComponent(encodedId) : "";
+        } catch {
+          matchId = encodedId;
+        }
+        if (matchId) {
+          setActiveNavView("home");
+          setSelectedMatchId(matchId);
+          setView("detail");
+          return;
+        }
+      }
       if (p === "/user/profile" || p.startsWith("/user/profile/")) {
+        setActiveNavView("account");
         setAccountPanelTab("deposit");
         setView("account");
         return;
       }
       if (p === "/user/bets" || p.startsWith("/user/bets/")) {
+        setActiveNavView("account");
         setAccountPanelTab("bets");
         setView("account");
         return;
       }
       if (p === "/user/ticket" || p.startsWith("/user/ticket/")) {
+        setActiveNavView("account");
         setAccountPanelTab("ticket");
         setView("account");
         return;
       }
+      const routeView = Object.entries(tabRoutes).find(([, route]) => p === route || (route !== "/" && p.startsWith(`${route}/`)))?.[0];
+      if (routeView) {
+        setActiveNavView(routeView);
+        setSelectedMatchId(null);
+        if (routeView === "home") {
+          setView("home");
+          setActiveSport(null);
+          setActiveLeague(null);
+          setActiveLeagueId(null);
+          setActiveApiFootballLeagueId(null);
+          return;
+        }
+        if (comingSoonTitles[routeView]) {
+          setComingSoonTitle(comingSoonTitles[routeView]);
+          setView("coming-soon");
+          return;
+        }
+        if (routeView === "sport" && isDesktop) {
+          setView("home");
+          return;
+        }
+        setView(routeView);
+        return;
+      }
       // Default route
+      setActiveNavView("home");
       setView("home");
     };
 
@@ -162,7 +226,7 @@ export default function App() {
     const onHash = () => applyPath(getPath());
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
-  }, []);
+  }, [isDesktop]);
 
   const pushPath = (path: string) => {
     if (typeof window === "undefined") return;
@@ -312,31 +376,33 @@ export default function App() {
       }
     }
     setSelectedMatchId(matchId);
+    setActiveNavView("home");
     setView("detail");
+    pushPath(getMatchRoute(matchId));
   };
 
   const handleViewChange = (newView: string) => {
-    if (newView === "live" || newView === "live-games" || newView === "virtual" || newView === "promotions") {
-      const label =
-        newView === "live" ? "Live (Coming Soon)" :
-        newView === "live-games" ? "Live Games (Coming Soon)" :
-        newView === "virtual" ? "Virtual Sports (Coming Soon)" :
-        "Promotions (Coming Soon)";
-      setComingSoonTitle(label);
+    setActiveNavView(newView);
+    if (comingSoonTitles[newView]) {
+      setComingSoonTitle(comingSoonTitles[newView]);
       setView("coming-soon");
       setSelectedMatchId(null);
+      pushPath(tabRoutes[newView]);
       return;
     }
 
     setView(newView);
     setSelectedMatchId(null);
+    if (newView === "sport" && isDesktop) {
+      setView("home");
+    }
     if (newView === 'home') {
       setActiveSport(null);
       setActiveLeague(null);
       setActiveLeagueId(null);
       setActiveApiFootballLeagueId(null);
-      pushPath("/");
     }
+    if (tabRoutes[newView]) pushPath(tabRoutes[newView]);
     if (newView === "account") pushPath("/user/profile");
   };
 
@@ -553,7 +619,7 @@ export default function App() {
     console.log("Fixtures count:", visibleFixtures.length);
   }, [activeSport, activeLeague, timeFilter, visibleFixtures.length]);
 
-  const selectedMatch = visibleFixtures.find((m) => m.id === selectedMatchId);
+  const selectedMatch = visibleFixtures.find((m) => String(m.id) === String(selectedMatchId));
 
   const isLiveView = view === "live";
   const isGamesView = view === "games";
@@ -571,28 +637,32 @@ export default function App() {
         onSignOut={handleSignOut}
         onLogoClick={() => {
           setMobileMenuOpen(false);
+          setActiveNavView("home");
           setView("home");
           setSelectedMatchId(null);
           pushPath("/");
         }}
         onOpenDeposit={() => {
+          setActiveNavView("account");
           setAccountPanelTab("deposit");
           setView("account");
           pushPath("/user/profile");
         }}
         onOpenBetsHistory={() => {
+          setActiveNavView("account");
           setAccountPanelTab("bets");
           setView("account");
           pushPath("/user/bets");
         }}
         onOpenCheckTicket={() => {
+          setActiveNavView("account");
           setAccountPanelTab("ticket");
           setView("account");
           pushPath("/user/ticket");
         }}
       />
       <Navbar
-        currentView={view === "detail" ? "home" : view}
+        currentView={view === "detail" ? "home" : activeNavView}
         onViewChange={handleViewChange}
       />
 
@@ -623,6 +693,7 @@ export default function App() {
                     type="button"
                     onClick={() => {
                       setMobileMenuOpen(false);
+                      setActiveNavView("home");
                       setView("home");
                       setSelectedMatchId(null);
                       pushPath("/");
@@ -662,12 +733,14 @@ export default function App() {
                       onClick={() => {
                         setMobileMenuOpen(false);
                         if (item.view === "check-ticket") {
+                          setActiveNavView("account");
                           setAccountPanelTab("ticket");
                           setView("account");
                           pushPath("/user/ticket");
                           return;
                         }
                         if (item.view === "results" || item.view === "rules" || item.view === "contacts") {
+                          setActiveNavView(item.view);
                           setComingSoonTitle(`${item.label} (Coming Soon)`);
                           setView("coming-soon");
                           return;
@@ -795,6 +868,7 @@ export default function App() {
                       setFixturesTab("upcoming");
                       setTimeFilter("3 Hours");
                       setSelectedMatchId(null);
+                      pushPath("/");
                     }}
                     className={`px-4 py-2 font-normal transition-all flex-1 rounded-full ${selectedMatchId ? "text-[13px]" : "text-[14px]"} ${fixturesTab === "upcoming" ? "bg-brand-primary text-black shadow-lg shadow-green-500/20" : "text-gray-500 hover:text-white"}`}
                   >
@@ -804,6 +878,7 @@ export default function App() {
                     onClick={() => {
                       setFixturesTab("top");
                       setSelectedMatchId(null);
+                      pushPath("/");
                     }}
                     className={`px-4 py-2 font-normal flex-1 rounded-full transition-all ${fixturesTab === "top" ? "bg-brand-primary text-black shadow-lg shadow-green-500/20" : "text-gray-500 hover:text-white"} ${selectedMatchId ? "text-[13px]" : "text-[14px]"}`}
                   >
@@ -894,6 +969,7 @@ export default function App() {
                     onBack={() => {
                       setSelectedMatchId(null);
                       setView("home");
+                      pushPath("/");
                     }}
                   />
                 </div>
