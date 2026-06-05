@@ -1,5 +1,8 @@
 import { api } from "../../lib/api";
 
+const rawApiBase = (import.meta as any)?.env?.VITE_API_BASE_URL ? String((import.meta as any).env.VITE_API_BASE_URL) : "";
+const backendAssetBase = rawApiBase.trim().replace(/\/+$/, "").replace(/\/api$/i, "") || window.location.origin;
+
 export type GameProvider = {
   id: string;
   name: string;
@@ -37,6 +40,14 @@ type SilentCatalogGame = {
   imgUrl2?: string;
 };
 
+function resolveGameImage(image: string) {
+  const trimmed = String(image || "").trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("data:")) return trimmed;
+  if (trimmed.startsWith("/game-assets/")) return `${backendAssetBase}${encodeURI(trimmed)}`;
+  return trimmed;
+}
+
 export async function fetchGameProviders(): Promise<GameProvider[]> {
   return GAME_PROVIDERS;
 }
@@ -56,7 +67,7 @@ async function fetchCatalog(provider: GameProvider): Promise<LiveGame[]> {
         id: `${provider.id}:${uid || index}`,
         uid,
         name,
-        image: String(game.img || game.imgUrl2 || "").trim(),
+        image: resolveGameImage(String(game.img || game.imgUrl2 || "")),
         provider: provider.name,
         providerId: provider.id,
         isNew: provider.id === "spribe",

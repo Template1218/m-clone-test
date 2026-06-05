@@ -18,6 +18,10 @@ export default defineConfig(() => {
           target: process.env.VITE_API_BASE_URL || 'http://localhost:4000',
           changeOrigin: true,
         },
+        '/game-assets': {
+          target: process.env.VITE_API_BASE_URL || 'http://localhost:4000',
+          changeOrigin: true,
+        },
       },
     },
   };

@@ -25,8 +25,8 @@ export default function GameCard({ game, launching = false, onLaunch }: GameCard
       disabled={launching}
       className="relative group cursor-pointer text-left disabled:cursor-wait"
     >
-      <div className="h-full overflow-hidden rounded-2xl border border-white/10 bg-[#111] transition-all duration-300 group-hover:-translate-y-1 group-hover:border-brand-primary/60 group-hover:shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
-        <div className="relative aspect-[3/4] overflow-hidden bg-[#171717]">
+      <div className="h-full overflow-hidden rounded-xl border border-white/10 bg-[#111] transition-all duration-300 group-hover:-translate-y-1 group-hover:border-brand-primary/60 group-hover:shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
+        <div className="relative aspect-[4/3] overflow-hidden bg-[#171717]">
           {hasImage ? (
             <img
               src={game.image}
@@ -58,15 +58,15 @@ export default function GameCard({ game, launching = false, onLaunch }: GameCard
             </div>
           )}
 
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/75 to-transparent p-3 pt-12">
-            <div className="mx-auto flex w-fit items-center justify-center gap-1.5 rounded-lg bg-brand-primary px-2.5 py-1.5 text-[9px] font-black uppercase italic text-black shadow-xl transition-transform group-hover:scale-[1.03]">
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent p-2 pt-10">
+            <div className="mx-auto flex w-fit items-center justify-center gap-1.5 rounded-md bg-brand-primary px-2.5 py-1.5 text-[9px] font-black uppercase italic text-black shadow-xl transition-transform group-hover:scale-[1.03]">
               {launching ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3 fill-black" />}
               {launching ? "Opening" : "Play Now"}
             </div>
           </div>
         </div>
 
-        <div className="border-t border-white/[0.06] px-3 py-3">
+        <div className="border-t border-white/[0.06] px-3 py-2">
           <h3 className="truncate text-[12px] font-black uppercase italic tracking-wide text-white transition-colors group-hover:text-brand-primary">
             {game.name}
           </h3>
