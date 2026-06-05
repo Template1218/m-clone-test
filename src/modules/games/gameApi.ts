@@ -5,6 +5,9 @@ const backendAssetBase = rawApiBase.trim().replace(/\/+$/, "").replace(/\/api$/i
 const evolutionCloudinaryBase = (import.meta as any)?.env?.VITE_EVOLUTION_CLOUDINARY_BASE_URL
   ? String((import.meta as any).env.VITE_EVOLUTION_CLOUDINARY_BASE_URL).trim().replace(/\/+$/, "")
   : "";
+const evolutionCloudinaryVersion = (import.meta as any)?.env?.VITE_EVOLUTION_CLOUDINARY_VERSION
+  ? String((import.meta as any).env.VITE_EVOLUTION_CLOUDINARY_VERSION).trim().replace(/^v/i, "")
+  : "";
 
 export type GameProvider = {
   id: string;
