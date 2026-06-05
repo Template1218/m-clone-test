@@ -51,7 +51,7 @@ export default function OfflineTicketModal(props: { open: boolean; onClose: () =
             </button>
 
             <div className="flex flex-col items-center text-center">
-              <div className="text-brand-primary font-black text-2xl uppercase italic">KING5bet</div>
+              <img src="/brand/king5bet-logo.png" alt="KING5bet" className="h-12 w-auto max-w-[220px] object-contain" />
               <div className="mt-4 text-white font-black text-sm uppercase tracking-wide">Fast Bet Code</div>
 
               <div className="mt-3 flex items-center gap-2">

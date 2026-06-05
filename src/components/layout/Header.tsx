@@ -67,13 +67,8 @@ export default function Header({
     <header className="h-[50px] bg-brand-primary flex items-center px-4 sticky top-0 z-[100] shadow-md border-b border-black/5">
       {/* Mobile */}
       <div className="flex items-center justify-between w-full lg:hidden">
-        <button type="button" onClick={onLogoClick} className="flex items-center gap-1 cursor-pointer">
-          <div className="flex flex-col items-center leading-none">
-            <span className="text-lg font-black text-black italic tracking-tighter">king5</span>
-            <div className="bg-black text-[#a3e635] px-1 py-0.5 mt-[-1px] rounded-sm transform">
-              <span className="text-[8px] font-black italic">bet</span>
-            </div>
-          </div>
+        <button type="button" onClick={onLogoClick} className="flex items-center cursor-pointer" aria-label="KING5bet home">
+          <img src="/brand/king5bet-logo-black.png" alt="KING5bet" className="h-11 w-auto max-w-[170px] object-contain" />
         </button>
 
         <div className="flex items-center gap-2">
@@ -167,13 +162,8 @@ export default function Header({
 
       {/* Desktop */}
       <div className="hidden lg:flex items-center gap-6 flex-1">
-        <div className="flex items-center gap-1 cursor-pointer" onClick={() => (window.location.href = "/")}>
-          <div className="flex flex-col items-center leading-none">
-            <span className="text-xl font-black text-black italic tracking-tighter">king5</span>
-            <div className="bg-black text-brand-primary px-1.5 py-0.5 mt-[-1px] rounded-sm transform">
-              <span className="text-[10px] font-black italic">bet</span>
-            </div>
-          </div>
+        <div className="flex items-center cursor-pointer" onClick={() => (window.location.href = "/")}>
+          <img src="/brand/king5bet-logo-black.png" alt="KING5bet" className="h-12 w-auto max-w-[210px] object-contain" />
         </div>
 
         {user && (
