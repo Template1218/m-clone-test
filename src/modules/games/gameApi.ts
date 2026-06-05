@@ -2,6 +2,9 @@ import { api } from "../../lib/api";
 
 const rawApiBase = (import.meta as any)?.env?.VITE_API_BASE_URL ? String((import.meta as any).env.VITE_API_BASE_URL) : "";
 const backendAssetBase = rawApiBase.trim().replace(/\/+$/, "").replace(/\/api$/i, "") || window.location.origin;
+const evolutionCloudinaryBase = (import.meta as any)?.env?.VITE_EVOLUTION_CLOUDINARY_BASE_URL
+  ? String((import.meta as any).env.VITE_EVOLUTION_CLOUDINARY_BASE_URL).trim().replace(/\/+$/, "")
+  : "";
 
 export type GameProvider = {
   id: string;
@@ -44,6 +47,10 @@ function resolveGameImage(image: string) {
   const trimmed = String(image || "").trim();
   if (!trimmed) return "";
   if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("data:")) return trimmed;
+  if (trimmed.startsWith("/game-assets/evolution/") && evolutionCloudinaryBase) {
+    const cloudinaryFileName = (trimmed.split("/").pop() || "").replace(/\s+/g, "_");
+    return `${evolutionCloudinaryBase}/${encodeURIComponent(cloudinaryFileName)}`;
+  }
   if (trimmed.startsWith("/game-assets/")) return `${backendAssetBase}${encodeURI(trimmed)}`;
   return trimmed;
 }
