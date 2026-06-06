@@ -52,7 +52,7 @@ export default function App() {
   const [activeLeagueId, setActiveLeagueId] = useState<string | null>(null);
   const [activeApiFootballLeagueId, setActiveApiFootballLeagueId] = useState<string | null>(null);
   const [timeFilter, setTimeFilter] = useState<string>('All Time');
-  const [fixturesTab, setFixturesTab] = useState<"upcoming" | "top">("top");
+  const [fixturesTab, setFixturesTab] = useState<"upcoming" | "top">("upcoming");
   const [isDesktop, setIsDesktop] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.matchMedia("(min-width: 1024px)").matches;

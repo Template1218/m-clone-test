@@ -200,34 +200,50 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="p-8 space-y-8"
+              className="p-6 sm:p-10 space-y-8"
             >
-              <div className="flex flex-col md:flex-row items-center justify-between p-8 bg-brand-dark/50 border border-white/5 rounded-3xl gap-6">
-                <div className="text-center md:text-left">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Total Available Balance</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl lg:text-5xl font-black text-white">{amount(user?.balance).toFixed(2)}</span>
-                    <span className="text-xl font-bold text-brand-primary">ETB</span>
-                  </div>
+              <div className="relative overflow-hidden p-10 bg-brand-dark/50 border border-white/5 rounded-3xl flex flex-col items-center justify-center text-center gap-2">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(193,223,31,0.03),transparent_70%)]" />
+                <p className="relative z-10 text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-2">Total Available Balance</p>
+                <div className="relative z-10 flex items-baseline gap-3">
+                  <span className="text-5xl lg:text-7xl font-black text-white italic tracking-tighter tabular-nums drop-shadow-[0_0_20px_rgba(255,255,255,0.1)]">{amount(user?.balance).toFixed(2)}</span>
+                  <span className="text-2xl font-black text-brand-primary italic">ETB</span>
                 </div>
-                <button className="w-full md:w-auto bg-brand-primary text-black px-12 py-4 rounded-2xl font-black uppercase tracking-widest text-[13px] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-brand-primary/10">
-                  Top Up Now
-                </button>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-brand-dark/30 p-6 border border-white/5 rounded-2xl group hover:border-white/10 transition-colors">
-                  <span className="text-gray-500 text-[9px] font-bold uppercase tracking-widest block mb-1.5">Account ID</span>
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold text-white tracking-tight">{user?.displayName || user?.id || "-"}</span>
-                    <CreditCard size={18} className="text-white/10 group-hover:text-brand-primary transition-colors" />
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-4 max-w-2xl mx-auto w-full">
+                <div className="bg-brand-dark/30 border border-white/5 rounded-2xl divide-y divide-white/5 overflow-hidden">
+                  <div className="p-5 flex items-center justify-between group hover:bg-white/[0.02] transition-all">
+                    <div className="flex flex-col">
+                      <span className="text-gray-500 text-[9px] font-black uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                        <CreditCard size={10} className="text-brand-primary" />
+                        Account Identifier
+                      </span>
+                      <span className="text-base font-black text-white tracking-tight">{user?.displayName || user?.id || "-"}</span>
+                    </div>
+                    <div className="text-[10px] font-black text-brand-primary/40 uppercase italic px-3 py-1 bg-brand-primary/5 rounded-full">Active</div>
                   </div>
-                </div>
-                <div className="bg-brand-dark/30 p-6 border border-white/5 rounded-2xl group hover:border-white/10 transition-colors">
-                  <span className="text-gray-500 text-[9px] font-bold uppercase tracking-widest block mb-1.5">Phone Number</span>
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold text-white tracking-tight">{user?.phoneNumber || "-"}</span>
-                    <Clock size={18} className="text-white/10 group-hover:text-brand-primary transition-colors" />
+                  
+                  <div className="p-5 flex items-center justify-between group hover:bg-white/[0.02] transition-all">
+                    <div className="flex flex-col">
+                      <span className="text-gray-500 text-[9px] font-black uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                        <Wallet size={10} className="text-brand-primary" />
+                        Withdrawal Method
+                      </span>
+                      <span className="text-base font-black text-white tracking-tight">Main Wallet (ETB)</span>
+                    </div>
+                    <ChevronRight size={16} className="text-white/10 group-hover:text-white transition-colors" />
+                  </div>
+
+                  <div className="p-5 flex items-center justify-between group hover:bg-white/[0.02] transition-all">
+                    <div className="flex flex-col">
+                      <span className="text-gray-500 text-[9px] font-black uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                        <Clock size={10} className="text-brand-primary" />
+                        Registration Date
+                      </span>
+                      <span className="text-base font-black text-white tracking-tight">{fmtDate(user?.createdAt)}</span>
+                    </div>
+                    <Info size={16} className="text-white/10 group-hover:text-white transition-colors" />
                   </div>
                 </div>
               </div>
