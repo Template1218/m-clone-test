@@ -219,10 +219,10 @@ export default function MatchCard({
         }}
         disabled={hardDisabled || !hasOdd}
         aria-disabled={blocked}
-        className={`relative flex items-center justify-between px-2 h-8 flex-1 text-[10px] font-bold rounded-lg transition-all border ${
+        className={`relative flex items-center justify-between px-2 h-8 flex-1 text-[10px] font-bold rounded-lg transition-all border shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_1px_2px_rgba(0,0,0,0.28)] ${
           isBetSelected(market, sel)
             ? "bg-brand-primary text-black border-brand-primary shadow-lg shadow-brand-primary/20 scale-[1.01]"
-            : "bg-[#161616] text-gray-300 border border-zinc-800 hover:bg-zinc-800 hover:border-zinc-700"
+            : "bg-[#171717] text-gray-300 border-white/10 hover:bg-[#1f1f1f] hover:border-brand-primary/35 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_0_0_1px_rgba(204,255,0,0.06)]"
         } ${(blocked || !hasOdd) ? "opacity-60 hover:bg-transparent" : "active:scale-95"}`}
       >
         <span
@@ -247,8 +247,8 @@ export default function MatchCard({
     <>
       {/* Mobile Card Layout */}
       <div
-        className={`lg:hidden flex flex-col bg-[#111111] border rounded-xl p-3 mb-1.5 gap-3 cursor-pointer active:scale-[0.99] transition-all relative overflow-hidden ${
-          isSelected ? "border-brand-primary/40 shadow-lg shadow-brand-primary/5" : "border-white/5"
+        className={`lg:hidden flex flex-col bg-[#101010] border rounded-xl p-3 mb-2 gap-3 cursor-pointer active:scale-[0.99] transition-all relative overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.035),0_5px_14px_rgba(0,0,0,0.2)] ${
+          isSelected ? "border-brand-primary/45 shadow-lg shadow-brand-primary/8" : "border-white/10 hover:border-white/18"
         }`}
         onClick={() => onClick(match.id)}
       >
@@ -344,10 +344,10 @@ export default function MatchCard({
 
       {/* Desktop Card Layout */}
       <div
-        className={`hidden lg:flex flex-col border-b border-white/[0.03] hover:bg-white/[0.02] transition-all cursor-pointer group/card px-4 relative overflow-hidden ${
+        className={`hidden lg:flex flex-col border border-white/10 rounded-lg mb-2 bg-[#0f0f0f] hover:bg-[#141414] hover:border-white/18 transition-all cursor-pointer group/card px-4 relative overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_6px_18px_rgba(0,0,0,0.16)] ${
           isSelected
-            ? "bg-brand-primary/[0.03] border-l-4 border-l-brand-primary"
-            : "border-l-4 border-l-transparent"
+            ? "bg-brand-primary/[0.04] border-brand-primary/45 border-l-4 border-l-brand-primary"
+            : "border-l-4 border-l-white/10"
         }`}
         onClick={() => onClick(match.id)}
       >
@@ -425,7 +425,7 @@ export default function MatchCard({
             className="grid items-center gap-3 grid-cols-[1.5fr_1.5fr_1fr] pb-2 mt-1 relative z-10"
           >
             {/* Match Result Group */}
-            <div className="flex gap-1.5 w-full pr-4 border-r border-white/5 py-1">
+            <div className="flex gap-1.5 w-full pr-4 border-r border-white/10 py-1">
               <OddsButton
                 market="Match Result"
                 sel="1"
@@ -453,7 +453,7 @@ export default function MatchCard({
             </div>
 
             {/* Double Chance Group */}
-            <div className="flex gap-1.5 w-full px-4 border-r border-white/5 py-1">
+            <div className="flex gap-1.5 w-full px-4 border-r border-white/10 py-1">
               <OddsButton
                 market="Double Chance"
                 sel="1X"

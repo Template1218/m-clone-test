@@ -4,6 +4,32 @@ import { useCatalog, useMezzoTopLeagues, usePissbetTopLeagues } from '../../modu
 import { useState, useRef, useEffect } from 'react';
 import SidebarSkeleton from './SidebarSkeleton';
 
+function WorldGamesIcon({ className = "w-3 h-3" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 680 680" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <clipPath id="world-games-clip">
+          <circle cx="340" cy="340" r="240" />
+        </clipPath>
+      </defs>
+      <circle cx="340" cy="340" r="240" fill="#2196F3" />
+      <g clipPath="url(#world-games-clip)" fill="#4CAF50">
+        <path d="M160 220Q180 200 200 215Q220 230 215 270Q210 310 195 340Q185 370 175 400Q160 430 155 400Q145 370 148 340Q150 300 148 270Q145 245 160 220Z" />
+        <path d="M300 200Q330 190 350 200Q365 215 360 240Q355 260 345 265Q360 270 365 300Q370 340 360 380Q348 420 335 440Q320 420 310 380Q300 340 305 300Q310 270 320 260Q308 250 305 230Q300 215 300 200Z" />
+        <path d="M380 190Q430 178 480 185Q520 192 530 220Q535 245 515 260Q490 270 460 268Q435 265 415 255Q395 245 380 225Q370 205 380 190Z" />
+        <path d="M410 310Q450 300 485 315Q520 330 535 365Q548 395 525 425Q500 458 462 468Q430 476 405 455Q385 438 395 405Q405 375 430 360Q400 345 410 310Z" />
+        <path d="M225 470Q250 455 280 465Q305 475 315 505Q325 535 300 555Q270 580 238 565Q210 552 210 520Q210 490 225 470Z" />
+      </g>
+      <circle cx="340" cy="340" r="240" fill="none" stroke="#90CAF9" strokeWidth="18" opacity="0.65" />
+    </svg>
+  );
+}
+
+function isWorldGamesName(name?: string | null) {
+  const n = String(name || "").trim().toLowerCase();
+  return n === "world" || n === "international" || n.includes("world cup") || n.includes("friendly internationals");
+}
+
 interface SidebarProps {
   activeSport: string | null;
   onSportChange: (id: string | null) => void;
@@ -155,18 +181,18 @@ export default function Sidebar({
       : sports;
 
   return (
-    <aside className={`w-64 border-r border-brand-border overflow-y-auto bg-brand-dark h-full ${className || ""}`}>
+    <aside className={`w-64 border-r border-brand-border overflow-y-auto bg-[#0A0A0A] h-full ${className || ""}`}>
       {isLoading ? (
         <SidebarSkeleton />
       ) : (
-        <div className="p-2.5 space-y-3">
+        <div className="min-h-full">
           {/* Top Leagues Section */}
-          <div className="bg-brand-surface rounded-xl overflow-hidden border border-brand-border/50 shadow-xl">
-            <div className="p-3 text-[11px] font-bold uppercase tracking-wider flex items-center gap-2 bg-white/[0.03] border-b border-brand-border/50 text-gray-400">
+          <div className="bg-[#0A0A0A] border-b border-zinc-800/80">
+            <div className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider flex items-center gap-2 bg-[#111111] border-b border-zinc-800/80 text-gray-400">
               <Trophy className="w-3.5 h-3.5 text-brand-primary" />
               Top Leagues
             </div>
-            <div className="py-1">
+            <div>
               {effectiveTopLeagues.map((league: any) => (
                 <div 
                    key={league.id || league.name} 
@@ -179,11 +205,15 @@ export default function Sidebar({
                      });
                      // Keep sport filter unchanged; Mezzo endpoint is keyed by sportId in App state.
                    }}
-                   className={`sidebar-item group !py-1.5 border-b border-brand-border/10 last:border-0 hover:bg-white/[0.02] cursor-pointer ${activeLeague === league.name ? 'bg-brand-primary/10 text-brand-primary' : ''}`}
+                   className={`sidebar-item group !rounded-none !px-4 !py-2.5 border-b border-zinc-900 last:border-0 hover:bg-zinc-900/80 cursor-pointer ${activeLeague === league.name ? 'bg-brand-primary/10 text-brand-primary border-l-2 border-l-brand-primary' : ''}`}
                
                 >
                   <div className={`w-4 h-4 rounded-full bg-white/5 flex items-center justify-center flex-shrink-0 transition-colors border border-white/5 ${activeLeague === league.name ? 'bg-brand-primary/40 border-brand-primary' : 'group-hover:bg-brand-primary/20'}`}>
-                    <span className="text-[10px] leading-none">⚽</span>
+                    {isWorldGamesName(league.country || league.name) ? (
+                      <WorldGamesIcon className="w-3.5 h-3.5" />
+                    ) : (
+                      <span className="text-[10px] leading-none">{"\u26BD"}</span>
+                    )}
                   </div>
                   <span className={`truncate flex-1 text-[13px] font-medium transition-colors ${activeLeague === league.name ? 'text-white' : 'group-hover:text-white'}`}>{league.name}</span>
                   <div className="flex items-center gap-1.5">
@@ -204,10 +234,10 @@ export default function Sidebar({
           </div>
 
           {/* Filter by Time Button */}
-          <div className="relative" ref={dropdownRef}>
+          <div className="relative border-b border-zinc-800/80" ref={dropdownRef}>
             <div 
               onClick={() => setIsTimeDropdownOpen(!isTimeDropdownOpen)}
-              className="bg-brand-yellow text-black p-3 text-center font-bold text-[12px] cursor-pointer rounded-full hover:brightness-110 active:scale-95 transition-all uppercase tracking-tight shadow-md flex items-center justify-center gap-2"
+              className="bg-brand-yellow text-black px-4 py-3 text-center font-bold text-[12px] cursor-pointer hover:brightness-105 active:brightness-95 transition-all uppercase tracking-tight flex items-center justify-center gap-2"
             >
               <span>Filter by</span>
               <span className="bg-[#3b82f6] text-white px-1 rounded-sm flex items-center gap-1">
@@ -216,7 +246,7 @@ export default function Sidebar({
             </div>
 
             {isTimeDropdownOpen && (
-              <div className="absolute top-full left-0 right-0 mt-1.5 bg-[#1e1a2b] border border-white/5 shadow-2xl rounded-xl py-1.5 z-50 animate-in fade-in zoom-in-95 origin-top">
+              <div className="absolute top-full left-0 right-0 bg-[#111111] border-y border-zinc-800 shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 origin-top">
                 {['All Time', '1 Hour', '3 Hours', '6 Hours', '12 Hours', '24 Hours', '3 Days'].map((f) => (
                   <button
                     key={f}
@@ -235,35 +265,35 @@ export default function Sidebar({
           </div>
 
           {/* Sports Section */}
-          <div className="bg-brand-surface rounded-xl overflow-hidden border border-brand-border/50 shadow-xl">
+          <div className="bg-[#0A0A0A]">
             <div className="flex flex-col">
               {effectiveSports.map((sport: any) => {
                 const isExpanded = expandedSports.includes(sport.id);
                 const sportIcons: Record<string, string> = {
-                  'football': '⚽',
-                  'basketball': '🏀',
-                  'tennis': '🎾',
-                  'volleyball': '🏐',
-                  'hockey': '🏒',
-                  'cricket': '🏏',
-                  'handball': '🤾',
-                  'baseball': '⚾',
-                  'rugby': '🏉',
-                  'combat': '🥊'
+                  football: "\u26BD",
+                  basketball: "\uD83C\uDFC0",
+                  tennis: "\uD83C\uDFBE",
+                  volleyball: "\uD83C\uDFD0",
+                  hockey: "\uD83C\uDFD2",
+                  cricket: "\uD83C\uDFCF",
+                  handball: "\uD83E\uDD3E",
+                  baseball: "\u26BE",
+                  rugby: "\uD83C\uDFC9",
+                  combat: "\uD83E\uDD4A"
                 };
 
                 return (
-                  <div key={sport.id} className="flex flex-col border-b border-brand-border/10 last:border-0">
+                  <div key={sport.id} className="flex flex-col border-b border-zinc-900 last:border-0">
                     <div 
                       onClick={() => {
                         toggleSport(sport.id);
                         onSportChange(activeSport === sport.id ? null : sport.id);
                         onLeagueChange({ name: null, id: null, apiFootballLeagueId: null });
                       }}
-                      className={`sidebar-item group py-2.5 cursor-pointer hover:bg-white/[0.02] ${isExpanded || activeSport === sport.id ? 'bg-white/[0.03] text-white border-l-2 border-brand-primary' : ''}`}
+                      className={`sidebar-item group !rounded-none px-4 py-3 cursor-pointer hover:bg-zinc-900/80 ${isExpanded || activeSport === sport.id ? 'bg-zinc-900/70 text-white border-l-2 border-brand-primary' : ''}`}
                     >
-                      <div className={`w-5 h-5 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 transition-colors border border-white/5 ${activeSport === sport.id ? 'bg-brand-primary/20 border-brand-primary' : 'group-hover:bg-brand-primary/10'}`}>
-                        <span className="text-[13px] leading-none">{sportIcons[sport.id] || '⚽'}</span>
+                      <div className={`w-5 h-5 rounded-md bg-white/5 flex items-center justify-center flex-shrink-0 transition-colors border border-white/5 ${activeSport === sport.id ? 'bg-brand-primary/20 border-brand-primary' : 'group-hover:bg-brand-primary/10'}`}>
+                        <span className="text-[13px] leading-none">{sportIcons[sport.id] || "\u26BD"}</span>
                       </div>
                       <span className="flex-1 font-bold text-[12px] uppercase tracking-wide">{sport.name}</span>
                       <div className="flex items-center gap-1.5">
@@ -273,7 +303,7 @@ export default function Sidebar({
                     </div>
                     
                     {isExpanded && sport.countries && (
-                      <div className="bg-black/30 py-0.5 transition-all">
+                      <div className="bg-black/35 transition-all">
                         {sport.countries.map((country: any) => (
                           <div 
                             key={country.name} 
@@ -289,7 +319,11 @@ export default function Sidebar({
                             }}
                             className={`flex items-center gap-2.5 px-5 py-2 hover:bg-white/5 cursor-pointer text-[12px] transition-colors group/country ${activeLeague === country.name ? 'text-brand-primary bg-white/[0.03]' : 'text-gray-400 hover:text-white'}`}
                           >
-                            <Globe className={`w-3 h-3 transition-colors ${activeLeague === country.name ? 'text-brand-primary' : 'text-gray-600 group-hover/country:text-brand-primary/60'}`} />
+                            {isWorldGamesName(country.name) ? (
+                              <WorldGamesIcon className="w-3.5 h-3.5 shrink-0" />
+                            ) : (
+                              <Globe className={`w-3 h-3 transition-colors ${activeLeague === country.name ? 'text-brand-primary' : 'text-gray-600 group-hover/country:text-brand-primary/60'}`} />
+                            )}
                             <span className="flex-1 font-medium">{country.name}</span>
                             <span className="text-[10px] text-gray-600 group-hover/country:text-gray-400 font-bold">{country.count}</span>
                           </div>

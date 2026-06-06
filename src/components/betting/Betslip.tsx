@@ -343,8 +343,8 @@ export default function Betslip({
         </div>
 
         {/* Header Tabs */}
-        <div className="px-4 py-2 flex items-center justify-between border-b border-white/5 bg-[#111111]">
-          <div className="flex gap-1 bg-black/40 p-1 rounded-xl">
+        <div className="px-5 py-3 flex items-center justify-between border-b border-white/5 bg-[#0d0d0d]">
+          <div className="flex gap-2 p-1 bg-white/[0.03] rounded-full border border-white/5">
             {([1, 2, 3] as const).map((slot) => {
               const isActive = activeSlot === slot;
               const count = slotCounts?.[slot] ?? 0;
@@ -353,23 +353,15 @@ export default function Betslip({
                   key={slot}
                   type="button"
                   onClick={() => onChangeSlot(slot)}
-                  className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-2 ${
+                  className={`px-4 py-2 rounded-full text-[10px] font-black uppercase transition-all flex items-center gap-1.5 ${
                     isActive
-                      ? "bg-brand-primary text-black shadow-lg shadow-brand-primary/10"
+                      ? "bg-brand-primary text-black"
                       : "text-gray-500 hover:text-white"
                   }`}
                 >
                   <span>SLIP {slot}</span>
                   {count > 0 && (
-                    <span
-                      className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] ${
-                        isActive
-                          ? "bg-black/10 text-black"
-                          : "bg-white/5 text-gray-400"
-                      }`}
-                    >
-                      {count}
-                    </span>
+                    <span className="text-[9px] font-black">{count}</span>
                   )}
                 </button>
               );
@@ -432,16 +424,12 @@ export default function Betslip({
         ) : null}
 
         {/* Bets List */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-2 py-3 space-y-2 no-scrollbar">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3 no-scrollbar pb-10">
           <AnimatePresence initial={false}>
             {selectedBets.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center py-20">
-                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
-                  <Smartphone className="w-8 h-8 text-white/20" />
-                </div>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-white/20 text-center">
-                  Betslip is Empty
-                </p>
+              <div className="h-full flex flex-col items-center justify-center py-20 opacity-30">
+                <Smartphone className="w-12 h-12 mb-4 text-white" strokeWidth={1} />
+                <p className="text-[10px] font-black uppercase tracking-[0.2em]">Ticket Empty</p>
               </div>
             ) : (
               selectedBets.map((bet) => (
@@ -450,33 +438,33 @@ export default function Betslip({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="bg-[#111111] rounded-xl p-3 relative group border border-white/5 hover:border-white/10 transition-all"
+                  className="bg-white rounded-sm p-3 relative group border-l-4 border-l-brand-primary shadow-lg"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="text-[12px] text-white font-bold leading-tight truncate mb-1">
+                      <div className="text-[11px] text-black font-black leading-tight uppercase italic truncate mb-1">
                         {bet.matchName}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-medium text-gray-500 uppercase">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tight">
                           {bet.market}
                         </span>
-                        <span className="w-1 h-1 rounded-full bg-white/10" />
-                        <span className="text-[10px] font-bold text-brand-primary uppercase">
+                        <div className="w-1 h-1 rounded-full bg-gray-200" />
+                        <span className="text-[10px] font-black text-black uppercase italic">
                           {bet.selection}
                         </span>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-col items-end gap-2 shrink-0">
                       <button
                         onClick={() =>
                           onRemoveBet(bet.matchId, bet.market, bet.selection)
                         }
-                        className="text-white/20 hover:text-red-500 transition-colors"
+                        className="text-gray-300 hover:text-red-500 transition-colors"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-3 h-3" />
                       </button>
-                      <div className="bg-brand-primary text-black px-2.5 py-1 rounded-lg text-[11px] font-bold shadow-lg shadow-brand-primary/10">
+                      <div className="bg-black text-white px-2 py-0.5 rounded-sm text-[11px] font-black italic">
                         {bet.odd.toFixed(2)}
                       </div>
                     </div>
@@ -494,56 +482,51 @@ export default function Betslip({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="p-4 pb-12 lg:pb-6 bg-[#111111] border-t border-white/5 space-y-3 shadow-2xl"
+              className="p-4 pb-12 lg:pb-6 bg-[#0d0d0d] border-t border-white/5 space-y-4 shadow-2xl relative z-10"
             >
               {/* Summary Row */}
               <div className="flex items-center justify-between px-1">
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">
+                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">
                     Total Odds
                   </span>
-                  <span className="text-lg font-black text-brand-primary leading-none">
+                  <span className="text-2xl font-black text-brand-primary italic leading-none tracking-tighter">
                     {totalOdds.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">
+                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">
                     Selections
                   </span>
-                  <span className="text-lg font-black text-white leading-none">
+                  <span className="text-2xl font-black text-white italic leading-none tracking-tighter tabular-nums">
                     {selectedBets.length}
                   </span>
                 </div>
               </div>
 
               {/* Stake Controller */}
-              <div className="bg-black/40 rounded-2xl p-1.5 border border-white/5">
-                <div className="flex items-center justify-between mb-1 px-2">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase">
-                    Stake Amount
-                  </span>
-                  <span className="text-[10px] font-bold text-brand-primary uppercase">
-                    ETB
-                  </span>
+              <div className="bg-white/5 rounded-sm p-2 border border-white/5 space-y-1.5">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-[0.1em]">Stake (ETB)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => onStakeChange(Math.max(1, stake - 10))}
-                    className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl text-white hover:bg-white/10 transition-colors active:scale-90"
+                    className="w-10 h-10 flex items-center justify-center bg-black/40 rounded-sm text-white hover:bg-black/60 transition-all border border-white/5"
                   >
-                    <div className="w-3 h-0.5 bg-white" />
+                    <div className="w-3 h-0.5 bg-white rounded-full" />
                   </button>
-                  <div className="flex-1">
+                  <div className="flex-1 bg-black/40 rounded-sm border border-white/5 flex items-center h-10">
                     <input
                       type="number"
                       value={stake}
                       onChange={(e) => onStakeChange(Number(e.target.value))}
-                      className="w-full bg-transparent text-center focus:outline-none text-white font-bold text-xl [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-full bg-transparent text-center focus:outline-none text-white font-black text-xl italic tracking-tighter [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   <button
                     onClick={() => onStakeChange(stake + 10)}
-                    className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-xl text-white hover:bg-white/10 transition-colors active:scale-90 text-lg font-bold"
+                    className="w-10 h-10 flex items-center justify-center bg-black/40 rounded-sm text-white hover:bg-black/60 transition-all border border-white/5 text-xl font-black italic"
                   >
                     +
                   </button>
@@ -551,105 +534,51 @@ export default function Betslip({
               </div>
 
               {/* Totals Breakdown */}
-              <div
-                className={`space-y-1.5 px-1 ${mobileDetailsOpen ? "" : "hidden lg:block"}`}
-              >
-                <div className="flex justify-between items-center">
-                  <span className="text-[11px] font-medium text-gray-400">
-                    Potential Payout
-                  </span>
-                  <span className="text-[11px] font-bold text-white">
-                    {(totalOdds * stake).toFixed(2)} ETB
-                  </span>
+              <div className={`space-y-1.5 px-1 ${mobileDetailsOpen ? "" : "hidden lg:block"}`}>
+                <div className="flex justify-between items-center text-[10px] font-bold">
+                  <span className="text-gray-400 uppercase tracking-tight">Potential Payout</span>
+                  <span className="text-white">{(totalOdds * stake).toFixed(2)} ETB</span>
                 </div>
 
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] font-medium text-gray-400">
-                      Income Tax
-                    </span>
-                    <span className="text-[9px] font-bold bg-white/5 px-1.5 py-0.5 rounded text-gray-500">
-                      15%
-                    </span>
-                  </div>
-                  <span className="text-[11px] font-bold text-red-400/80">
-                    -{incomeTax.toFixed(2)} ETB
-                  </span>
-                </div>
-
-                {/* Bonus Info */}
-                <div className="flex items-center justify-between bg-brand-primary/5 p-1.5 rounded-xl border border-brand-primary/10">
+                <div className="flex justify-between items-center text-[10px] font-bold">
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-brand-primary/20 rounded-full flex items-center justify-center">
-                      <Info className="w-2.5 h-2.5 text-brand-primary" />
-                    </div>
-                    <span className="text-[10px] font-bold text-brand-primary uppercase tracking-tight">
-                      Bonus Applied
-                    </span>
+                    <span className="text-gray-400 uppercase tracking-tight">Income Tax</span>
+                    <span className="text-[8px] bg-red-500/10 text-red-400 px-1 py-0.5 rounded border border-red-500/10">15%</span>
                   </div>
-                  <span className="text-[10px] font-black text-brand-primary uppercase italic">
-                    0%
-                  </span>
+                  <span className="text-red-400/80">-{incomeTax.toFixed(2)} ETB</span>
                 </div>
 
-                <div className="pt-1.5 mt-1.5 border-t border-white/5">
-                  <div className="flex justify-between items-end">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-gray-500 uppercase">
-                        Net Win
-                      </span>
-                      <span className="text-xl font-black text-brand-primary leading-tight tabular-nums">
-                        {netWin.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                        })}
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-bold text-brand-primary mb-1">
-                      ETB
+                <div className="h-px bg-white/5 my-1" />
+
+                <div className="flex justify-between items-end">
+                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Net Win</span>
+                  <div className="flex items-baseline gap-1 leading-none">
+                    <span className="text-3xl font-black text-brand-primary italic tracking-tighter tabular-nums drop-shadow-[0_0_10px_rgba(193,223,31,0.3)]">
+                      {netWin.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </span>
+                    <span className="text-[10px] font-black text-brand-primary italic uppercase">ETB</span>
                   </div>
                 </div>
               </div>
 
-              {/* Mobile details toggle (keeps selections visible) */}
-              <div className="lg:hidden pt-0.5">
+              {/* Mobile details toggle */}
+              <div className="lg:hidden">
                 <button
                   type="button"
                   onClick={() => setMobileDetailsOpen((v) => !v)}
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-1.5 text-[10px] font-black uppercase tracking-widest text-white/70 hover:text-white"
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-sm py-1.5 text-[9px] font-black uppercase tracking-widest text-white/70 hover:text-white"
                 >
                   {mobileDetailsOpen ? "Hide Details" : "Show Details"}
                 </button>
               </div>
 
               {/* Buttons */}
-              <div className="space-y-2 pt-1">
-                <div className="flex justify-center">
-                  {!isAuthenticated ? (
-                    <button
-                      onClick={handlePrintPreview}
-                      disabled={busy || createOffline.isPending}
-                      className="text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-white transition-colors disabled:opacity-50"
-                    >
-                      {createOffline.isPending
-                        ? "Preparing..."
-                        : "Print Preview"}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setPreviewOpen(true)}
-                      className="text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-white transition-colors"
-                    >
-                      Full Ticket Preview
-                    </button>
-                  )}
-                </div>
-
+              <div className="space-y-1.5 pt-1">
                 <div className="flex flex-col gap-1.5">
                   <button
                     onClick={handlePlaceOnline}
                     disabled={busy || (!isAuthenticated && authLoading)}
-                    className="w-full bg-brand-primary text-black font-black py-3.5 rounded-2xl text-[13px] uppercase tracking-wider hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_10px_20px_rgba(193,223,31,0.2)] disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full bg-brand-primary text-black font-black py-3 rounded-sm text-[12px] uppercase tracking-wider hover:bg-brand-primary/90 active:scale-[0.98] transition-all shadow-[0_5px_15px_rgba(193,223,31,0.2)] disabled:opacity-50"
                   >
                     {busy ? "Placing..." : "Place Bet Online"}
                   </button>
@@ -657,7 +586,7 @@ export default function Betslip({
                   <button
                     onClick={handlePrintPreview}
                     disabled={busy || createOffline.isPending}
-                    className="w-full bg-white/5 text-white font-bold py-2.5 rounded-2xl text-[11px] uppercase tracking-wide hover:bg-white/10 active:scale-[0.98] transition-all border border-white/5 disabled:opacity-50"
+                    className="w-full bg-white/5 text-white font-bold py-2 rounded-sm text-[10px] uppercase tracking-wide hover:bg-white/10 active:scale-[0.98] transition-all border border-white/5 disabled:opacity-50"
                   >
                     {createOffline.isPending
                       ? "Preparing..."
