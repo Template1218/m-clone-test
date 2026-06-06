@@ -41,7 +41,7 @@ export default function WinnersSection() {
             {/* Game Icon/Logo - Using Aviator for example */}
             <div className="w-20 h-14 bg-black/40 rounded-xl overflow-hidden p-2 flex items-center justify-center border border-white/5 group-hover:scale-105 transition-transform">
               <img 
-                src="https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&q=80&w=100" 
+                src="/games/Aviator.png" 
                 alt="Aviator" 
                 className="w-full h-full object-contain brightness-125"
               />

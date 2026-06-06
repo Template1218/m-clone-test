@@ -17,15 +17,15 @@
 }
 
 .bet-button {
-    @apply bg-brand-surface border border-brand-border py-2 px-3 rounded-sm text-sm font-medium transition-all hover:bg-brand-primary/10 hover:border-brand-primary/40 active:scale-95;
+    @apply bg-brand-surface border-2 border-brand-border py-2 px-3 rounded-sm text-sm font-medium transition-all hover:bg-brand-primary/10 hover:border-brand-primary/60 active:scale-95;
 }
 
 .bet-button-active {
-    @apply bg-brand-primary text-black border-brand-primary;
+    @apply bg-brand-primary text-black border-2 border-brand-primary shadow-[0_0_20px_rgba(193,223,31,0.5)];
 }
 
 .sidebar-item {
-    @apply flex items-center gap-3 px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer;
+    @apply flex items-center gap-3 px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer border-l-2 border-transparent hover:border-brand-primary;
 }
 
 /* Skeleton Shimmer */

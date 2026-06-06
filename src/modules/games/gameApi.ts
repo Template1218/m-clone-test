@@ -92,7 +92,44 @@ export async function fetchProviderGames(provider: GameProvider): Promise<LiveGa
   if (provider.id !== "all") return fetchCatalog(provider);
 
   const catalogs = await Promise.all(GAME_PROVIDERS.filter((item) => item.catalog).map(fetchCatalog));
-  return catalogs.flat();
+  return sortAllGames(catalogs.flat());
+}
+
+const ALL_GAMES_TOP_ORDER: Array<{ names: string[]; providerId?: string }> = [
+  { names: ["aviator"], providerId: "spribe" },
+  { names: ["jetx"], providerId: "smartsoft" },
+  { names: ["chicken road 2 0", "chicken road 2"], providerId: "inout" },
+  { names: ["chicken road"], providerId: "inout" },
+  { names: ["penalty unlimited", "penalty", "penality"], providerId: "inout" },
+  { names: ["plinkox", "plankox"], providerId: "smartsoft" },
+  { names: ["roulette"], providerId: "inout" },
+  { names: ["rollx"], providerId: "smartsoft" },
+];
+
+function normalizeGameName(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function getAllGamesPriority(game: LiveGame) {
+  const name = normalizeGameName(game.name);
+  return ALL_GAMES_TOP_ORDER.findIndex(
+    (entry) =>
+      (!entry.providerId || entry.providerId === game.providerId) &&
+      entry.names.some((alias) => name === normalizeGameName(alias)),
+  );
+}
+
+function sortAllGames(games: LiveGame[]) {
+  return [...games].sort((a, b) => {
+    const aPriority = getAllGamesPriority(a);
+    const bPriority = getAllGamesPriority(b);
+    if (aPriority !== bPriority) {
+      if (aPriority === -1) return 1;
+      if (bPriority === -1) return -1;
+      return aPriority - bPriority;
+    }
+    return 0;
+  });
 }
 
 export async function ensureGameMember(user: any) {
