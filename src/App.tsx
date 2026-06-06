@@ -665,6 +665,7 @@ export default function App() {
         currentView={view === "detail" ? "home" : activeNavView}
         onViewChange={handleViewChange}
       />
+      <div className="h-1 lg:h-1.5 w-full bg-gradient-to-b from-black to-transparent opacity-50 relative z-[85]" />
 
       {/* Mobile menu drawer */}
       <AnimatePresence>
@@ -785,7 +786,7 @@ export default function App() {
           ref={(el) => {
             mainScrollRef.current = el;
           }}
-          className={`flex-1 ${selectedMatchId ? "overflow-hidden" : "overflow-y-auto"} ${isGamesView || isVirtualView ? "bg-[#0a0a0a]" : "p-0 lg:p-4"} pb-32 lg:pb-4`}
+          className={`flex-1 ${selectedMatchId ? "overflow-hidden" : "overflow-y-auto w-full"} ${isGamesView || isVirtualView ? "bg-[#0a0a0a]" : "p-0"} pb-32 lg:pb-10`}
         >
           {isSportFiltersView ? (
             <div className="p-0 lg:hidden h-full">
@@ -822,15 +823,15 @@ export default function App() {
             <VirtualSportsView />
           ) : (
             <div
-              className={`flex flex-col lg:flex-row lg:gap-6 transition-all duration-300 ${selectedMatchId ? "items-start h-full" : ""} max-w-full`}
+              className={`flex flex-col lg:flex-row lg:gap-0 transition-all duration-300 ${selectedMatchId ? "items-start h-full" : ""} max-w-full`}
             >
               {/* Left Column: Match List */}
               <div
-                className={`transition-all duration-300 ${selectedMatchId ? "hidden lg:block lg:w-[40%] h-full overflow-y-auto no-scrollbar" : "w-full"} p-2 lg:p-0`}
+                className={`transition-all duration-300 ${selectedMatchId ? "hidden lg:block lg:w-[40%] h-full overflow-y-auto no-scrollbar" : "w-full"} p-0`}
               >
                 {/* Banner Carousel */}
                 {!selectedMatchId && banners.length > 0 && (
-                  <div className="relative w-full h-[180px] lg:h-[300px] lg:rounded-lg overflow-hidden mb-0.5 shadow-2xl -mx-2 lg:mx-0 w-[calc(100%+1rem)] lg:w-full group">
+                  <div className="relative w-full h-[180px] lg:h-[260px] overflow-hidden mb-0 shadow-2xl group">
                     <AnimatePresence mode="wait">
                       <motion.div
                         key={currentBanner}
@@ -861,8 +862,8 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Match Headers - Pill Shaped */}
-                <div className="flex bg-brand-surface rounded-full overflow-hidden mb-0.5 p-0.5 border border-white/5">
+                {/* Match Headers - Sharp Style */}
+                <div className="flex bg-black p-1 gap-1 border-b border-white/5">
                   <button
                     onClick={() => {
                       setFixturesTab("upcoming");
@@ -870,7 +871,7 @@ export default function App() {
                       setSelectedMatchId(null);
                       pushPath("/");
                     }}
-                    className={`px-4 py-2 font-normal transition-all flex-1 rounded-full ${selectedMatchId ? "text-[13px]" : "text-[14px]"} ${fixturesTab === "upcoming" ? "bg-brand-primary text-black shadow-lg shadow-green-500/20" : "text-gray-500 hover:text-white"}`}
+                    className={`px-6 py-2.5 font-black uppercase italic transition-all flex-1 rounded-sm text-[11px] tracking-widest ${fixturesTab === "upcoming" ? "bg-brand-primary text-black" : "text-gray-500 hover:text-white hover:bg-white/5"}`}
                   >
                     Upcoming
                   </button>
@@ -880,7 +881,7 @@ export default function App() {
                       setSelectedMatchId(null);
                       pushPath("/");
                     }}
-                    className={`px-4 py-2 font-normal flex-1 rounded-full transition-all ${fixturesTab === "top" ? "bg-brand-primary text-black shadow-lg shadow-green-500/20" : "text-gray-500 hover:text-white"} ${selectedMatchId ? "text-[13px]" : "text-[14px]"}`}
+                    className={`px-6 py-2.5 font-black uppercase italic transition-all flex-1 rounded-sm text-[11px] tracking-widest ${fixturesTab === "top" ? "bg-brand-primary text-black" : "text-gray-500 hover:text-white hover:bg-white/5"}`}
                   >
                     Top Matches
                   </button>
@@ -1043,12 +1044,6 @@ export default function App() {
         onMenuOpen={() => setMobileMenuOpen(true)}
       />
 
-      {/* Floating Chat Button */}
-      <div className="fixed bottom-6 right-6 z-50 hidden lg:block">
-        <button className="bg-brand-primary text-black p-4 rounded-full shadow-lg shadow-brand-primary/20 hover:scale-110 transition-transform">
-          <Activity className="w-6 h-6" />
-        </button>
-      </div>
 
       <AuthModal
         isOpen={authModal.open}

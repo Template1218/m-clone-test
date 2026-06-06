@@ -24,14 +24,14 @@ export default function GameCard({ game, launching = false, onLaunch }: GameCard
       onClick={() => onLaunch?.(game)}
       disabled={launching}
       aria-label={`Play ${game.name}`}
-      className="relative group cursor-pointer overflow-hidden rounded-md bg-[#111] text-left shadow-[0_1px_0_rgba(255,255,255,0.12)] transition-transform duration-200 hover:-translate-y-0.5 disabled:cursor-wait"
+      className="relative group cursor-pointer overflow-hidden rounded-xl border border-white/5 bg-[#121212] text-left shadow-[0_8px_30px_rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-1.5 hover:border-brand-primary/30 hover:shadow-[0_20px_40px_rgba(0,0,0,0.5),0_0_20px_rgba(193,223,31,0.1)] disabled:cursor-wait"
     >
-      <div className="relative aspect-[16/9] overflow-hidden rounded-md bg-[#1a1a1a]">
+      <div className="relative aspect-[4/3] overflow-hidden bg-black">
         {hasImage ? (
           <img
             src={game.image}
             alt={game.name}
-            className="h-full w-full object-fill"
+            className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-110"
             loading="lazy"
             referrerPolicy="no-referrer"
           />
@@ -44,22 +44,28 @@ export default function GameCard({ game, launching = false, onLaunch }: GameCard
         )}
 
         {game.isNew && (
-          <div className="absolute left-2 top-2 rounded bg-red-600 px-1.5 py-0.5 text-[8px] font-black uppercase leading-none text-white shadow-md">
+          <div className="absolute left-3 top-3 rounded-[4px] bg-red-600 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-white shadow-lg shadow-red-600/20">
             New
           </div>
         )}
 
 
-        <div className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 group-active:opacity-100">
-          <div className="flex items-center gap-2 rounded-full bg-brand-primary px-5 py-2.5 text-[11px] font-black uppercase italic text-black shadow-[0_0_24px_rgba(193,223,31,0.55)]">
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent px-4 pb-4 pt-10">
+          <div className="truncate text-[11px] font-black uppercase italic tracking-wider text-white drop-shadow-md">
+            {game.name}
+          </div>
+        </div>
+
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 backdrop-blur-[2px] transition-all duration-300 group-hover:opacity-100 group-focus-visible:opacity-100">
+          <div className="flex items-center gap-2 bg-brand-primary px-6 py-3 rounded-sm text-[12px] font-black uppercase italic text-black shadow-[0_0_30px_rgba(193,223,31,0.6)] transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
             <Play className="h-4 w-4 fill-black" />
             Play Now
           </div>
         </div>
 
         {launching && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/45">
-            <Loader2 className="h-6 w-6 animate-spin text-white" />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-md">
+            <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
           </div>
         )}
       </div>

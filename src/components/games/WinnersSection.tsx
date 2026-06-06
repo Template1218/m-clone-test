@@ -1,59 +1,88 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Flame, Trophy, TrendingUp } from 'lucide-react';
 
 const WINNERS = [
-  { id: '41***38', amount: 40000, currency: 'ETB', time: '07:05', date: '5.2.2026' },
-  { id: '41***39', amount: 35000, currency: 'ETB', time: '08:12', date: '5.2.2026' },
-  { id: '41***40', amount: 42000, currency: 'ETB', time: '09:45', date: '5.2.2026' },
-  { id: '41***41', amount: 28000, currency: 'ETB', time: '10:20', date: '5.2.2026' },
-  { id: '41***42', amount: 31000, currency: 'ETB', time: '11:15', date: '5.2.2026' },
+  { id: 'User_41**8', amount: 48250, currency: 'ETB', game: 'Aviator', color: 'bg-red-500' },
+  { id: 'Player_09**2', amount: 12500, currency: 'ETB', game: 'Chicken', color: 'bg-yellow-500' },
+  { id: 'Winner_77**0', amount: 94000, currency: 'ETB', game: 'JetX', color: 'bg-blue-500' },
+  { id: 'Lucky_12**4', amount: 32100, currency: 'ETB', game: 'Rocketman', color: 'bg-purple-500' },
+  { id: 'Pro_55**1', amount: 67800, currency: 'ETB', game: 'Plinko', color: 'bg-green-500' },
 ];
 
 export default function WinnersSection() {
-  const [activeTab, setActiveTab] = useState('Daily Top Winners');
+  const [jackpot, setJackpot] = useState(2540892.45);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setJackpot(prev => prev + Math.random() * 5.5);
+    }, 1500);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
-      {/* Winners Tabs */}
-      <div className="flex items-center justify-center gap-8 mb-6">
-        {['Daily Top Winners', 'Weekly Winners', 'Monthly Winners'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`text-[13px] font-black uppercase italic tracking-wider transition-all relative py-2 ${
-              activeTab === tab ? 'text-brand-primary' : 'text-gray-500 hover:text-white'
-            }`}
-          >
-            {tab}
-            {activeTab === tab && (
-              <div className="absolute bottom-0 left-0 w-full h-0.5 bg-brand-primary rounded-full shadow-[0_0_10px_rgba(232,225,12,0.5)]" />
-            )}
-          </button>
-        ))}
+    <div className="mb-10 space-y-6">
+      {/* Global Jackpot & Stats */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="lg:col-span-8 relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] border border-white/5 p-6 flex flex-col sm:flex-row items-center justify-between shadow-2xl">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(193,223,31,0.05),transparent_70%)]" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 text-brand-primary mb-1">
+              <TrendingUp className="w-4 h-4" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Global Arena Jackpot</span>
+            </div>
+            <div className="text-4xl sm:text-5xl font-black text-white italic tracking-tighter tabular-nums drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+              {jackpot.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <span className="ml-2 text-xl text-brand-primary not-italic tracking-normal font-bold">ETB</span>
+            </div>
+          </div>
+          <div className="relative z-10 mt-4 sm:mt-0">
+             <div className="px-6 py-3 bg-brand-primary rounded-full text-black font-black uppercase italic text-sm shadow-[0_0_30px_rgba(193,223,31,0.4)] hover:shadow-[0_0_40px_rgba(193,223,31,0.6)] transition-all cursor-pointer">
+               Win Now
+             </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-4 rounded-2xl bg-white/[0.03] border border-white/5 p-6 flex flex-col justify-center">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Live Feedback</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+              <span className="text-[10px] font-black text-red-500 uppercase">Live Wins</span>
+            </div>
+          </div>
+          <div className="flex gap-2">
+             <div className="flex-1 h-12 bg-black/40 rounded-xl border border-white/5 flex flex-col items-center justify-center">
+                <span className="text-white font-black text-lg leading-none">1.2k+</span>
+                <span className="text-[8px] uppercase text-gray-500 font-bold">Online</span>
+             </div>
+             <div className="flex-1 h-12 bg-black/40 rounded-xl border border-white/5 flex flex-col items-center justify-center">
+                <span className="text-brand-primary font-black text-lg leading-none">84%</span>
+                <span className="text-[8px] uppercase text-gray-500 font-bold">RTP Avg</span>
+             </div>
+          </div>
+        </div>
       </div>
 
-      {/* Winners Scroll Container */}
-      <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide px-2">
+      {/* Live Winners Feed */}
+      <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar px-1">
         {WINNERS.map((winner, idx) => (
           <div 
             key={idx} 
-            className="flex-shrink-0 w-[280px] bg-brand-surface rounded-2xl border border-brand-border/40 p-4 flex items-center gap-4 hover:border-brand-primary/30 transition-all cursor-pointer group"
+            className="flex-shrink-0 w-[240px] bg-black/40 backdrop-blur-md rounded-xl border border-white/5 p-3 flex items-center gap-3 hover:border-brand-primary/30 transition-all cursor-pointer group hover:bg-black/60 shadow-xl"
           >
-            {/* Game Icon/Logo - Using Aviator for example */}
-            <div className="w-20 h-14 bg-black/40 rounded-xl overflow-hidden p-2 flex items-center justify-center border border-white/5 group-hover:scale-105 transition-transform">
-              <img 
-                src="/games/Aviator.png" 
-                alt="Aviator" 
-                className="w-full h-full object-contain brightness-125"
-              />
+            <div className={`w-12 h-12 rounded-lg flex items-center justify-center border border-white/10 ${winner.color} bg-opacity-10 group-hover:bg-opacity-20 transition-all`}>
+              <Trophy className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
             </div>
             
-            <div className="flex flex-1 flex-col leading-tight">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-brand-primary font-black text-lg italic">{winner.amount?.toLocaleString()}</span>
-                <span className="text-gray-500 font-bold text-[10px]">{winner.currency}</span>
+            <div className="flex flex-1 flex-col overflow-hidden leading-tight">
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-white font-black text-[11px] truncate opacity-70 italic">{winner.id}</span>
+                <span className="text-brand-primary font-black text-[11px] italic">+{winner.amount.toLocaleString()}</span>
               </div>
-              <div className="text-white font-black text-[12px] opacity-80 mb-0.5">ID {winner.id}</div>
-              <div className="text-gray-500 text-[10px] font-bold">{winner.date} | {winner.time}</div>
+              <div className="text-[10px] font-black uppercase text-gray-500 tracking-wider">in {winner.game}</div>
+              <div className="mt-1.5 h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                 <div className="h-full bg-brand-primary w-2/3 group-hover:w-full transition-all duration-1000" />
+              </div>
             </div>
           </div>
         ))}

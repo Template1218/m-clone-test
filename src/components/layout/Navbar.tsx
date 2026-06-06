@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
-  Home,
+  LayoutDashboard,
   Trophy,
-  Activity,
-  Smartphone,
-  Globe,
-  Clock,
-  CircleHelp,
+  Flame,
+  Gamepad2,
+  Dices,
+  MonitorPlay,
+  Percent,
   Timer,
 } from "lucide-react";
 
@@ -16,23 +16,23 @@ interface NavbarProps {
 }
 
 const NAV_ITEMS = [
-  { icon: <Home className="w-8 h-8" />, label: "HOME", view: "home" },
-  { icon: <Trophy className="w-8 h-8" />, label: "SPORT", view: "sport" },
-  { icon: <Activity className="w-8 h-8" />, label: "LIVE", view: "live" },
-  { icon: <Smartphone className="w-8 h-8" />, label: "GAMES", view: "games" },
+  { icon: (active: boolean) => <LayoutDashboard strokeWidth={2.5} fill={active ? "currentColor" : "none"} />, label: "HOME", view: "home" },
+  { icon: (active: boolean) => <Trophy strokeWidth={2.5} fill={active ? "currentColor" : "none"} />, label: "SPORT", view: "sport" },
+  { icon: (active: boolean) => <Flame strokeWidth={2.5} fill={active ? "currentColor" : "none"} />, label: "LIVE", view: "live" },
+  { icon: (active: boolean) => <Gamepad2 strokeWidth={2.5} fill={active ? "currentColor" : "none"} />, label: "GAMES", view: "games" },
   {
-    icon: <Globe className="w-8 h-8" />,
+    icon: (active: boolean) => <Dices strokeWidth={2.5} fill={active ? "currentColor" : "none"} />,
     label: "LIVE GAMES",
     view: "live-games",
   },
   {
-    icon: <Clock className="w-8 h-8" />,
-    label: "VIRTUAL SPORTS",
+    icon: (active: boolean) => <MonitorPlay strokeWidth={2.5} fill={active ? "currentColor" : "none"} />,
+    label: "VIRTUAL",
     view: "virtual",
   },
   {
-    icon: <CircleHelp className="w-8 h-8" />,
-    label: "PROMOTIONS",
+    icon: (active: boolean) => <Percent strokeWidth={2.5} />,
+    label: "PROMOS",
     view: "promotions",
   },
 ];
@@ -64,8 +64,8 @@ export default function Navbar({ currentView, onViewChange }: NavbarProps) {
   }, []);
 
   return (
-    <nav className="bg-[#050505] border-b border-zinc-800 h-16 flex items-center justify-center shrink-0 sticky top-[50px] z-[90] overflow-x-auto no-scrollbar shadow-lg">
-      <div className="flex w-full lg:w-auto lg:gap-8 px-2 lg:px-4 lg:min-w-max justify-start">
+    <nav className="bg-[#0b0b0b] border-b border-white/10 h-[72px] flex items-center justify-start lg:justify-center shrink-0 sticky top-[50px] z-[90] overflow-x-auto no-scrollbar shadow-[0_15px_40px_rgba(0,0,0,0.9)] mb-1">
+      <div className="flex w-auto lg:gap-1 px-2 lg:px-4 min-w-max justify-start h-full">
         {NAV_ITEMS.map((item) => {
           const isActive = currentView === item.view;
           const isSport = item.label === "SPORT";
@@ -88,36 +88,51 @@ export default function Navbar({ currentView, onViewChange }: NavbarProps) {
                   onViewChange(item.view);
                 }
               }}
-              className={`flex-1 min-w-[70px] lg:min-w-0 flex flex-col items-center justify-center cursor-pointer group px-2 relative h-16 transition-all ${isActive ? "text-[#ccff00]" : "text-zinc-500 hover:text-white"}`}
+              className={`flex-none min-w-[75px] sm:min-w-[85px] lg:min-w-0 flex flex-col items-center justify-center cursor-pointer group px-3 lg:px-5 relative h-full transition-all duration-300 ${
+                isActive 
+                  ? "text-brand-primary bg-white/[0.04]" 
+                  : "text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.01]"
+              }`}
             >
               <div
-                className={`mb-1 transition-transform group-hover:scale-105 ${isActive ? "scale-105" : ""}`}
+                className={`mb-1 transition-all duration-500 ${
+                  isActive ? "scale-110 drop-shadow-[0_0_12px_rgba(193,223,31,0.6)]" : "group-hover:scale-105"
+                }`}
               >
-                {/* Icons restored to moderate size */}
-                {React.cloneElement(item.icon as React.ReactElement, { className: 'w-5 h-5' })}
+                <div className="w-5 h-5 flex items-center justify-center">
+                  {typeof item.icon === 'function' ? item.icon(isActive) : item.icon}
+                </div>
               </div>
               <span
-                className={`text-[9px] font-black tracking-widest uppercase whitespace-nowrap ${isActive ? "text-[#ccff00]" : ""}`}
+                className={`text-[9px] sm:text-[10px] font-black tracking-widest uppercase whitespace-nowrap transition-all duration-300 ${
+                  isActive ? "text-brand-primary" : ""
+                }`}
               >
                 {item.label}
               </span>
-              {isActive && !isSportDropdownOpen && (
-                <div className="absolute bottom-0 h-0.5 w-full bg-[#ccff00] hidden lg:block animate-in fade-in slide-in-from-bottom-1" />
+              
+              {/* Premium Active Indicator */}
+              {isActive && (
+                <>
+                  <div className="absolute bottom-0 h-[3px] w-full bg-brand-primary shadow-[0_-2px_12px_rgba(193,223,31,0.7)] animate-in fade-in slide-in-from-bottom-1" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-brand-primary/5 to-transparent pointer-events-none" />
+                </>
               )}
 
               {/* Sport Dropdown */}
               {isSport && isDesktop && isSportDropdownOpen && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-60 bg-[#1e1a2b] border border-white/5 shadow-2xl rounded-sm py-4 z-50 animate-in fade-in zoom-in-95 origin-top">
-                  <div className="flex flex-col items-center mb-4">
-                    <div className="w-10 h-10 rounded-full border border-brand-primary/30 flex items-center justify-center mb-2">
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-64 bg-[#141414] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-md py-5 z-50 animate-in fade-in zoom-in-95 origin-top backdrop-blur-xl">
+                  <div className="flex flex-col items-center mb-5 px-6">
+                    <div className="w-12 h-12 rounded-full border border-brand-primary/30 bg-brand-primary/5 flex items-center justify-center mb-3 shadow-[inset_0_0_15px_rgba(193,223,31,0.1)]">
                       <Timer className="w-6 h-6 text-brand-primary" />
                     </div>
-                    <span className="text-brand-primary text-[11px] font-black tracking-widest italic uppercase">
-                      Sport
+                    <span className="text-brand-primary text-[12px] font-black tracking-[0.2em] italic uppercase">
+                      Sport Betting
                     </span>
+                    <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent mt-4" />
                   </div>
 
-                  <div className="space-y-0.5">
+                  <div className="space-y-1 px-2">
                     {[
                       "Upcoming Events",
                       "Top Sports",
@@ -126,11 +141,12 @@ export default function Navbar({ currentView, onViewChange }: NavbarProps) {
                     ].map((link) => (
                       <button
                         key={link}
-                        className="w-full text-left px-6 py-2 content-center hover:bg-white/5 transition-colors group/item"
+                        className="w-full text-left px-5 py-2.5 rounded-sm hover:bg-brand-primary/10 transition-all group/item flex items-center justify-between"
                       >
-                        <span className="text-white font-black text-[13px] uppercase italic tracking-tight group-hover/item:text-brand-primary transition-colors">
+                        <span className="text-white/80 font-bold text-[13px] uppercase italic tracking-tight group-hover/item:text-brand-primary group-hover/item:translate-x-1 transition-all">
                           {link}
                         </span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-brand-primary opacity-0 group-hover/item:opacity-100 transition-opacity shadow-[0_0_8px_rgba(193,223,31,0.8)]" />
                       </button>
                     ))}
                   </div>
