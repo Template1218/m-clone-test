@@ -19,6 +19,7 @@ interface HeaderProps {
   user?: any;
   authLoading?: boolean;
   onOpenDeposit?: () => void;
+  onOpenWithdraw?: () => void;
   onOpenBetsHistory?: () => void;
   onOpenCheckTicket?: () => void;
   onLogoClick?: () => void;
@@ -30,6 +31,7 @@ export default function Header({
   user,
   authLoading = false,
   onOpenDeposit,
+  onOpenWithdraw,
   onOpenBetsHistory,
   onOpenCheckTicket,
   onLogoClick,
@@ -56,7 +58,7 @@ export default function Header({
   const menuItems = [
     { label: "BETS HISTORY", icon: History, action: onOpenBetsHistory },
     { label: "DEPOSIT", icon: Wallet, action: onOpenDeposit },
-    { label: "WITHDRAW", icon: ArrowUpRight, action: () => {} },
+    { label: "WITHDRAW", icon: ArrowUpRight, action: onOpenWithdraw },
     { label: "TRANSACTION HISTORY", icon: FileText, action: () => {} },
     { label: "CHECK TICKET", icon: Search, action: onOpenCheckTicket },
     { label: "PROFILE", icon: Settings, action: () => {} },
@@ -68,7 +70,7 @@ export default function Header({
       {/* Mobile */}
       <div className="flex items-center justify-between w-full lg:hidden">
         <button type="button" onClick={onLogoClick} className="flex items-center cursor-pointer" aria-label="KING5bet home">
-          <img src="/brand/king5bet-logo-black.png" alt="KING5bet" className="h-11 w-auto max-w-[170px] object-contain" />
+          <img src="/brand/king5bet-logo-black.png" alt="KING5bet" className="h-9 w-auto max-w-[150px] object-contain" />
         </button>
 
         <div className="flex items-center gap-2">
@@ -163,7 +165,7 @@ export default function Header({
       {/* Desktop */}
       <div className="hidden lg:flex items-center gap-6 flex-1">
         <div className="flex items-center cursor-pointer" onClick={() => (window.location.href = "/")}>
-          <img src="/brand/king5bet-logo-black.png" alt="KING5bet" className="h-12 w-auto max-w-[210px] object-contain" />
+          <img src="/brand/king5bet-logo-black.png" alt="KING5bet" className="h-10 w-auto max-w-[190px] object-contain" />
         </div>
 
         {user && (

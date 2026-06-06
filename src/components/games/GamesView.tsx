@@ -71,9 +71,9 @@ export default function GamesView({ user, onLoginRequired }: { user?: any; onLog
           <WinnersSection />
         )}
 
-        <div className="sticky top-[122px] z-20 mb-8 border border-white/5 bg-[#0d0d0d]/80 backdrop-blur-xl px-2 py-2 rounded-xl shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
-          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-            <div className="flex bg-white/[0.03] border border-white/5 p-1 gap-1 overflow-x-auto no-scrollbar max-w-full rounded-lg">
+        <div className="sticky top-0 z-20 mb-4 sm:mb-8 border border-white/5 bg-[#0d0d0d]/90 backdrop-blur-xl px-1.5 py-1.5 sm:px-2 sm:py-2 rounded-xl shadow-[0_20px_40px_rgba(0,0,0,0.4)] transition-all">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2 sm:gap-4">
+            <div className="flex bg-white/[0.03] border border-white/5 p-0.5 sm:p-1 gap-1 overflow-x-auto no-scrollbar max-w-full rounded-lg">
           {providersQuery.isLoading ? (
             Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="h-9 w-24 bg-white/5 rounded-md animate-pulse" />
@@ -84,7 +84,7 @@ export default function GamesView({ user, onLoginRequired }: { user?: any; onLog
                 type="button"
                 key={provider.id}
                 onClick={() => setSelectedProviderId(provider.id)}
-                className={`relative shrink-0 min-w-[90px] px-5 py-2.5 text-[10px] sm:text-[11px] font-black uppercase italic transition-all duration-300 rounded-md ${
+                className={`relative shrink-0 min-w-[70px] sm:min-w-[90px] px-3 sm:px-5 py-2 sm:py-2.5 text-[9px] sm:text-[11px] font-black uppercase italic transition-all duration-300 rounded-md ${
                   activeProvider?.id === provider.id
                     ? 'bg-brand-primary text-black shadow-[0_0_20px_rgba(193,223,31,0.5)] scale-[1.02] z-10'
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -96,16 +96,16 @@ export default function GamesView({ user, onLoginRequired }: { user?: any; onLog
           )}
             </div>
 
-            <div className="relative w-full md:w-[380px]">
+            <div className="relative w-full lg:w-[380px]">
               <input
                 type="text"
                 placeholder="Find your game arena..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-black/40 border border-white/10 py-3 px-5 pr-12 rounded-xl text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-primary/50 focus:ring-1 focus:ring-brand-primary/30 transition-all font-bold italic"
+                className="w-full bg-black/40 border border-white/10 py-2 sm:py-3 px-4 sm:px-5 pr-10 sm:pr-12 rounded-lg sm:rounded-xl text-[11px] sm:text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-primary/50 focus:ring-1 focus:ring-brand-primary/30 transition-all font-bold italic"
               />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                <Search className="w-5 h-5 text-gray-600 group-focus-within:text-brand-primary transition-colors" />
+              <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2">
+                <Search className="w-4 h-4 sm:w-5 h-5 text-gray-600 group-focus-within:text-brand-primary transition-colors" />
               </div>
             </div>
           </div>

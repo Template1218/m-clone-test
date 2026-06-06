@@ -119,7 +119,7 @@ export default function App() {
     open: false,
     type: "login",
   });
-  const [accountPanelTab, setAccountPanelTab] = useState<"deposit" | "bets" | "ticket">("deposit");
+  const [accountPanelTab, setAccountPanelTab] = useState<"deposit" | "withdraw" | "bets" | "ticket">("deposit");
 
   const getMatchRoute = (matchId: string) => `/match/${encodeURIComponent(matchId)}`;
 
@@ -177,6 +177,12 @@ export default function App() {
       if (p === "/user/bets" || p.startsWith("/user/bets/")) {
         setActiveNavView("account");
         setAccountPanelTab("bets");
+        setView("account");
+        return;
+      }
+      if (p === "/user/withdraw" || p.startsWith("/user/withdraw/")) {
+        setActiveNavView("account");
+        setAccountPanelTab("withdraw");
         setView("account");
         return;
       }
@@ -648,6 +654,12 @@ export default function App() {
           setView("account");
           pushPath("/user/profile");
         }}
+        onOpenWithdraw={() => {
+          setActiveNavView("account");
+          setAccountPanelTab("withdraw");
+          setView("account");
+          pushPath("/user/withdraw");
+        }}
         onOpenBetsHistory={() => {
           setActiveNavView("account");
           setAccountPanelTab("bets");
@@ -661,11 +673,13 @@ export default function App() {
           pushPath("/user/ticket");
         }}
       />
-      <Navbar
-        currentView={view === "detail" ? "home" : activeNavView}
-        onViewChange={handleViewChange}
-      />
-      <div className="h-1 lg:h-1.5 w-full bg-gradient-to-b from-black to-transparent opacity-50 relative z-[85]" />
+      <div className="hidden lg:block">
+        <Navbar
+          currentView={view === "detail" ? "home" : activeNavView}
+          onViewChange={handleViewChange}
+        />
+      </div>
+      <div className="hidden lg:block h-1 lg:h-1.5 w-full bg-gradient-to-b from-black to-transparent opacity-50 relative z-[85]" />
 
       {/* Mobile menu drawer */}
       <AnimatePresence>
@@ -1042,6 +1056,7 @@ export default function App() {
         currentView={view}
         onViewChange={handleViewChange}
         onMenuOpen={() => setMobileMenuOpen(true)}
+        scrollElement={mainScrollRef.current}
       />
 
 

@@ -41,13 +41,30 @@
     border-radius: 4px;
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - Premium & Tiny */
 ::-webkit-scrollbar {
-    width: 6px;
+    width: 3px;
+    height: 3px;
 }
 ::-webkit-scrollbar-track {
-    @apply bg-brand-dark;
+    background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    @apply bg-brand-border rounded-full hover:bg-gray-600;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    transition: background 0.3s;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(193, 223, 31, 0.4); /* Brand primary with transparency on hover */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
 }
