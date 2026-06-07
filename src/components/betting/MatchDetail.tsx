@@ -23,29 +23,42 @@ interface MarketSectionProps {
 }
 
 const MarketSection = ({ title, children, hasInfo = false, isExpanded, onToggle, disabled = false, subtitle = null }: MarketSectionProps) => (
-  <div className="mb-1.5 bg-[#111111] border border-white/5 rounded-xl overflow-hidden shadow-sm">
+  <div className="mb-2">
     <div 
-      className={`p-3 flex items-center justify-between transition-colors ${disabled ? "opacity-40 cursor-default" : "cursor-pointer hover:bg-white/[0.02]"}`}
+      className={`relative overflow-hidden rounded-xl border transition-colors ${
+        isExpanded 
+          ? "bg-[#111111] border-white/10" 
+          : "bg-[#0d0d0d] border-white/5 hover:border-white/10"
+      } ${disabled ? "opacity-40 cursor-default" : "cursor-pointer"}`}
       onClick={disabled ? undefined : onToggle}
     >
-      <div className="flex items-center gap-2">
-        <div className="flex flex-col">
-          <span className="text-[11px] font-bold uppercase text-white/90 tracking-tight leading-none">{title}</span>
-          {subtitle ? <span className="text-[9px] text-gray-500 font-medium mt-1 leading-none uppercase tracking-tighter">{subtitle}</span> : null}
+      <div className="p-3.5 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="flex flex-col">
+            <span className="text-[13px] font-bold text-white/90">
+              {title}
+            </span>
+            {subtitle ? <span className="text-[10px] text-gray-500 font-medium mt-0.5 uppercase tracking-wider">{subtitle}</span> : null}
+          </div>
+          {hasInfo && <Info className="w-3.5 h-3.5 text-brand-primary opacity-60" />}
         </div>
-        {hasInfo && <Info className="w-3 h-3 text-brand-primary cursor-help opacity-60 hover:opacity-100" />}
+        
+        {disabled ? null : (
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+            isExpanded ? "bg-white/10 rotate-180" : "bg-white/5"
+          }`}>
+            <ChevronDown className="w-4 h-4 text-gray-500" />
+          </div>
+        )}
       </div>
-      {disabled ? null : (
-        <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center">
-          {isExpanded ? <ChevronUp className="w-3.5 h-3.5 text-gray-400" /> : <ChevronDown className="w-3.5 h-3.5 text-gray-400" />}
+
+      {isExpanded && (
+        <div className="px-3.5 pb-3.5 pt-0">
+          <div className="h-[1px] w-full bg-white/5 mb-3" />
+          {children}
         </div>
       )}
     </div>
-    {isExpanded && (
-      <div className="p-3 pt-0 border-t border-white/[0.03] bg-black/20">
-        {children}
-      </div>
-    )}
   </div>
 );
 
@@ -471,169 +484,182 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
     return categoryOrder
       .map((key) => ({ key, markets: map.get(key) || [] }))
       .filter((x) => x.markets.length > 0);
-  })();
-
-  return (
+  })();  return (
     <div className="w-full h-full flex flex-col min-h-0 bg-[#0a0a0a]">
       {/* Top Navigation */}
-      <div className="flex items-center justify-between p-2 mb-2 shrink-0">
+      <div className="flex items-center justify-between px-3 py-3 shrink-0">
         <button 
           onClick={onBack}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 text-brand-primary text-[11px] font-bold hover:bg-white/10 transition-colors uppercase tracking-wider shadow-sm"
+          className="flex items-center gap-1.5 text-white/50 hover:text-white text-xs font-bold transition-all hover:translate-x-[-2px]"
         >
-          <span className="text-lg leading-none">&larr;</span> Back
+          <span className="text-sm">←</span> BACK
         </button>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5">
-           <CountryFlag country={match.country || null} className="w-3.5 h-3.5" />
-           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{match.league}</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/5 shadow-inner">
+           <CountryFlag country={match.country || null} className="w-3.5 h-3.5 shadow-sm" />
+           <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.15em]">{match.league}</span>
         </div>
       </div>
 
-      {/* Cinematic Header - Shrink-0 prevents it from being squashed */}
-      <div className="relative h-28 rounded-xl overflow-hidden mb-3 border border-white/5 bg-[#111111] shadow-2xl group shrink-0 mx-2">
-        {/* Abstract Glow Effects */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-brand-primary/5 rounded-full blur-[60px]" />
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-black/10 to-black/50 z-1" />
-
-        <div className="relative z-10 h-full flex items-center justify-between px-4">
-          <div className="flex flex-col items-center gap-1.5 flex-1 text-center min-w-0">
-            <div className="w-10 h-10 rounded-full bg-black/40 border border-white/10 flex items-center justify-center shadow-xl transition-transform group-hover:scale-105">
-              <div className="text-lg opacity-80">🛡️</div>
-            </div>
-            <span className="text-[12px] lg:text-[14px] font-bold text-white uppercase tracking-tight leading-tight w-full drop-shadow-md truncate">
-              {match.homeTeam}
-            </span>
-          </div>
-
-          <div className="flex flex-col items-center gap-0.5 min-w-[50px]">
-            <div className="text-[8px] font-bold text-gray-500 uppercase tracking-[0.2em]">VS</div>
-            <div className="px-2 py-0.5 bg-brand-primary text-black text-[10px] font-black rounded shadow-lg">
-              {match.time}
-            </div>
-            <div className="text-[8px] font-bold text-gray-500 uppercase tracking-widest opacity-60">{match.date}</div>
-          </div>
-
-          <div className="flex flex-col items-center gap-1.5 flex-1 text-center min-w-0">
-            <div className="w-10 h-10 rounded-full bg-black/40 border border-white/10 flex items-center justify-center shadow-xl transition-transform group-hover:scale-105">
-              <div className="text-lg opacity-80">🛡️</div>
-            </div>
-            <span className="text-[12px] lg:text-[14px] font-bold text-white uppercase tracking-tight leading-tight w-full drop-shadow-md truncate">
-              {match.awayTeam}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Markets Content - flex-1 min-h-0 makes it scrollable independently */}
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-6 pr-1 no-scrollbar pb-10 mx-2">
-        {detailLoading ? <DetailLoadingSkeleton /> : null}
-        {detailResp?.warning ? <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400 text-xs mb-4">{detailResp.warning}</div> : null}
-        {detailResp?.success === false ? <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">{detailResp?.message || "Could not load event details."}</div> : null}
-        
-        {!detailLoading && categories.map((cat) => (
-          <div key={cat.key} className="space-y-2">
-            <button
-              type="button"
-              onClick={() => toggleCategory(cat.key)}
-              className="w-full text-left flex items-center gap-2 mb-2 px-1 sticky top-0 z-10 bg-[#0a0a0a]/80 backdrop-blur-sm py-2"
-            >
-              <div className="w-1 h-4 bg-brand-primary rounded-full shadow-[0_0_8px_rgba(193,223,31,0.5)]" />
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{cat.key}</span>
-              <div className="ml-auto w-6 h-6 rounded-full bg-white/5 flex items-center justify-center">
-                {(expandedCategories[String(cat.key || "").toUpperCase()] ?? (String(cat.key || "").toUpperCase() === "MAIN")) ? (
-                  <ChevronUp className="w-3.5 h-3.5 text-gray-400" />
-                ) : (
-                  <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
-                )}
+      {/* Content Container */}
+      <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-10">
+        {/* Match Header Section */}
+        <div className="px-3 pt-2 mb-6">
+          <div className="relative rounded-[2rem] overflow-hidden bg-[#111111] border border-white/5">
+            <div className="px-6 py-8 flex items-center justify-between">
+              {/* Home Team */}
+              <div className="flex flex-col items-center gap-3 flex-1 min-w-0">
+                <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-white/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-[12px] font-bold text-white uppercase tracking-normal text-center leading-tight">
+                    {match.homeTeam}
+                  </span>
+                  <span className="text-[9px] text-white/30 font-bold uppercase mt-1">Home</span>
+                </div>
               </div>
-            </button>
 
-            {(expandedCategories[String(cat.key || "").toUpperCase()] ?? (String(cat.key || "").toUpperCase() === "MAIN")) ? (
-            <div className="grid gap-1.5">
-              {cat.markets.map((m: any) => {
-                const marketTitle = displayMarketTitle(m);
-                const outcomes = m.outcomes || m.prices || [];
-                const hasOdds = Array.isArray(outcomes) && outcomes.length > 0;
-                const expanded = expandedSections[marketTitle] ?? false;
-                
-                return (
-                  <MarketSection
-                    key={m.id}
-                    title={marketTitle}
-                    isExpanded={hasOdds ? expanded : false}
-                    onToggle={() => toggleSection(marketTitle)}
-                    disabled={!hasOdds}
-                    subtitle={!hasOdds ? "Suspended" : null}
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 mt-2">
-                      {outcomes.map((o: any) => {
-                        const oName = o.label || o.priceName || o.name || o.outcomeKey || o.key;
-                        // Some providers reuse generic outcome names like "Over"/"Under" with different handicapValue.
-                        // Include handicapValue in the selection key so selecting "Over 0.5" doesn't highlight all "Over X" rows.
-                        const handicapSuffix = Number(o.handicapValue || 0) ? ` ${Number(o.handicapValue)}` : "";
-                        const selectionKey = `${String(oName)}${handicapSuffix}`;
-                        const isBetActive = isSelected(m.marketName || m.name, selectionKey);
-                        // Only allow selecting outcomes that have a persisted outcomeId.
-                        // Detail-only rows (no outcomeId) are not placeable with the current backend contract.
-                        const maybeOutcomeId = String(
-                          (isUuid(o.outcomeId) ? o.outcomeId : "") ||
-                            (isUuid(o.id) ? o.id : "") ||
-                            ""
-                        ).trim();
-                        const rawSelectionKey = String(o.selectionKey || o.referenceId || o.selection_key || "").trim();
-                        const hasOutcomeId = !!maybeOutcomeId;
-                        const selectable = outcomeSelectable(o) && (hasOutcomeId || !!rawSelectionKey);
+              {/* Center Info */}
+              <div className="flex flex-col items-center gap-2 px-4 shrink-0">
+                <span className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">VS</span>
+                <div className="px-4 py-1.5 bg-brand-primary text-black text-xs font-black rounded-lg">
+                  {match.time}
+                </div>
+                <span className="text-[9px] font-bold text-white/30 tracking-wider mt-1 uppercase">
+                  {match.date}
+                </span>
+              </div>
 
-                        return (
-                          <button
-                            key={o.id}
-                            onClick={() => {
-                              if (!selectable || o.uiStatus === "suspended" || o.uiStatus === "closed") return;
-                              const rawOutcomeId = maybeOutcomeId;
-                              onToggleBet(
-                                match,
-                                m.marketName || m.name,
-                                selectionKey,
-                                outcomeOddsValue(o),
-                                rawOutcomeId || undefined,
-                                rawSelectionKey || undefined,
-                                Number(o.oddsVersion ?? o.odds_version ?? 1),
-                                o.lastFetchedAt,
-                                o.status,
-                                o.uiStatus
-                              );
-                            }}
-                            disabled={!selectable}
-                            className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg border transition-all ${
-                              isBetActive
-                                ? "bg-brand-primary text-black border-brand-primary shadow-lg shadow-brand-primary/20 scale-[1.01]"
-                                : "bg-white/[0.03] border-white/5 text-white/80 hover:bg-white/[0.06] hover:border-white/10 active:scale-[0.98]"
-                            } disabled:opacity-30 disabled:cursor-not-allowed`}
-                          >
-                            <span className={`text-[9px] font-bold truncate pr-1.5 ${isBetActive ? "text-black/70" : "text-gray-400"}`}>
-                              {oName}{Number(o.handicapValue || 0) ? ` ${Number(o.handicapValue)}` : ""}
-                            </span>
-                            <span className={`text-[11px] font-black tabular-nums ${isBetActive ? "text-black" : "text-brand-primary"}`}>
-                              {outcomeOddsValue(o).toFixed(2)}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </MarketSection>
-                );
-              })}
+              {/* Away Team */}
+              <div className="flex flex-col items-center gap-3 flex-1 min-w-0">
+                <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-white/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-[12px] font-bold text-white uppercase tracking-normal text-center leading-tight">
+                    {match.awayTeam}
+                  </span>
+                  <span className="text-[9px] text-white/30 font-bold uppercase mt-1">Away</span>
+                </div>
+              </div>
             </div>
-            ) : null}
           </div>
-        ))}
+        </div>
 
-        {!detailLoading && activeMarketsSource.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 opacity-20">
-            <Info className="w-12 h-12 mb-4" />
-            <p className="text-sm font-bold uppercase tracking-widest">No Markets Available</p>
-          </div>
-        ) : null}
+        {/* Markets Area */}
+        <div className="px-3 space-y-4">
+          {detailLoading ? <DetailLoadingSkeleton /> : null}
+          {detailResp?.warning ? <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-400 text-xs font-bold mb-6">{detailResp.warning}</div> : null}
+          {detailResp?.success === false ? <div className="p-5 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm font-bold">{detailResp?.message || "Could not load event details."}</div> : null}
+          
+          {!detailLoading && categories.map((cat) => (
+            <div key={cat.key} className="space-y-4">
+              <button
+                type="button"
+                onClick={() => toggleCategory(cat.key)}
+                className="w-full text-left flex items-center gap-2 mb-1 px-1 sticky top-0 z-20 bg-[#0a0a0a]/95 py-3 group"
+              >
+                <div className="w-1 h-4 bg-brand-primary rounded-full" />
+                <span className="text-[11px] font-bold text-white/60 uppercase tracking-widest group-hover:text-white transition-colors">
+                  {cat.key}
+                </span>
+                <div className="ml-auto flex items-center gap-2">
+                  <span className="text-[8px] font-bold text-white/10 uppercase tracking-tighter">{cat.markets.length} MARKETS</span>
+                  <div className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${
+                      (expandedCategories[String(cat.key || "").toUpperCase()] ?? (String(cat.key || "").toUpperCase() === "MAIN")) ? "rotate-180" : ""
+                    }`} />
+                  </div>
+                </div>
+              </button>
+
+              {(expandedCategories[String(cat.key || "").toUpperCase()] ?? (String(cat.key || "").toUpperCase() === "MAIN")) ? (
+                <div className="grid gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                  {cat.markets.map((m: any) => {
+                    const marketTitle = displayMarketTitle(m);
+                    const outcomes = m.outcomes || m.prices || [];
+                    const hasOdds = Array.isArray(outcomes) && outcomes.length > 0;
+                    const expanded = expandedSections[marketTitle] ?? false;
+                    
+                    return (
+                      <MarketSection
+                        key={m.id}
+                        title={marketTitle}
+                        isExpanded={hasOdds ? expanded : false}
+                        onToggle={() => toggleSection(marketTitle)}
+                        disabled={!hasOdds}
+                        subtitle={!hasOdds ? "SUSPENDED" : null}
+                      >
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 mt-2">
+                          {outcomes.map((o: any) => {
+                            const oName = o.label || o.priceName || o.name || o.outcomeKey || o.key;
+                            const handicapSuffix = Number(o.handicapValue || 0) ? ` ${Number(o.handicapValue)}` : "";
+                            const selectionKey = `${String(oName)}${handicapSuffix}`;
+                            const isBetActive = isSelected(m.marketName || m.name, selectionKey);
+                            const maybeOutcomeId = String(
+                              (isUuid(o.outcomeId) ? o.outcomeId : "") ||
+                                (isUuid(o.id) ? o.id : "") ||
+                                ""
+                            ).trim();
+                            const rawSelectionKey = String(o.selectionKey || o.referenceId || o.selection_key || "").trim();
+                            const hasOutcomeId = !!maybeOutcomeId;
+                            const selectable = outcomeSelectable(o) && (hasOutcomeId || !!rawSelectionKey);
+
+                            return (
+                              <button
+                                key={o.id}
+                                onClick={() => {
+                                  if (!selectable || o.uiStatus === "suspended" || o.uiStatus === "closed") return;
+                                  const rawOutcomeId = maybeOutcomeId;
+                                  onToggleBet(
+                                    match,
+                                    m.marketName || m.name,
+                                    selectionKey,
+                                    outcomeOddsValue(o),
+                                    rawOutcomeId || undefined,
+                                    rawSelectionKey || undefined,
+                                    Number(o.oddsVersion ?? o.odds_version ?? 1),
+                                    o.lastFetchedAt,
+                                    o.status,
+                                    o.uiStatus
+                                  );
+                                }}
+                                disabled={!selectable}
+                                className={`group relative flex items-center justify-between px-3 py-2 rounded-lg border transition-all ${
+                                  isBetActive
+                                    ? "bg-brand-primary text-black border-brand-primary"
+                                    : "bg-[#111111] border-white/5 text-white/90 hover:bg-[#1a1a1a] hover:border-white/10"
+                                } disabled:opacity-30 disabled:cursor-not-allowed`}
+                              >
+                                <span className={`text-[10px] font-bold truncate pr-1.5 uppercase ${isBetActive ? "text-black/80" : "text-gray-400"}`}>
+                                  {oName}{Number(o.handicapValue || 0) ? ` ${Number(o.handicapValue)}` : ""}
+                                </span>
+                                <span className={`text-[12px] font-black tabular-nums ${isBetActive ? "text-black" : "text-brand-primary"}`}>
+                                  {outcomeOddsValue(o).toFixed(2)}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </MarketSection>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          ))}
+
+          {!detailLoading && activeMarketsSource.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 opacity-10">
+              <Info className="w-16 h-16 mb-6 stroke-[1.5]" />
+              <p className="text-sm font-black uppercase tracking-[0.4em]">NO MARKETS AVAILABLE</p>
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );

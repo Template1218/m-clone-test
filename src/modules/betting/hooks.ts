@@ -669,8 +669,12 @@ export function useFixtureDetails(
       const provider = String(opts?.externalProvider || "").trim().toLowerCase();
       const externalEventId = String(opts?.externalEventId ?? "").trim();
       const sportId = inferMezzoSportIdFromName(opts?.sportName ?? null);
-      const canUseMezzoDetails = !!externalEventId && Number.isFinite(Number(externalEventId)) && sportId > 0;
-      if (canUseMezzoDetails && provider !== "pissbet_socket") {
+      const canUseMezzoDetails =
+        !!externalEventId &&
+        Number.isFinite(Number(externalEventId)) &&
+        sportId > 0 &&
+        (provider === "mezzo" || provider === "king5");
+      if (canUseMezzoDetails) {
         // Use the "king5" alias route for nicer URLs; provider still stays "mezzo" internally.
         const fetchDetails = async (force: boolean) => {
           const { data } = await api.get(`/odds/king5/event-details`, {
