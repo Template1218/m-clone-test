@@ -179,6 +179,20 @@ export default function Sidebar({
           return mapped.length ? mapped : sports;
         })()
       : sports;
+  const sortedEffectiveSports = Array.isArray(effectiveSports)
+    ? [...effectiveSports]
+      .filter((sport: any) => {
+        const name = String(sport?.name || sport?.slug || sport?.id || "").toLowerCase();
+        const count = Number(sport?.count ?? sport?.eventCount ?? 0) || 0;
+        return name === "football" || count > 0;
+      })
+      .sort((a: any, b: any) => {
+        const af = String(a?.name || a?.slug || a?.id || "").toLowerCase() === "football" ? 1 : 0;
+        const bf = String(b?.name || b?.slug || b?.id || "").toLowerCase() === "football" ? 1 : 0;
+        if (af !== bf) return bf - af;
+        return (Number(b?.count ?? b?.eventCount ?? 0) || 0) - (Number(a?.count ?? a?.eventCount ?? 0) || 0);
+      })
+    : effectiveSports;
 
   return (
     <aside className={`w-64 border-r border-brand-border overflow-y-auto bg-[#0A0A0A] h-full ${className || ""}`}>
@@ -267,7 +281,7 @@ export default function Sidebar({
           {/* Sports Section */}
           <div className="bg-[#0A0A0A]">
             <div className="flex flex-col">
-              {effectiveSports.map((sport: any) => {
+              {sortedEffectiveSports.map((sport: any) => {
                 const isExpanded = expandedSports.includes(sport.id);
                 const sportIcons: Record<string, string> = {
                   football: "\u26BD",

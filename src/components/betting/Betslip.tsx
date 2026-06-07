@@ -1,4 +1,4 @@
-import { Trash2, Smartphone, Info, ChevronDown, X } from "lucide-react";
+import { Trash2, Smartphone, Info, ChevronDown, X, Ticket } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { BetSelection } from "../../types";
@@ -438,7 +438,10 @@ export default function Betslip({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="bg-white rounded-sm p-3 relative group border-l-4 border-l-brand-primary shadow-lg"
+                  style={{ 
+                    clipPath: "polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% calc(50% - 6px), calc(100% - 6px) 50%, 100% calc(50% + 6px), 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)" 
+                  }}
+                  className="bg-white p-3 relative group border-l-4 border-l-brand-primary shadow-xl"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
@@ -573,24 +576,32 @@ export default function Betslip({
               </div>
 
               {/* Buttons */}
-              <div className="space-y-1.5 pt-1">
-                <div className="flex flex-col gap-1.5">
+              <div className="space-y-2 pt-1">
+                <button
+                  onClick={handlePlaceOnline}
+                  disabled={busy || (!isAuthenticated && authLoading)}
+                  className="w-full bg-brand-primary text-black font-black py-4 rounded-sm text-[13px] uppercase tracking-wider hover:bg-brand-primary/90 active:scale-[0.98] transition-all shadow-[0_10px_30px_rgba(193,223,31,0.2)] disabled:opacity-50 relative overflow-hidden group"
+                >
+                  <span className="relative z-10">{busy ? "Placing..." : "Place Bet Online"}</span>
+                  <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-[45deg]" />
+                </button>
+
+                <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={handlePlaceOnline}
-                    disabled={busy || (!isAuthenticated && authLoading)}
-                    className="w-full bg-brand-primary text-black font-black py-3 rounded-sm text-[12px] uppercase tracking-wider hover:bg-brand-primary/90 active:scale-[0.98] transition-all shadow-[0_5px_15px_rgba(193,223,31,0.2)] disabled:opacity-50"
+                    onClick={() => setPreviewOpen(true)}
+                    className="bg-white/[0.03] hover:bg-white/[0.08] text-white/90 hover:text-white border border-white/10 font-black py-3 rounded-sm text-[10px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.98] group"
                   >
-                    {busy ? "Placing..." : "Place Bet Online"}
+                    <Ticket className="w-3.5 h-3.5 text-brand-primary group-hover:rotate-12 transition-transform" />
+                    <span>Preview</span>
                   </button>
 
                   <button
                     onClick={handlePrintPreview}
                     disabled={busy || createOffline.isPending}
-                    className="w-full bg-white/5 text-white font-bold py-2 rounded-sm text-[10px] uppercase tracking-wide hover:bg-white/10 active:scale-[0.98] transition-all border border-white/5 disabled:opacity-50"
+                    className="bg-white/[0.03] hover:bg-white/[0.08] text-white/60 hover:text-white border border-white/10 font-black py-3 rounded-sm text-[10px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.98] group"
                   >
-                    {createOffline.isPending
-                      ? "Preparing..."
-                      : "Book Offline Ticket"}
+                    <Smartphone className="w-3.5 h-3.5 text-gray-500 group-hover:-translate-y-0.5 transition-transform" />
+                    <span>Offline</span>
                   </button>
                 </div>
               </div>
@@ -629,17 +640,25 @@ export default function Betslip({
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative z-10 bg-[#111111] border border-brand-primary/20 p-10 rounded-[3rem] text-center max-w-sm w-full shadow-2xl"
+              style={{
+                clipPath: "polygon(0% 0%, 100% 0%, 100% 70%, 94% 75%, 100% 80%, 100% 100%, 0% 100%, 0% 80%, 6% 75%, 0% 70%)"
+              }}
+              className="relative z-10 bg-[#f8f8f8] p-10 py-14 text-center max-w-[360px] w-full shadow-[0_30px_100px_rgba(0,0,0,0.5)]"
             >
-              <div className="w-20 h-20 bg-brand-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              {/* Paper Texture Overlay */}
+              <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
+              
+              <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-8 relative">
+                <div className="absolute inset-0 bg-emerald-500/5 blur-xl rounded-full" />
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", delay: 0.2 }}
+                  className="relative z-10"
                 >
-                  <div className="w-12 h-12 bg-brand-primary rounded-full flex items-center justify-center text-black">
+                  <div className="w-14 h-14 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-lg">
                     <svg
-                      className="w-7 h-7"
+                      className="w-8 h-8"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -654,18 +673,35 @@ export default function Betslip({
                   </div>
                 </motion.div>
               </div>
-              <h3 className="text-2xl font-black text-white uppercase italic mb-2">
+
+              <h3 className="text-3xl font-black text-black uppercase italic mb-3 tracking-tighter leading-none">
                 Bet Accepted!
               </h3>
-              <p className="text-gray-400 text-sm mb-8">
+              <p className="text-gray-500 text-[13px] mb-12 font-bold leading-relaxed px-6">
                 Your bet has been placed successfully. Good luck!
               </p>
+
+              {/* Perforation Line & Notches */}
+              <div className="absolute left-0 right-0 top-[75%] -translate-y-1/2 flex items-center gap-2 opacity-10 px-[6%]">
+                <div className="h-[2px] flex-1 border-t-2 border-dashed border-black" />
+              </div>
+
               <button
                 onClick={() => setAcceptedOpen(false)}
-                className="w-full bg-brand-primary text-black font-black py-4 rounded-2xl text-[12px] uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all"
+                className="w-full bg-black text-white font-black py-4.5 rounded-xl text-[11px] uppercase tracking-[0.2em] hover:bg-zinc-800 active:scale-95 transition-all shadow-xl mt-4"
               >
                 Back to Games
               </button>
+
+              {/* Decorative Barcode / Footer */}
+              <div className="mt-10 flex flex-col items-center gap-2 opacity-[0.07]">
+                <div className="flex gap-1 h-3">
+                  {[...Array(24)].map((_, i) => (
+                    <div key={i} className={`h-full bg-black ${i % 3 === 0 ? 'w-1' : 'w-0.5'}`} />
+                  ))}
+                </div>
+                <span className="text-[7px] font-black tracking-[0.5em]">TICKET ID: {Math.random().toString(36).substring(7).toUpperCase()}</span>
+              </div>
             </motion.div>
           </div>
         )}

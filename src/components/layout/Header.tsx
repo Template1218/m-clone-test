@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type RefObject } from "react";
 import {
   Search,
   Mail,
@@ -8,8 +8,7 @@ import {
   History,
   Wallet,
   ArrowUpRight,
-  FileText,
-  Settings,
+  Ticket,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -37,7 +36,8 @@ export default function Header({
   onLogoClick,
 }: HeaderProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const mobileDropdownRef = useRef<HTMLDivElement>(null);
+  const desktopDropdownRef = useRef<HTMLDivElement>(null);
 
   const balanceText = (() => {
     const n = Number(user?.balance ?? 0);
@@ -45,9 +45,18 @@ export default function Header({
     return n.toFixed(2);
   })();
 
+  const exposureText = (() => {
+    const n = Number(user?.exposure ?? 0);
+    if (!Number.isFinite(n)) return "0.00";
+    return n.toFixed(2);
+  })();
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const isInsideMobile = mobileDropdownRef.current?.contains(target);
+      const isInsideDesktop = desktopDropdownRef.current?.contains(target);
+      if (!isInsideMobile && !isInsideDesktop) {
         setIsProfileOpen(false);
       }
     }
@@ -56,238 +65,219 @@ export default function Header({
   }, []);
 
   const menuItems = [
-    { label: "BETS HISTORY", icon: History, action: onOpenBetsHistory },
     { label: "DEPOSIT", icon: Wallet, action: onOpenDeposit },
     { label: "WITHDRAW", icon: ArrowUpRight, action: onOpenWithdraw },
-    { label: "TRANSACTION HISTORY", icon: FileText, action: () => {} },
-    { label: "CHECK TICKET", icon: Search, action: onOpenCheckTicket },
-    { label: "PROFILE", icon: Settings, action: () => {} },
+    { label: "MY BETS", icon: History, action: onOpenBetsHistory },
+    { label: "CHECK TICKET", icon: Ticket, action: onOpenCheckTicket },
     { label: "SIGN OUT", icon: LogOut, action: onSignOut, isDanger: true },
-  ];
+  ].filter((item) => item.action);
 
-  return (
-    <header className="h-[50px] bg-brand-primary flex items-center px-4 sticky top-0 z-[100] shadow-md border-b border-black/5">
-      {/* Mobile */}
-      <div className="flex items-center justify-between w-full lg:hidden">
-        <button type="button" onClick={onLogoClick} className="flex items-center cursor-pointer" aria-label="KING5bet home">
-          <img src="/brand/king5bet-logo-black.png" alt="KING5bet" className="h-9 w-auto max-w-[150px] object-contain" />
-        </button>
+  const renderProfileDropdown = (ref: RefObject<HTMLDivElement | null>, compact = false) => (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsProfileOpen((open) => !open);
+        }}
+        className={`${compact ? "w-8 h-8" : "h-9 min-w-9"} rounded-lg border border-white/5 flex items-center justify-center gap-2 bg-white/5 cursor-pointer hover:bg-white/10 active:bg-white/10 transition-all ${
+          isProfileOpen ? "ring-2 ring-brand-primary/25 border-brand-primary/30" : ""
+        }`}
+        aria-haspopup="menu"
+        aria-expanded={isProfileOpen}
+      >
+        <User className="w-4 h-4 text-white/55" />
+        {!compact && (
+          <ChevronDown className={`hidden sm:block w-3 h-3 text-white/30 transition-transform ${isProfileOpen ? "rotate-180" : ""}`} />
+        )}
+      </button>
 
-        <div className="flex items-center gap-2">
-          {user ? (
-            <>
-              <div className="flex items-center gap-1.5 bg-black/10 border border-black/10 rounded-full h-7 px-2.5">
-                <span className="text-[9px] font-black text-black/70 uppercase italic tracking-wide">Bal</span>
-                <span className="text-[10px] font-black text-black tabular-nums">{balanceText}</span>
-                <span className="text-[9px] font-black text-black/70 uppercase italic">ETB</span>
+      <AnimatePresence>
+        {isProfileOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 12, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.96 }}
+            transition={{ duration: 0.14 }}
+            className={`${compact ? "w-56" : "w-64"} absolute right-0 mt-3 bg-[#0f0e13]/98 backdrop-blur-2xl rounded-xl shadow-2xl border border-white/10 overflow-hidden py-1 z-[200]`}
+            role="menu"
+          >
+            <div className="px-4 py-3 border-b border-white/5">
+              <div className="text-[9px] font-black uppercase tracking-widest text-white/30">Balance</div>
+              <div className="mt-1 flex items-baseline gap-1.5">
+                <span className="text-brand-primary font-black text-lg tabular-nums">{balanceText}</span>
+                <span className="text-white/35 text-[10px] font-bold uppercase">{user?.currency || "ETB"}</span>
               </div>
+              {user?.id && (
+                <div className="mt-1 text-[8px] font-bold uppercase tracking-widest text-white/20">
+                  ID: {String(user.id).slice(-6).toUpperCase()}
+                </div>
+              )}
+            </div>
 
-              <button
-                type="button"
-                onClick={onOpenDeposit}
-                className="bg-brand-yellow text-black font-black px-3 h-7 rounded-full text-[10px] uppercase italic shadow-md active:scale-95 transition-all"
-              >
-                Deposit
-              </button>
-
-              <div className="relative" ref={dropdownRef}>
+            {menuItems.map((item, idx) => (
+              <div key={item.label}>
                 <button
                   type="button"
-                  onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className={`w-7 h-7 rounded-full border border-black/10 flex items-center justify-center bg-black/5 cursor-pointer hover:bg-black/10 transition-all ${
-                    isProfileOpen ? "ring-2 ring-black/20" : ""
+                  onClick={() => {
+                    item.action?.();
+                    setIsProfileOpen(false);
+                  }}
+                  className={`w-full px-4 py-3 text-[10px] font-black uppercase italic tracking-widest transition-all flex items-center justify-between group ${
+                    item.isDanger
+                      ? "text-rose-400 hover:bg-rose-500/10 active:bg-rose-500/10"
+                      : "text-gray-300 hover:bg-white/5 active:bg-white/5"
                   }`}
-                  aria-label="Account menu"
+                  role="menuitem"
                 >
-                  <User className="w-4 h-4 text-black" />
+                  <span>{item.label}</span>
+                  <item.icon className="w-3.5 h-3.5 opacity-40" />
                 </button>
-
-                <AnimatePresence>
-                  {isProfileOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 mt-2 w-56 bg-[#1e1b21] rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/5 overflow-hidden py-1 z-[110]"
-                    >
-                      {menuItems.map((item, idx) => (
-                        <div key={item.label}>
-                          <button
-                            onClick={() => {
-                              item.action?.();
-                              setIsProfileOpen(false);
-                            }}
-                            className={`w-full px-4 py-3 text-left text-[10px] font-bold uppercase italic tracking-wider transition-colors flex items-center justify-between group ${
-                              item.isDanger
-                                ? "text-red-400 hover:bg-red-500/10"
-                                : "text-gray-200 hover:bg-white/5 hover:text-white"
-                            }`}
-                          >
-                            <span>{item.label}</span>
-                            <item.icon
-                              className={`w-3.5 h-3.5 opacity-30 group-hover:opacity-100 transition-opacity ${
-                                item.isDanger ? "text-red-400" : "text-brand-primary"
-                              }`}
-                            />
-                          </button>
-                          {idx < menuItems.length - 1 && <div className="mx-4 border-b border-white/5" />}
-                        </div>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {idx < menuItems.length - 1 && <div className="mx-4 border-b border-white/5" />}
               </div>
-            </>
-          ) : authLoading ? (
-            <div className="border border-black/20 text-black/70 font-bold text-[10px] px-2.5 py-1 rounded-full uppercase italic select-none">
-              Loading...
-            </div>
-          ) : (
-            <>
-              <Search className="w-4 h-4 text-black" />
-              <button
-                onClick={() => onAuth("login")}
-                className="border border-black/20 text-black font-bold text-[10px] px-2.5 py-1 rounded-full uppercase italic"
-              >
-                Login
-              </button>
-              <button
-                onClick={() => onAuth("register")}
-                className="bg-brand-yellow text-black font-bold text-[10px] px-2.5 py-1 rounded-full uppercase italic shadow-md"
-              >
-                Register
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 
-      {/* Desktop */}
-      <div className="hidden lg:flex items-center gap-6 flex-1">
-        <div className="flex items-center cursor-pointer" onClick={() => (window.location.href = "/")}>
-          <img src="/brand/king5bet-logo-black.png" alt="KING5bet" className="h-10 w-auto max-w-[190px] object-contain" />
+  return (
+    <div className="sticky top-0 z-[220] px-3 py-2 pointer-events-none">
+      <header className="pointer-events-auto h-[54px] bg-[#121117]/85 backdrop-blur-xl flex items-center px-4 sm:px-6 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-white/5 relative">
+        {/* Neon Glow Bottom Bar */}
+        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-brand-primary/50 blur-[1.5px]" />
+        <div className="absolute bottom-0 left-[10%] right-[10%] h-[1px] bg-brand-primary shadow-[0_0_20px_#c1df1f]" />
+
+        {/* Mobile View */}
+        {/* Mobile View */}
+        <div className="flex items-center justify-between w-full lg:hidden h-full">
+          {/* Logo */}
+          <div className="flex-shrink-0">
+            <button type="button" onClick={onLogoClick} className="flex items-center active:scale-95 transition-transform">
+              <img src="/brand/king5bet-logo.png" alt="KING5bet" className="h-6 w-auto" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5 min-w-0">
+            {user ? (
+              <>
+                {/* Financial Pill */}
+                <div className="flex flex-col items-end px-2 py-0.5 bg-white/[0.03] border border-white/5 rounded-lg mr-1 shrink-0">
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] font-black text-brand-primary tabular-nums tracking-tight whitespace-nowrap">
+                      {balanceText}
+                    </span>
+                    <span className="text-[6px] font-bold text-white/30 uppercase italic">ETB</span>
+                  </div>
+                  {Number(exposureText) > 0 && (
+                    <div className="flex items-center gap-1 -mt-0.5">
+                      <span className="text-[6px] font-bold text-rose-400/60 uppercase italic tracking-tighter">EXP</span>
+                      <span className="text-[7px] font-black text-rose-400/80 tabular-nums leading-none">
+                        {exposureText}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Icons Group */}
+                <div className="flex items-center gap-1 px-1 border-x border-white/5 mx-0.5">
+                  <button className="relative w-8 h-8 rounded-lg flex items-center justify-center active:bg-white/5 transition-colors">
+                    <Mail className="w-4 h-4 text-white/30" />
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-[#121117]" />
+                  </button>
+
+                  {renderProfileDropdown(mobileDropdownRef, true)}
+                </div>
+              </>
+            ) : authLoading ? (
+              <div className="bg-white/5 px-3 h-8 flex items-center rounded-lg text-white/20 font-black text-[8px] uppercase border border-white/5 animate-pulse italic">
+                ...
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => onAuth("login")}
+                  className="text-white/50 font-black text-[9px] px-2 uppercase hover:text-white transition-colors italic"
+                >
+                  Log In
+                </button>
+                <button
+                  onClick={() => onAuth("register")}
+                  className="bg-brand-primary text-black font-black text-[9px] px-3.5 h-8 rounded-lg uppercase shadow-lg active:scale-95 transition-all italic"
+                >
+                  Join
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
-        {user && (
-          <div className="max-w-[240px] flex-1">
-            <div className="relative group">
+        {/* Desktop View */}
+        <div className="hidden lg:flex items-center w-full">
+          {/* Logo */}
+          <button type="button" className="cursor-pointer shrink-0 mr-8" onClick={onLogoClick}>
+            <img src="/brand/king5bet-logo.png" alt="KING5bet" className="h-8 w-auto hover:opacity-80 transition-opacity" />
+          </button>
+
+          {/* Search */}
+          <div className="flex-1 max-w-md">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-white/25 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search"
-                className="w-full bg-white/95 rounded-full py-1 px-4 pr-10 text-[12px] text-black placeholder:text-gray-400 focus:outline-none shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)] font-medium"
+                placeholder="Search events, teams..."
+                className="w-full bg-white/5 border border-white/[0.06] rounded-xl py-2 pl-10 pr-4 text-xs text-white placeholder:text-white/25 focus:outline-none focus:border-brand-primary/30 transition-all"
               />
-              <Search className="w-3.5 h-3.5 text-gray-500 absolute right-4 top-1/2 -translate-y-1/2" />
             </div>
           </div>
-        )}
-      </div>
 
-      <div className="hidden lg:flex items-center gap-4">
-        {user ? (
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-4 pr-4 border-r border-black/10 h-7">
-              <div className="relative cursor-pointer hover:scale-110 transition-transform group">
-                <div className="w-7 h-7 rounded-full border border-black/10 flex items-center justify-center bg-black/5 group-hover:bg-black/10">
-                  <Mail className="w-3.5 h-3.5 text-black" />
+          {/* Right side */}
+          <div className="ml-auto flex items-center gap-5">
+            {user ? (
+              <>
+                {/* Balance + ID */}
+                <div className="flex flex-col items-end mr-1">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-brand-primary font-bold text-base tabular-nums">
+                      {balanceText}
+                    </span>
+                    <span className="text-white/30 text-[10px] font-semibold uppercase">
+                      {user?.currency || "ETB"}
+                    </span>
+                  </div>
+                  <span className="text-white/20 text-[8px] font-bold uppercase tracking-widest mt-0.5">
+                    ID: {user?.id?.slice(-6).toUpperCase()}
+                  </span>
                 </div>
-                <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-500 rounded-full border border-brand-primary flex items-center justify-center">
-                  <span className="text-[7px] font-black text-white">1</span>
-                </div>
-              </div>
 
-              <div className="relative" ref={dropdownRef}>
-                <div
-                  onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className={`w-7 h-7 rounded-full border border-black/10 flex items-center justify-center bg-black/5 cursor-pointer hover:bg-black/10 transition-all ${
-                    isProfileOpen ? "ring-2 ring-black/20" : ""
-                  }`}
+                {/* Notifications */}
+                <button className="relative w-9 h-9 rounded-lg flex items-center justify-center hover:bg-white/5 transition-colors">
+                  <Mail className="w-4 h-4 text-white/40" />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full" />
+                </button>
+
+                {renderProfileDropdown(desktopDropdownRef)}
+              </>
+            ) : (
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => onAuth("login")}
+                  className="text-white/60 hover:text-white font-semibold text-xs uppercase transition-colors"
                 >
-                  <User className="w-4 h-4 text-black" />
-                </div>
-
-                <AnimatePresence>
-                  {isProfileOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 mt-2 w-56 bg-[#1e1b21] rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/5 overflow-hidden py-1 z-[110]"
-                    >
-                      {menuItems.map((item, idx) => (
-                        <div key={item.label}>
-                          <button
-                            onClick={() => {
-                              item.action?.();
-                              setIsProfileOpen(false);
-                            }}
-                            className={`w-full px-4 py-3 text-left text-[10px] font-bold uppercase italic tracking-wider transition-colors flex items-center justify-between group ${
-                              item.isDanger
-                                ? "text-red-400 hover:bg-red-500/10"
-                                : "text-gray-200 hover:bg-white/5 hover:text-white"
-                            }`}
-                          >
-                            <span>{item.label}</span>
-                            <item.icon
-                              className={`w-3.5 h-3.5 opacity-30 group-hover:opacity-100 transition-opacity ${
-                                item.isDanger ? "text-red-400" : "text-brand-primary"
-                              }`}
-                            />
-                          </button>
-                          {idx < menuItems.length - 1 && <div className="mx-4 border-b border-white/5" />}
-                        </div>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                  Log In
+                </button>
+                <button
+                  onClick={() => onAuth("register")}
+                  className="bg-brand-primary text-black font-bold px-6 h-9 rounded-xl text-[11px] uppercase hover:brightness-110 active:scale-95 transition-all"
+                >
+                  Join Now
+                </button>
               </div>
-
-              <div className="flex items-center gap-1 cursor-pointer hover:scale-105 transition-transform">
-                <div className="w-4 h-2.5 bg-white/20 rounded-sm flex items-center justify-center overflow-hidden border border-black/10">
-                  <img src="https://flagcdn.com/w20/gb.png" alt="EN" className="w-full h-full object-cover" />
-                </div>
-                <span className="text-black font-bold text-[11px] uppercase italic">EN</span>
-                <ChevronDown className="w-3 h-3 text-black" />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="text-right flex flex-col leading-none">
-                <span className="text-black font-black text-[13px] italic">
-                  {(Number(user?.balance) || 0).toFixed(2)} {user?.currency || "ETB"}
-                </span>
-                <span className="text-black font-bold text-[9px] uppercase italic opacity-50">
-                  ID: {user?.id?.slice(-6).toUpperCase()}
-                </span>
-              </div>
-              <button
-                onClick={onOpenDeposit}
-                className="bg-brand-yellow text-black font-black px-4 h-8 rounded-full text-[11px] uppercase italic shadow-md hover:scale-105 hover:brightness-110 active:scale-95 transition-all"
-              >
-                DEPOSIT
-              </button>
-            </div>
+            )}
           </div>
-        ) : authLoading ? (
-          <div className="px-4 py-2 text-black/70 font-bold text-xs uppercase rounded-full italic select-none">
-            Loading...
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => onAuth("login")}
-              className="px-4 py-2 text-black font-bold text-xs uppercase hover:bg-black/10 rounded-full transition-all italic"
-            >
-              Login
-            </button>
-            <button
-              onClick={() => onAuth("register")}
-              className="bg-black text-brand-primary px-6 py-2 rounded-full text-xs font-black uppercase italic shadow-lg hover:scale-105 active:scale-95 transition-all"
-            >
-              Sign Up
-            </button>
-          </div>
-        )}
-      </div>
-    </header>
+        </div>
+      </header>
+    </div>
   );
 }

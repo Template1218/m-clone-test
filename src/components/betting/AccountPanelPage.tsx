@@ -202,48 +202,54 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
               exit={{ opacity: 0, y: -10 }}
               className="p-6 sm:p-10 space-y-8"
             >
-              <div className="relative overflow-hidden p-10 bg-brand-dark/50 border border-white/5 rounded-3xl flex flex-col items-center justify-center text-center gap-2">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(193,223,31,0.03),transparent_70%)]" />
-                <p className="relative z-10 text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-2">Total Available Balance</p>
-                <div className="relative z-10 flex items-baseline gap-3">
-                  <span className="text-5xl lg:text-7xl font-black text-white italic tracking-tighter tabular-nums drop-shadow-[0_0_20px_rgba(255,255,255,0.1)]">{amount(user?.balance).toFixed(2)}</span>
-                  <span className="text-2xl font-black text-brand-primary italic">ETB</span>
+              <div className="p-8 bg-zinc-900 border border-white/5 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm">
+                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Available Balance</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl sm:text-5xl font-bold text-white tabular-nums">
+                    {amount(user?.balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-base font-bold text-brand-primary">ETB</span>
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-1 gap-4 max-w-2xl mx-auto w-full">
-                <div className="bg-brand-dark/30 border border-white/5 rounded-2xl divide-y divide-white/5 overflow-hidden">
-                  <div className="p-5 flex items-center justify-between group hover:bg-white/[0.02] transition-all">
-                    <div className="flex flex-col">
-                      <span className="text-gray-500 text-[9px] font-black uppercase tracking-widest mb-1.5 flex items-center gap-2">
-                        <CreditCard size={10} className="text-brand-primary" />
-                        Account Identifier
-                      </span>
-                      <span className="text-base font-black text-white tracking-tight">{user?.displayName || user?.id || "-"}</span>
+              <div className="max-w-2xl mx-auto w-full">
+                <div className="divide-y divide-white/5 bg-zinc-950/50 border border-white/5 rounded-xl overflow-hidden">
+                  <div className="px-6 py-5 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+                        <CreditCard size={18} className="text-zinc-400" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Account Identifier</p>
+                        <p className="text-[15px] font-medium text-white">{user?.displayName || user?.id || "-"}</p>
+                      </div>
                     </div>
-                    <div className="text-[10px] font-black text-brand-primary/40 uppercase italic px-3 py-1 bg-brand-primary/5 rounded-full">Active</div>
+                    <span className="text-[9px] font-bold text-brand-primary/80 uppercase px-2 py-1 bg-brand-primary/10 rounded">Active</span>
                   </div>
                   
-                  <div className="p-5 flex items-center justify-between group hover:bg-white/[0.02] transition-all">
-                    <div className="flex flex-col">
-                      <span className="text-gray-500 text-[9px] font-black uppercase tracking-widest mb-1.5 flex items-center gap-2">
-                        <Wallet size={10} className="text-brand-primary" />
-                        Withdrawal Method
-                      </span>
-                      <span className="text-base font-black text-white tracking-tight">Main Wallet (ETB)</span>
+                  <div className="px-6 py-5 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+                        <Wallet size={18} className="text-zinc-400" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Withdrawal Method</p>
+                        <p className="text-[15px] font-medium text-white">Main Wallet</p>
+                      </div>
                     </div>
-                    <ChevronRight size={16} className="text-white/10 group-hover:text-white transition-colors" />
+                    <ChevronRight size={16} className="text-zinc-600" />
                   </div>
 
-                  <div className="p-5 flex items-center justify-between group hover:bg-white/[0.02] transition-all">
-                    <div className="flex flex-col">
-                      <span className="text-gray-500 text-[9px] font-black uppercase tracking-widest mb-1.5 flex items-center gap-2">
-                        <Clock size={10} className="text-brand-primary" />
-                        Registration Date
-                      </span>
-                      <span className="text-base font-black text-white tracking-tight">{fmtDate(user?.createdAt)}</span>
+                  <div className="px-6 py-5 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+                        <Clock size={18} className="text-zinc-400" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Registration Date</p>
+                        <p className="text-[15px] font-medium text-white">{fmtDate(user?.createdAt)}</p>
+                      </div>
                     </div>
-                    <Info size={16} className="text-white/10 group-hover:text-white transition-colors" />
                   </div>
                 </div>
               </div>
@@ -258,12 +264,12 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
               exit={{ opacity: 0, y: -10 }}
               className="p-8 space-y-6"
             >
-              <div className="flex flex-col md:flex-row items-center justify-between p-8 bg-brand-dark/50 border border-white/5 rounded-3xl gap-6">
+              <div className="flex flex-col md:flex-row items-center justify-between p-8 bg-zinc-900 border border-white/5 rounded-2xl gap-8 shadow-sm">
                 <div className="text-center md:text-left">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Available Balance</p>
+                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Available Balance</p>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl lg:text-5xl font-black text-white">{amount(user?.balance).toFixed(2)}</span>
-                    <span className="text-xl font-bold text-brand-primary">ETB</span>
+                    <span className="text-4xl font-bold text-white">{amount(user?.balance).toFixed(2)}</span>
+                    <span className="text-lg font-bold text-brand-primary">ETB</span>
                   </div>
                 </div>
                 <div className="w-full md:w-[320px] space-y-3">
@@ -274,15 +280,15 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
                     value={withdrawAmount}
                     onChange={(e) => setWithdrawAmount(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && requestWithdrawal()}
-                    placeholder="Amount"
-                    className="w-full bg-white text-black px-4 py-4 rounded-2xl text-sm font-black outline-none"
+                    placeholder="Enter amount"
+                    className="w-full bg-white/5 border border-white/10 text-white px-4 py-3.5 rounded-xl text-sm font-medium outline-none focus:border-brand-primary/50 transition-colors"
                   />
                   <button
                     onClick={requestWithdrawal}
                     disabled={withdrawLoading}
-                    className="w-full bg-brand-primary text-black px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[12px] disabled:opacity-50"
+                    className="w-full bg-brand-primary text-black px-8 py-3.5 rounded-xl font-bold uppercase tracking-widest text-[11px] disabled:opacity-50 transition-all hover:brightness-105"
                   >
-                    {withdrawLoading ? "Creating..." : "Get Token"}
+                    {withdrawLoading ? "PROCESSING..." : "GET TOKEN"}
                   </button>
                 </div>
               </div>
@@ -371,28 +377,26 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
                             setSubmittedTicketId(slip.id);
                             onTabChange("ticket");
                           }}
-                          className="w-full bg-brand-dark/40 border border-white/5 hover:border-white/10 rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4 transition-all group"
+                          className="w-full bg-zinc-900/50 border border-white/5 hover:border-white/10 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-colors group"
                         >
-                          <div className="flex items-center gap-6 w-full md:w-auto">
-                            <div className="flex flex-col items-start">
-                              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">{fmtDate(slip.placedAt)}</span>
-                              <span className="text-sm font-black text-white mt-1">MULTI BET</span>
-                            </div>
+                          <div className="flex flex-col items-start gap-1">
+                            <span className="text-[10px] font-bold text-zinc-500 uppercase">{fmtDate(slip.placedAt)}</span>
+                            <span className="text-sm font-bold text-white">Multi Bet</span>
                           </div>
 
-                          <div className="flex items-center justify-between md:justify-end gap-8 w-full md:w-auto">
+                          <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-auto">
                              <div className="text-right">
-                               <div className="text-[8px] uppercase font-bold text-gray-600 tracking-wider mb-0.5">Stake</div>
-                               <div className="text-xs font-bold text-white">{stake.toFixed(2)} <span className="text-[9px] text-gray-500">ETB</span></div>
+                               <p className="text-[9px] uppercase font-bold text-zinc-600 mb-0.5">Stake</p>
+                               <p className="text-sm font-bold text-white">{stake.toFixed(2)} <span className="text-[10px] text-zinc-500">ETB</span></p>
                              </div>
                              <div className="text-right">
-                               <div className="text-[8px] uppercase font-bold text-gray-600 tracking-wider mb-0.5">Payout</div>
-                               <div className="text-xs font-bold text-brand-primary">{payoutToShow.toFixed(2)} <span className="text-[9px] text-brand-primary/60">ETB</span></div>
+                               <p className="text-[9px] uppercase font-bold text-zinc-600 mb-0.5">Payout</p>
+                               <p className="text-sm font-bold text-brand-primary">{payoutToShow.toFixed(2)} <span className="text-[10px] text-brand-primary/60">ETB</span></p>
                              </div>
-                             <div className={`px-3 py-1.5 rounded-lg border ${config.bg} ${config.text} ${config.border} text-[9px] font-black tracking-widest`}>
+                             <div className={`px-3 py-1.5 rounded-lg border ${config.bg} ${config.text} ${config.border} text-[9px] font-bold tracking-widest`}>
                                {config.label}
                              </div>
-                             <ChevronRight size={16} className="text-white/10 group-hover:text-white transition-colors" />
+                             <ChevronRight size={16} className="text-zinc-600 group-hover:text-white transition-colors" />
                           </div>
                         </button>
                       );
@@ -456,19 +460,19 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
               exit={{ opacity: 0, y: -10 }}
               className="p-6 space-y-6"
             >
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <div className="relative flex-1 group">
-                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 group-focus-within:text-brand-primary transition-colors" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
                   <input 
                     value={ticketId} 
                     onChange={(e) => setTicketId(e.target.value)} 
-                    placeholder="ENTER TICKET ID..." 
-                    className="w-full bg-brand-dark/60 border border-white/5 px-14 py-4.5 text-white placeholder-gray-700 outline-none rounded-2xl focus:border-brand-primary/50 transition-all text-sm font-bold tracking-tight" 
+                    placeholder="Enter ticket ID..." 
+                    className="w-full bg-zinc-900 border border-white/5 px-10 py-3.5 text-white placeholder-zinc-700 outline-none rounded-xl focus:border-brand-primary/40 transition-all text-sm font-medium" 
                   />
                 </div>
                 <button 
                   onClick={() => setSubmittedTicketId(ticketId.trim())} 
-                  className="bg-brand-primary text-black px-10 py-4.5 font-black text-[11px] uppercase rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all tracking-widest shadow-lg shadow-brand-primary/10"
+                  className="bg-brand-primary text-black px-8 py-3.5 font-bold text-[11px] uppercase rounded-xl transition-all hover:brightness-105 active:scale-95 tracking-widest"
                 >
                   Check
                 </button>
@@ -479,36 +483,36 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
               ) : !ticket && !isError ? (
                 <div className="py-24 text-center">
                   <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Ticket className="w-8 h-8 text-white/10" />
+                    <Ticket className="w-8 h-8 text-zinc-800" />
                   </div>
-                  <p className="text-gray-500 font-bold uppercase tracking-widest text-[11px]">Enter your ticket id to see the status</p>
+                  <p className="text-zinc-600 font-bold uppercase tracking-widest text-[10px]">Enter ticket ID to check status</p>
                 </div>
               ) : isError ? (
                 <div className="py-24 text-center">
                   <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Info className="w-8 h-8 text-rose-500/40" />
+                    <Info className="w-8 h-8 text-rose-500/30" />
                   </div>
-                  <p className="text-rose-400 font-bold uppercase tracking-widest text-[11px]">Ticket not found</p>
+                  <p className="text-rose-400 font-bold uppercase tracking-widest text-[10px]">Ticket not found</p>
                 </div>
               ) : ticket ? (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between px-6 py-4 bg-brand-dark/40 border border-white/5 rounded-2xl">
+                  <div className="flex items-center justify-between px-6 py-4 bg-zinc-900 border border-white/5 rounded-xl">
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Status Report</span>
+                        <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Ticket Details</span>
                         <button 
                           onClick={() => refetchTicket()}
-                          className={`p-1 rounded bg-white/5 text-gray-500 hover:text-brand-primary transition-all ${ticketFetching ? 'animate-spin text-brand-primary' : ''}`}
+                          className={`p-1 text-zinc-600 hover:text-brand-primary transition-colors ${ticketFetching ? 'animate-spin text-brand-primary' : ''}`}
                         >
-                          <RotateCw size={10} />
+                          <RotateCw size={12} />
                         </button>
                       </div>
-                      <div className="text-lg font-black text-white tracking-widest italic">TICKET: #{ticket.id.slice(0, 8).toUpperCase()}</div>
+                      <div className="text-base font-bold text-white tracking-widest uppercase">ID: {ticket.id.slice(0, 8)}</div>
                     </div>
                     {(() => {
                       const config = statusConfig(ticket.result || ticket.status);
                       return (
-                        <div className={`px-4 py-2 rounded-xl border ${config.bg} ${config.text} ${config.border} text-[10px] font-black tracking-[0.2em]`}>
+                        <div className={`px-4 py-1.5 rounded-lg border ${config.bg} ${config.text} ${config.border} text-[9px] font-bold tracking-widest`}>
                           {config.label}
                         </div>
                       );
