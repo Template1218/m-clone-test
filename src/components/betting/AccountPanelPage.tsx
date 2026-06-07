@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMyUserBetslips, useTicketDetails } from "../../modules/betslips/hooks";
-import { Activity, CreditCard, Ticket, ChevronRight, Search, Clock, Wallet, Info, RotateCw } from "lucide-react";
+import { Activity, CreditCard, Ticket, ChevronRight, Search, Clock, Wallet, Info, RotateCw, ArrowUpRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { api } from "../../lib/api";
 
-type AccountTab = "deposit" | "bets" | "ticket";
+type AccountTab = "deposit" | "withdraw" | "bets" | "ticket";
 type PeriodFilter = "24h" | "7d" | "30d" | "all";
 
 interface AccountPanelPageProps {
@@ -96,6 +97,10 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
   const [period, setPeriod] = useState<PeriodFilter>("24h");
   const [ticketId, setTicketId] = useState("");
   const [submittedTicketId, setSubmittedTicketId] = useState("");
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawRequest, setWithdrawRequest] = useState<any>(null);
+  const [withdrawMessage, setWithdrawMessage] = useState("");
+  const [withdrawLoading, setWithdrawLoading] = useState(false);
   const [slipPage, setSlipPage] = useState(1);
   const slipsPerPage = 6;
   
@@ -141,26 +146,47 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
     return Array.from(pages).sort((a, b) => a - b);
   }, [slipPage, totalSlipPages]);
 
+  const requestWithdrawal = async () => {
+    const amountValue = Number(withdrawAmount);
+    if (!Number.isFinite(amountValue) || amountValue <= 0) {
+      setWithdrawMessage("Enter a valid amount.");
+      return;
+    }
+    setWithdrawLoading(true);
+    setWithdrawMessage("");
+    setWithdrawRequest(null);
+    try {
+      const { data } = await api.post("/users/me/withdrawal-requests", { amount: amountValue });
+      setWithdrawRequest(data.request);
+      setWithdrawAmount("");
+    } catch (e: any) {
+      setWithdrawMessage(e?.response?.data?.error?.message || e?.response?.data?.message || e?.message || "Could not create withdrawal token.");
+    } finally {
+      setWithdrawLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-4">
       {/* Header Tabs - Modern Pill Style */}
-      <div className="bg-brand-dark border border-white/5 rounded-2xl p-1.5 flex gap-1 shadow-xl">
+      <div className="bg-brand-dark border border-white/10 rounded-2xl p-1.5 flex gap-1 shadow-2xl overflow-x-auto no-scrollbar">
         {[
           { id: 'deposit', label: 'DEPOSIT', icon: Wallet },
+          { id: 'withdraw', label: 'WITHDRAW', icon: ArrowUpRight },
           { id: 'bets', label: 'MY BETS', icon: Activity },
-          { id: 'ticket', label: 'CHECK TICKET', icon: Ticket }
+          { id: 'ticket', label: 'TICKET', icon: Ticket }
         ].map((t) => (
           <button 
             key={t.id}
             onClick={() => onTabChange(t.id as AccountTab)} 
-            className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-[11px] font-bold transition-all ${
+            className={`flex-1 min-w-[80px] sm:min-w-0 flex items-center justify-center gap-2 py-3 rounded-xl text-[9px] sm:text-[11px] font-black transition-all ${
               tab === t.id 
-                ? "bg-brand-primary text-black shadow-lg shadow-brand-primary/10" 
+                ? "bg-brand-primary text-black shadow-lg shadow-brand-primary/20 scale-[0.98]" 
                 : "text-gray-500 hover:text-white hover:bg-white/5"
             }`}
           >
-            <t.icon size={16} /> 
-            <span className="tracking-widest">{t.label}</span>
+            <t.icon size={14} className="flex-shrink-0" /> 
+            <span className="tracking-tighter sm:tracking-widest truncate">{t.label}</span>
           </button>
         ))}
       </div>
@@ -174,37 +200,105 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="p-8 space-y-8"
+              className="p-6 sm:p-10 space-y-8"
+            >
+              <div className="relative overflow-hidden p-10 bg-brand-dark/50 border border-white/5 rounded-3xl flex flex-col items-center justify-center text-center gap-2">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(193,223,31,0.03),transparent_70%)]" />
+                <p className="relative z-10 text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-2">Total Available Balance</p>
+                <div className="relative z-10 flex items-baseline gap-3">
+                  <span className="text-5xl lg:text-7xl font-black text-white italic tracking-tighter tabular-nums drop-shadow-[0_0_20px_rgba(255,255,255,0.1)]">{amount(user?.balance).toFixed(2)}</span>
+                  <span className="text-2xl font-black text-brand-primary italic">ETB</span>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-4 max-w-2xl mx-auto w-full">
+                <div className="bg-brand-dark/30 border border-white/5 rounded-2xl divide-y divide-white/5 overflow-hidden">
+                  <div className="p-5 flex items-center justify-between group hover:bg-white/[0.02] transition-all">
+                    <div className="flex flex-col">
+                      <span className="text-gray-500 text-[9px] font-black uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                        <CreditCard size={10} className="text-brand-primary" />
+                        Account Identifier
+                      </span>
+                      <span className="text-base font-black text-white tracking-tight">{user?.displayName || user?.id || "-"}</span>
+                    </div>
+                    <div className="text-[10px] font-black text-brand-primary/40 uppercase italic px-3 py-1 bg-brand-primary/5 rounded-full">Active</div>
+                  </div>
+                  
+                  <div className="p-5 flex items-center justify-between group hover:bg-white/[0.02] transition-all">
+                    <div className="flex flex-col">
+                      <span className="text-gray-500 text-[9px] font-black uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                        <Wallet size={10} className="text-brand-primary" />
+                        Withdrawal Method
+                      </span>
+                      <span className="text-base font-black text-white tracking-tight">Main Wallet (ETB)</span>
+                    </div>
+                    <ChevronRight size={16} className="text-white/10 group-hover:text-white transition-colors" />
+                  </div>
+
+                  <div className="p-5 flex items-center justify-between group hover:bg-white/[0.02] transition-all">
+                    <div className="flex flex-col">
+                      <span className="text-gray-500 text-[9px] font-black uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                        <Clock size={10} className="text-brand-primary" />
+                        Registration Date
+                      </span>
+                      <span className="text-base font-black text-white tracking-tight">{fmtDate(user?.createdAt)}</span>
+                    </div>
+                    <Info size={16} className="text-white/10 group-hover:text-white transition-colors" />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {tab === "withdraw" && (
+            <motion.div
+              key="withdraw"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="p-8 space-y-6"
             >
               <div className="flex flex-col md:flex-row items-center justify-between p-8 bg-brand-dark/50 border border-white/5 rounded-3xl gap-6">
                 <div className="text-center md:text-left">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Total Available Balance</p>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Available Balance</p>
                   <div className="flex items-baseline gap-2">
                     <span className="text-4xl lg:text-5xl font-black text-white">{amount(user?.balance).toFixed(2)}</span>
                     <span className="text-xl font-bold text-brand-primary">ETB</span>
                   </div>
                 </div>
-                <button className="w-full md:w-auto bg-brand-primary text-black px-12 py-4 rounded-2xl font-black uppercase tracking-widest text-[13px] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-brand-primary/10">
-                  Top Up Now
-                </button>
+                <div className="w-full md:w-[320px] space-y-3">
+                  <input
+                    type="number"
+                    min="1"
+                    step="0.01"
+                    value={withdrawAmount}
+                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && requestWithdrawal()}
+                    placeholder="Amount"
+                    className="w-full bg-white text-black px-4 py-4 rounded-2xl text-sm font-black outline-none"
+                  />
+                  <button
+                    onClick={requestWithdrawal}
+                    disabled={withdrawLoading}
+                    className="w-full bg-brand-primary text-black px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[12px] disabled:opacity-50"
+                  >
+                    {withdrawLoading ? "Creating..." : "Get Token"}
+                  </button>
+                </div>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-brand-dark/30 p-6 border border-white/5 rounded-2xl group hover:border-white/10 transition-colors">
-                  <span className="text-gray-500 text-[9px] font-bold uppercase tracking-widest block mb-1.5">Account ID</span>
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold text-white tracking-tight">{user?.displayName || user?.id || "-"}</span>
-                    <CreditCard size={18} className="text-white/10 group-hover:text-brand-primary transition-colors" />
+
+              {withdrawRequest ? (
+                <div className="bg-brand-dark/40 border border-brand-primary/20 rounded-3xl p-8 text-center space-y-3">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Give this token to the cashier</p>
+                  <div className="text-5xl font-black tracking-[0.25em] text-brand-primary">{withdrawRequest.token}</div>
+                  <div className="text-sm font-bold text-white">{fmtMoney(withdrawRequest.amount)}</div>
+                  <div className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    Expires {fmtDate(withdrawRequest.expiresAt)}
                   </div>
                 </div>
-                <div className="bg-brand-dark/30 p-6 border border-white/5 rounded-2xl group hover:border-white/10 transition-colors">
-                  <span className="text-gray-500 text-[9px] font-bold uppercase tracking-widest block mb-1.5">Phone Number</span>
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold text-white tracking-tight">{user?.phoneNumber || "-"}</span>
-                    <Clock size={18} className="text-white/10 group-hover:text-brand-primary transition-colors" />
-                  </div>
-                </div>
-              </div>
+              ) : null}
+
+              {withdrawMessage ? <div className="text-sm font-bold text-rose-400">{withdrawMessage}</div> : null}
             </motion.div>
           )}
 
@@ -216,30 +310,35 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
               exit={{ opacity: 0, y: -10 }}
               className="p-6 space-y-6"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex bg-brand-dark p-1 rounded-xl border border-white/5 gap-1">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="flex-1 sm:flex-none flex bg-brand-dark p-1 rounded-xl border border-white/10 gap-0.5">
                     {(["24h", "7d", "30d", "all"] as PeriodFilter[]).map((p) => (
                       <button
                         key={p}
                         onClick={() => setPeriod(p)}
-                        className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${
-                          period === p ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"
+                        className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg text-[9px] sm:text-[10px] font-black uppercase transition-all ${
+                          period === p ? "bg-white/10 text-white shadow-inner" : "text-gray-500 hover:text-gray-300"
                         }`}
                       >
-                        {p === "all" ? "All Time" : p}
+                        {p === "all" ? (
+                          <>
+                            <span className="hidden sm:inline">All Time</span>
+                            <span className="sm:hidden">All</span>
+                          </>
+                        ) : p}
                       </button>
                     ))}
                   </div>
                   <button 
                     onClick={() => refetchSlips()}
-                    className={`p-2 rounded-lg bg-brand-dark border border-white/5 text-gray-500 hover:text-brand-primary transition-all ${slipsFetching ? 'animate-spin text-brand-primary' : ''}`}
+                    className={`p-2.5 rounded-xl bg-brand-dark border border-white/10 text-gray-500 hover:text-brand-primary transition-all active:scale-90 ${slipsFetching ? 'animate-spin text-brand-primary' : ''}`}
                     title="Refresh bet history"
                   >
                     <RotateCw size={14} />
                   </button>
                 </div>
-                <button className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-red-400 transition-colors">
+                <button className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest hover:text-rose-400 transition-colors py-1">
                   Clear History
                 </button>
               </div>
