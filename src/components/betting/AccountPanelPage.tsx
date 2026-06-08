@@ -360,7 +360,7 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
                 <BetHistorySkeleton />
               ) : (
                 <div className="space-y-3">
-                  {filteredSlips.length === 0 ? (
+                  {slips.length === 0 ? (
                     <div className="py-20 text-center flex flex-col items-center">
                       <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
                         <Activity className="w-8 h-8 text-white/10" />
@@ -454,7 +454,7 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
                     })
                   )}
 
-                  {filteredSlips.length > slipsPerPage && (
+                  {slips.length > slipsPerPage && (
                     <div className="flex flex-col gap-2 pt-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest text-center sm:text-left">
                         Page {Math.min(Math.max(1, slipPage), totalSlipPages)} of {totalSlipPages}
