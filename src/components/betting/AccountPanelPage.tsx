@@ -600,7 +600,7 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
 
                         {/* Selections List Stub */}
                         <div className={`border-t border-dashed overflow-hidden max-h-[350px] overflow-y-auto scrollbar-thin relative ${
-                          isWon ? 'bg-emerald-500/90 border-emerald-400/30' : isLost ? 'bg-rose-500/90 border-rose-400/30' : 'bg-[#fdfdfd] border-gray-200'
+                          isWon ? 'border-emerald-400/30' : isLost ? 'border-rose-400/30' : 'border-gray-200'
                         }`}>
                           <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
                           {sortedTicketSelections(ticket.BetSelections || [], ticketStatus).map((sel: any) => {
@@ -624,32 +624,34 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
 
                             return (
                               <div key={sel.id} className={`grid grid-cols-[1fr_auto] items-center px-8 py-5 border-b last:border-0 transition-colors relative z-10 group ${
-                                isWon || isLost ? 'border-white/10 hover:bg-white/5' : 'border-gray-100 hover:bg-black/[0.01]'
+                                selLost ? 'bg-rose-500/90 border-white/10 hover:bg-rose-500' :
+                                selWon ? 'bg-emerald-500/90 border-white/10 hover:bg-emerald-500' :
+                                'bg-[#fdfdfd] border-gray-100 hover:bg-black/[0.01]'
                               }`}>
                                  <div>
                                    <div className={`font-black text-[13px] uppercase leading-tight transition-colors truncate max-w-[200px] md:max-w-none ${
-                                     isWon || isLost ? 'text-white' : 'text-black group-hover:text-emerald-700'
+                                     selWon || selLost ? 'text-white' : 'text-black group-hover:text-emerald-700'
                                    }`}>{matchName}</div>
                                    <div className="flex items-center gap-2.5 mt-1.5">
                                      <span className={`text-[9px] font-bold uppercase tracking-tight ${
-                                       isWon || isLost ? 'text-white/60' : 'text-gray-400'
+                                       selWon || selLost ? 'text-white/60' : 'text-gray-400'
                                      }`}>{marketName}</span>
-                                     <div className={`w-0.5 h-0.5 rounded-full ${isWon || isLost ? 'bg-white/20' : 'bg-gray-200'}`} />
+                                     <div className={`w-0.5 h-0.5 rounded-full ${selWon || selLost ? 'bg-white/20' : 'bg-gray-200'}`} />
                                      <span className={`text-[10px] font-black uppercase tracking-tighter italic ${
-                                       isWon || isLost ? 'text-white/40' : 'text-black/40'
+                                       selWon || selLost ? 'text-white/40' : 'text-black/40'
                                      }`}>{outcomeName}</span>
                                    </div>
                                  </div>
                                  <div className="text-right flex flex-col items-end gap-2.5">
                                    <div className={`px-2 py-0.5 rounded text-[11px] font-black tracking-tight italic ${
-                                     isWon || isLost ? 'bg-white/20 text-white' : 'bg-black text-white'
+                                     selWon || selLost ? 'bg-white/20 text-white' : 'bg-black text-white'
                                    }`}>
                                      {amount(sel.oddsAtPlacement).toFixed(2)}
                                    </div>
                                    <div className={`text-[7px] font-black uppercase px-1.5 py-0.5 border rounded-sm tracking-[0.15em] italic ${
                                       selWon ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
                                       selLost ? 'bg-rose-100 text-rose-800 border-rose-200' :
-                                      (isWon || isLost ? 'bg-white/10 text-white border-white/20' : `${config.bg} ${config.text} ${config.border}`)
+                                      `${config.bg} ${config.text} ${config.border}`
                                    }`}>
                                      {config.label}
                                    </div>
