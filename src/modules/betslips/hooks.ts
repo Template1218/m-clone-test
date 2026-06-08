@@ -41,11 +41,11 @@ export function useCreateUserSlip() {
   });
 }
 
-export function useMyUserBetslips(enabled = true) {
+export function useMyUserBetslips(enabled = true, period: "24h" | "7d" | "30d" | "all" = "24h") {
   return useQuery({
-    queryKey: ["user-betslips"],
+    queryKey: ["user-betslips", period],
     queryFn: async () => {
-      const { data } = await api.get("/betslips/user/mine");
+      const { data } = await api.get("/betslips/user/mine", { params: { period } });
       return data.slips || [];
     },
     enabled,

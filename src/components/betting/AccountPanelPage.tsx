@@ -124,30 +124,17 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
   const [slipPage, setSlipPage] = useState(1);
   const slipsPerPage = 6;
   
-  const { data: slips = [], isLoading: slipsLoading, refetch: refetchSlips, isFetching: slipsFetching } = useMyUserBetslips(tab === "bets" || tab === "ticket");
+  const { data: slips = [], isLoading: slipsLoading, refetch: refetchSlips, isFetching: slipsFetching } = useMyUserBetslips(tab === "bets" || tab === "ticket", period);
   const { data: ticket, isError, isLoading: ticketLoading, isFetching: ticketFetching, refetch: refetchTicket } = useTicketDetails(submittedTicketId, tab === "ticket" && !!submittedTicketId);
 
   const isTicketSearching = ticketLoading || (ticketFetching && !!submittedTicketId);
 
-  const filteredSlips = useMemo(() => {
-    const now = Date.now();
-    const maxAgeMs =
-      period === "24h" ? 24 * 3600 * 1000 :
-      period === "7d" ? 7 * 24 * 3600 * 1000 :
-      period === "30d" ? 30 * 24 * 3600 * 1000 :
-      null;
-    return slips.filter((s: any) => {
-      if (!maxAgeMs) return true;
-      return now - new Date(s.placedAt || s.createdAt).getTime() <= maxAgeMs;
-    });
-  }, [slips, period]);
-
-  const totalSlipPages = Math.max(1, Math.ceil(filteredSlips.length / slipsPerPage));
+  const totalSlipPages = Math.max(1, Math.ceil(slips.length / slipsPerPage));
   const pagedSlips = useMemo(() => {
     const safePage = Math.min(Math.max(1, slipPage), totalSlipPages);
     const start = (safePage - 1) * slipsPerPage;
-    return filteredSlips.slice(start, start + slipsPerPage);
-  }, [filteredSlips, slipPage, totalSlipPages]);
+    return slips.slice(start, start + slipsPerPage);
+  }, [slips, slipPage, totalSlipPages]);
 
   useEffect(() => {
     setSlipPage(1);
