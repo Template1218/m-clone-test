@@ -65,6 +65,18 @@ function statusConfig(status: any, isLight = false) {
   };
 }
 
+function sortedTicketSelections(selections: any[], ticketStatus: string) {
+  if (ticketStatus !== "lost" && ticketStatus !== "won") return selections;
+  const rank = (sel: any) => {
+    const status = normalizeBetStatus(sel.result || "pending");
+    if (status === "lost" || status === "lose") return 0;
+    if (status === "won" || status === "win") return 1;
+    if (status === "void") return 2;
+    return 3;
+  };
+  return [...selections].sort((a, b) => rank(a) - rank(b));
+}
+
 function BetHistorySkeleton() {
   return (
     <div className="space-y-3">
@@ -591,7 +603,7 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
                           isWon ? 'bg-emerald-500/90 border-emerald-400/30' : isLost ? 'bg-rose-500/90 border-rose-400/30' : 'bg-[#fdfdfd] border-gray-200'
                         }`}>
                           <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
-                          {(ticket.BetSelections || []).map((sel: any) => {
+                          {sortedTicketSelections(ticket.BetSelections || [], ticketStatus).map((sel: any) => {
                             const modelFx = sel.Outcome?.Market?.Fixture;
                             const fx = sel.snapshot?.fixture || (modelFx ? {
                               startsAt: modelFx.startsAt,
