@@ -72,6 +72,7 @@ export interface BetSelection {
   selectionKey?: string;
   acceptedOddsVersion?: number;
   lastFetchedAt?: string;
+  startsAt?: string;
   status?: string;
   uiStatus?: "fresh" | "warning" | "expired" | "suspended" | "closed";
 }
