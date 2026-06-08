@@ -60,9 +60,9 @@ export default function Betslip({
   const [offlineExpiresAt, setOfflineExpiresAt] = useState<string | null>(null);
   const createOffline = useCreateOfflineTicket();
   const [inlineError, setInlineError] = useState<string | null>(null);
+  const [closedSelectionKeys, setClosedSelectionKeys] = useState<Set<string>>(new Set());
   const [balanceModalOpen, setBalanceModalOpen] = useState(false);
   const [localNotice, setLocalNotice] = useState<string | null>(null);
-  const [mobileDetailsOpen, setMobileDetailsOpen] = useState(false);
 
   useEffect(() => {
     if (!notice) return;
@@ -84,20 +84,26 @@ export default function Betslip({
   useEffect(() => {
     // Clear inline errors when user changes selections (add/remove/change).
     setInlineError(null);
+    setClosedSelectionKeys(new Set());
   }, [selectionSignature]);
 
   useEffect(() => {
     // Clear errors when betslip closes.
     if (!isOpen) {
       setInlineError(null);
+      setClosedSelectionKeys(new Set());
       setBalanceModalOpen(false);
-      setMobileDetailsOpen(false);
     }
   }, [isOpen]);
 
   const extractError = (e: any) => {
+    const details =
+      e?.response?.data?.error?.details ?? e?.response?.data?.details ?? null;
     const codeRaw =
-      e?.response?.data?.error?.code ?? e?.response?.data?.code ?? null;
+      details?.code ??
+      e?.response?.data?.error?.code ??
+      e?.response?.data?.code ??
+      null;
     const messageRaw =
       e?.response?.data?.error?.message ??
       e?.response?.data?.message ??
@@ -106,7 +112,28 @@ export default function Betslip({
     const code = codeRaw ? String(codeRaw) : null;
     const message = messageRaw ? String(messageRaw) : null;
     const status = Number(e?.response?.status || 0) || null;
-    return { code, message, status };
+    return { code, message, status, details };
+  };
+
+  const betKey = (bet: BetSelection) => `${bet.matchId}-${bet.market}-${bet.selection}`;
+
+  const markClosedSelections = (e: any) => {
+    const { details } = extractError(e);
+    const startsAt = details?.startsAt ? String(details.startsAt) : null;
+    const outcomeId = details?.outcomeId ? String(details.outcomeId) : null;
+    const selectionKey = details?.selectionKey ? String(details.selectionKey) : null;
+
+    const closedKeys = selectedBets
+      .filter((bet) => {
+        if (outcomeId && bet.outcomeId && String(bet.outcomeId) === outcomeId) return true;
+        if (selectionKey && bet.selectionKey && String(bet.selectionKey) === selectionKey) return true;
+        if (startsAt && bet.startsAt && new Date(bet.startsAt).getTime() === new Date(startsAt).getTime()) return true;
+        if (String(bet.uiStatus || bet.status || "").toLowerCase() === "closed") return true;
+        return false;
+      })
+      .map(betKey);
+
+    setClosedSelectionKeys(new Set(closedKeys.length ? closedKeys : selectedBets.map(betKey)));
   };
 
   const mapBetslipError = (
@@ -228,6 +255,9 @@ export default function Betslip({
         setBalanceModalOpen(true);
         return;
       }
+      if (String(mapped.code || "").toUpperCase() === "MARKET_CLOSED") {
+        markClosedSelections(e);
+      }
       setInlineError(mapped.message);
     } finally {
       setBusy(false);
@@ -261,6 +291,9 @@ export default function Betslip({
         setInlineError(null);
         setBalanceModalOpen(true);
         return;
+      }
+      if (String(mapped.code || "").toUpperCase() === "MARKET_CLOSED") {
+        markClosedSelections(e);
       }
       setInlineError(mapped.message);
     }
@@ -424,7 +457,7 @@ export default function Betslip({
         ) : null}
 
         {/* Bets List */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3 no-scrollbar pb-10">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3 scrollbar-thin scrollbar-thumb-white/10 pb-10">
           <AnimatePresence initial={false}>
             {selectedBets.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center py-20 opacity-30">
@@ -432,48 +465,75 @@ export default function Betslip({
                 <p className="text-[10px] font-black uppercase tracking-[0.2em]">Ticket Empty</p>
               </div>
             ) : (
-              selectedBets.map((bet) => (
+              selectedBets.map((bet) => {
+                const key = betKey(bet);
+                const isClosed =
+                  closedSelectionKeys.has(key) ||
+                  String(bet.uiStatus || bet.status || "").toLowerCase() === "closed";
+                return (
                 <motion.div
-                  key={`${bet.matchId}-${bet.market}-${bet.selection}`}
+                  key={key}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   style={{ 
                     clipPath: "polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% calc(50% - 6px), calc(100% - 6px) 50%, 100% calc(50% + 6px), 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)" 
                   }}
-                  className="bg-white p-3 relative group border-l-4 border-l-brand-primary shadow-xl"
+                  className={`p-3 relative group border-l-4 shadow-xl transition-colors ${
+                    isClosed
+                      ? "bg-red-500/15 border-l-red-500 border border-red-500/30"
+                      : "bg-white border-l-brand-primary"
+                  }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="text-[11px] text-black font-black leading-tight uppercase italic truncate mb-1">
+                      <div className={`text-[11px] font-black leading-tight uppercase italic truncate mb-1 ${
+                        isClosed ? "text-red-100" : "text-black"
+                      }`}>
                         {bet.matchName}
                       </div>
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tight">
+                        <span className={`text-[9px] font-bold uppercase tracking-tight ${
+                          isClosed ? "text-red-300/80" : "text-gray-400"
+                        }`}>
                           {bet.market}
                         </span>
-                        <div className="w-1 h-1 rounded-full bg-gray-200" />
-                        <span className="text-[10px] font-black text-black uppercase italic">
+                        <div className={`w-1 h-1 rounded-full ${isClosed ? "bg-red-400/70" : "bg-gray-200"}`} />
+                        <span className={`text-[10px] font-black uppercase italic ${
+                          isClosed ? "text-red-100" : "text-black"
+                        }`}>
                           {bet.selection}
                         </span>
                       </div>
+                      {isClosed ? (
+                        <div className="mt-2 inline-flex items-center rounded-sm bg-red-500 px-2 py-0.5 text-[8px] font-black uppercase italic tracking-widest text-black">
+                          Closed
+                        </div>
+                      ) : null}
                     </div>
                     <div className="flex flex-col items-end gap-2 shrink-0">
-                      <button
-                        onClick={() =>
-                          onRemoveBet(bet.matchId, bet.market, bet.selection)
-                        }
-                        className="text-gray-300 hover:text-red-500 transition-colors"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                      <div className="bg-black text-white px-2 py-0.5 rounded-sm text-[11px] font-black italic">
+                      {isClosed ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onRemoveBet(bet.matchId, bet.market, bet.selection)
+                          }
+                          className="w-6 h-6 rounded-full bg-red-500 text-black hover:bg-red-400 transition-colors flex items-center justify-center"
+                          title="Remove closed bet"
+                        >
+                          <X className="w-3.5 h-3.5 stroke-[4]" />
+                        </button>
+                      ) : null}
+                      <div className={`px-2 py-0.5 rounded-sm text-[11px] font-black italic ${
+                        isClosed ? "bg-red-500 text-black" : "bg-black text-white"
+                      }`}>
                         {bet.odd.toFixed(2)}
                       </div>
                     </div>
                   </div>
                 </motion.div>
-              ))
+              );
+              })
             )}
           </AnimatePresence>
         </div>
@@ -490,18 +550,18 @@ export default function Betslip({
               {/* Summary Row */}
               <div className="flex items-center justify-between px-1">
                 <div className="flex flex-col">
-                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">
+                  <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-0.5">
                     Total Odds
                   </span>
-                  <span className="text-2xl font-black text-brand-primary italic leading-none tracking-tighter">
+                  <span className="text-lg font-black text-brand-primary italic leading-none tracking-tighter">
                     {totalOdds.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">
+                  <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-0.5">
                     Selections
                   </span>
-                  <span className="text-2xl font-black text-white italic leading-none tracking-tighter tabular-nums">
+                  <span className="text-lg font-black text-white italic leading-none tracking-tighter tabular-nums">
                     {selectedBets.length}
                   </span>
                 </div>
@@ -510,26 +570,26 @@ export default function Betslip({
               {/* Stake Controller */}
               <div className="bg-white/5 rounded-sm p-2 border border-white/5 space-y-1.5">
                 <div className="flex items-center justify-between px-1">
-                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-[0.1em]">Stake (ETB)</span>
+                  <span className="text-[8px] font-black text-gray-400 uppercase tracking-[0.1em]">Stake (ETB)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => onStakeChange(Math.max(1, stake - 10))}
-                    className="w-10 h-10 flex items-center justify-center bg-black/40 rounded-sm text-white hover:bg-black/60 transition-all border border-white/5"
+                    className="w-8 h-8 flex items-center justify-center bg-black/40 rounded-sm text-white hover:bg-black/60 transition-all border border-white/5"
                   >
-                    <div className="w-3 h-0.5 bg-white rounded-full" />
+                    <div className="w-2.5 h-0.5 bg-white rounded-full" />
                   </button>
-                  <div className="flex-1 bg-black/40 rounded-sm border border-white/5 flex items-center h-10">
+                  <div className="flex-1 bg-black/40 rounded-sm border border-white/5 flex items-center h-8">
                     <input
                       type="number"
                       value={stake}
                       onChange={(e) => onStakeChange(Number(e.target.value))}
-                      className="w-full bg-transparent text-center focus:outline-none text-white font-black text-xl italic tracking-tighter [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-full bg-transparent text-center focus:outline-none text-white font-black text-base italic tracking-tighter [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   <button
                     onClick={() => onStakeChange(stake + 10)}
-                    className="w-10 h-10 flex items-center justify-center bg-black/40 rounded-sm text-white hover:bg-black/60 transition-all border border-white/5 text-xl font-black italic"
+                    className="w-8 h-8 flex items-center justify-center bg-black/40 rounded-sm text-white hover:bg-black/60 transition-all border border-white/5 text-base font-black italic"
                   >
                     +
                   </button>
@@ -537,42 +597,31 @@ export default function Betslip({
               </div>
 
               {/* Totals Breakdown */}
-              <div className={`space-y-1.5 px-1 ${mobileDetailsOpen ? "" : "hidden lg:block"}`}>
-                <div className="flex justify-between items-center text-[10px] font-bold">
-                  <span className="text-gray-400 uppercase tracking-tight">Potential Payout</span>
-                  <span className="text-white">{(totalOdds * stake).toFixed(2)} ETB</span>
+              <div className="space-y-1 px-1">
+                <div className="flex justify-between items-center text-[9px] font-bold">
+                  <span className="text-gray-500 uppercase tracking-tight">Potential Payout</span>
+                  <span className="text-white/80">{(totalOdds * stake).toFixed(2)} ETB</span>
                 </div>
 
-                <div className="flex justify-between items-center text-[10px] font-bold">
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-400 uppercase tracking-tight">Income Tax</span>
-                    <span className="text-[8px] bg-red-500/10 text-red-400 px-1 py-0.5 rounded border border-red-500/10">15%</span>
+                <div className="flex justify-between items-center text-[9px] font-bold">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-gray-500 uppercase tracking-tight">Income Tax</span>
+                    <span className="text-[7px] bg-red-500/10 text-red-500 px-1 py-0.5 rounded-sm border border-red-500/10">15%</span>
                   </div>
-                  <span className="text-red-400/80">-{incomeTax.toFixed(2)} ETB</span>
+                  <span className="text-red-500/60">-{incomeTax.toFixed(2)} ETB</span>
                 </div>
 
                 <div className="h-px bg-white/5 my-1" />
 
                 <div className="flex justify-between items-end">
-                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Net Win</span>
+                  <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Net Win</span>
                   <div className="flex items-baseline gap-1 leading-none">
-                    <span className="text-3xl font-black text-brand-primary italic tracking-tighter tabular-nums drop-shadow-[0_0_10px_rgba(193,223,31,0.3)]">
+                    <span className="text-xl font-black text-brand-primary italic tracking-tighter tabular-nums drop-shadow-[0_0_8px_rgba(193,223,31,0.2)]">
                       {netWin.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </span>
-                    <span className="text-[10px] font-black text-brand-primary italic uppercase">ETB</span>
+                    <span className="text-[8px] font-black text-brand-primary italic uppercase">ETB</span>
                   </div>
                 </div>
-              </div>
-
-              {/* Mobile details toggle */}
-              <div className="lg:hidden">
-                <button
-                  type="button"
-                  onClick={() => setMobileDetailsOpen((v) => !v)}
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-sm py-1.5 text-[9px] font-black uppercase tracking-widest text-white/70 hover:text-white"
-                >
-                  {mobileDetailsOpen ? "Hide Details" : "Show Details"}
-                </button>
               </div>
 
               {/* Buttons */}

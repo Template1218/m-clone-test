@@ -314,6 +314,7 @@ export default function App() {
           selectionKey: safeOutcomeId ? undefined : (safeSelectionKey || undefined),
           acceptedOddsVersion: safeOddsVersion,
           lastFetchedAt,
+          startsAt: match.startsAt,
           status,
           uiStatus,
         },
