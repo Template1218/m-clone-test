@@ -24,6 +24,10 @@ export interface Match {
     dcx2: number;
     btsYes: number;
     btsNo: number;
+    spHome?: number;
+    spAway?: number;
+    ouOver?: number;
+    ouUnder?: number;
   };
   outcomeIds?: {
     home?: string;
@@ -34,6 +38,10 @@ export interface Match {
     dcx2?: string;
     btsYes?: string;
     btsNo?: string;
+    spHome?: string;
+    spAway?: string;
+    ouOver?: string;
+    ouUnder?: string;
   };
   markets?: Array<{
     id: string;

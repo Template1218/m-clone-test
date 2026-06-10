@@ -52,7 +52,7 @@ export default function App() {
   const [activeLeagueId, setActiveLeagueId] = useState<string | null>(null);
   const [activeApiFootballLeagueId, setActiveApiFootballLeagueId] = useState<string | null>(null);
   const [timeFilter, setTimeFilter] = useState<string>('All Time');
-  const [fixturesTab, setFixturesTab] = useState<"upcoming" | "top">("upcoming");
+  const [fixturesTab, setFixturesTab] = useState<"upcoming" | "top">("top");
   const [isDesktop, setIsDesktop] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.matchMedia("(min-width: 1024px)").matches;
@@ -504,9 +504,27 @@ export default function App() {
       const t = f?.startsAt ? new Date(f.startsAt).getTime() : 0;
       return Number.isFinite(t) ? t : 0;
     };
+    const footballRank = (f: any) => {
+      const text = [
+        f?.sportName,
+        f?.sport,
+        f?.Sport?.name,
+        f?.league,
+        f?.League?.name,
+        f?.competitionName,
+        f?.country,
+      ].map((x) => String(x || "").toLowerCase()).join(" ");
+      if (text.includes("world cup")) return 0;
+      if (text.includes("football") || text.includes("soccer")) return 1;
+      return 2;
+    };
 
     if (fixturesTab === "top") {
       items.sort((a: any, b: any) => {
+        const aFootball = footballRank(a);
+        const bFootball = footballRank(b);
+        if (aFootball !== bFootball) return aFootball - bFootball;
+
         const aTop = a?.isTop ? 1 : 0;
         const bTop = b?.isTop ? 1 : 0;
         if (aTop !== bTop) return bTop - aTop;
@@ -527,6 +545,10 @@ export default function App() {
 
     // Upcoming: nearest kickoff first.
     items.sort((a: any, b: any) => {
+      const aFootball = footballRank(a);
+      const bFootball = footballRank(b);
+      if (aFootball !== bFootball) return aFootball - bFootball;
+
       const aStart = startsAtMs(a);
       const bStart = startsAtMs(b);
       if (aStart && bStart && aStart !== bStart) return aStart - bStart;
@@ -674,13 +696,11 @@ export default function App() {
           pushPath("/user/ticket");
         }}
       />
-      <div className="hidden lg:block">
-        <Navbar
-          currentView={view === "detail" ? "home" : activeNavView}
-          onViewChange={handleViewChange}
-        />
-      </div>
-      <div className="hidden lg:block h-1 lg:h-1.5 w-full bg-gradient-to-b from-black to-transparent opacity-50 relative z-[85]" />
+      <Navbar
+        currentView={view === "detail" ? "home" : activeNavView}
+        onViewChange={handleViewChange}
+      />
+      <div className="h-px lg:h-1.5 w-full bg-gradient-to-b from-black to-transparent opacity-50 relative z-[85]" />
 
       {/* Mobile menu drawer */}
       <AnimatePresence>
@@ -807,7 +827,12 @@ export default function App() {
             <div className="p-0 lg:hidden h-full">
               <Sidebar
                 activeSport={activeSport}
-                onSportChange={setActiveSport}
+                onSportChange={(sportId) => {
+                  setActiveSport(sportId);
+                  setSelectedMatchId(null);
+                  setView("home");
+                  pushPath("/");
+                }}
                 activeLeague={activeLeague}
                 onLeagueChange={({ name, id, apiFootballLeagueId }) => {
                   setActiveLeague(name);

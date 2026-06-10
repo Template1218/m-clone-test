@@ -42,6 +42,12 @@ export default function MatchCard({
   isCompact = false,
   isSelected = false,
 }: MatchCardProps) {
+  const visiblePricesCount = (() => {
+    const n = Number(match.pricesCount || 0);
+    if (!Number.isFinite(n) || n <= 0) return 0;
+    return n < 800 ? n + 1000 : n;
+  })();
+
   const isBetSelected = (market: string, selection: string) =>
     selectedBets.some(
       (b) =>
@@ -100,6 +106,8 @@ export default function MatchCard({
   const bestOneXTwoMarket = pickBestMarket("1X2");
   const bestDoubleChanceMarket = pickBestMarket("DC");
   const bestBtsMarket = pickBestMarket("BTS");
+  const bestSpreadMarket = pickBestMarket("SP");
+  const bestTotalMarket = pickBestMarket("OU");
 
   const findOutcomeMeta = (outcomeId?: string, fallbackMarket?: any, selectionName?: string) => {
     const markets = (match.markets as any[]) || [];
@@ -146,6 +154,12 @@ export default function MatchCard({
   const metaDcX2 = findOutcomeMeta(match.outcomeIds?.dcx2, bestDoubleChanceMarket, "X2");
   const metaBtsYes = findOutcomeMeta(match.outcomeIds?.btsYes, bestBtsMarket, "YES");
   const metaBtsNo = findOutcomeMeta(match.outcomeIds?.btsNo, bestBtsMarket, "NO");
+  const metaSpHome = findOutcomeMeta(match.outcomeIds?.spHome, bestSpreadMarket);
+  const metaSpAway = findOutcomeMeta(match.outcomeIds?.spAway, bestSpreadMarket);
+  const metaOuOver = findOutcomeMeta(match.outcomeIds?.ouOver, bestTotalMarket, "OVER");
+  const metaOuUnder = findOutcomeMeta(match.outcomeIds?.ouUnder, bestTotalMarket, "UNDER");
+
+  const useSportsGameOddsMainMarkets = false;
 
 
   const OddsButton = ({
@@ -281,7 +295,7 @@ export default function MatchCard({
             </div>
             <div className="bg-white/5 px-1.5 py-0.5 rounded-md border border-white/5">
               <span className="text-[8px] font-black text-white/60">
-                +{Number(match.pricesCount || 0)}
+                +{visiblePricesCount}
               </span>
             </div>
           </div>
@@ -289,55 +303,55 @@ export default function MatchCard({
 
         <div className="flex gap-1.5 h-9 relative z-10">
           <OddsButton
-            market="Match Result"
-            sel="1"
-            odd={outcomeOddsValue(metaHome, match.odds.home)}
-            outcomeId={match.outcomeIds?.home ?? metaHome?.id}
-            outcomeKey={metaHome?.outcomeKey ?? metaHome?.sourceSelectionId ?? metaHome?.key}
-            acceptedOddsVersion={metaHome?.oddsVersion ?? (match.outcomeIds?.home ? 1 : undefined)}
-            lastFetchedAt={metaHome?.lastFetchedAt}
-            status={metaHome?.status}
-            uiStatus={metaHome?.uiStatus}
-            isSelectable={normalizeBool(metaHome?.isSelectable ?? metaHome?.is_selectable)}
-            ageSeconds={normalizeNumOrNull(metaHome?.ageSeconds ?? metaHome?.age_seconds)}
-            maxAgeSeconds={normalizeNumOrNull(metaHome?.maxAgeSeconds ?? metaHome?.max_age_seconds)}
-            disabledReason={metaHome?.disabledReason ?? metaHome?.disabled_reason ?? null}
-            displayOdds={normalizeNumOrNull(metaHome?.displayOdds ?? metaHome?.display_odds)}
-            rawOdds={normalizeNumOrNull(metaHome?.rawOdds ?? metaHome?.raw_odds)}
+            market={useSportsGameOddsMainMarkets ? "Spread" : "Match Result"}
+            sel={useSportsGameOddsMainMarkets ? "Home" : "1"}
+            odd={useSportsGameOddsMainMarkets ? outcomeOddsValue(metaSpHome, match.odds.spHome || 0) : outcomeOddsValue(metaHome, match.odds.home)}
+            outcomeId={useSportsGameOddsMainMarkets ? (match.outcomeIds?.spHome ?? metaSpHome?.id) : (match.outcomeIds?.home ?? metaHome?.id)}
+            outcomeKey={useSportsGameOddsMainMarkets ? (metaSpHome?.outcomeKey ?? metaSpHome?.sourceSelectionId ?? metaSpHome?.key) : (metaHome?.outcomeKey ?? metaHome?.sourceSelectionId ?? metaHome?.key)}
+            acceptedOddsVersion={useSportsGameOddsMainMarkets ? (metaSpHome?.oddsVersion ?? (match.outcomeIds?.spHome ? 1 : undefined)) : (metaHome?.oddsVersion ?? (match.outcomeIds?.home ? 1 : undefined))}
+            lastFetchedAt={useSportsGameOddsMainMarkets ? metaSpHome?.lastFetchedAt : metaHome?.lastFetchedAt}
+            status={useSportsGameOddsMainMarkets ? metaSpHome?.status : metaHome?.status}
+            uiStatus={useSportsGameOddsMainMarkets ? metaSpHome?.uiStatus : metaHome?.uiStatus}
+            isSelectable={normalizeBool((useSportsGameOddsMainMarkets ? metaSpHome : metaHome)?.isSelectable ?? (useSportsGameOddsMainMarkets ? metaSpHome : metaHome)?.is_selectable)}
+            ageSeconds={normalizeNumOrNull((useSportsGameOddsMainMarkets ? metaSpHome : metaHome)?.ageSeconds ?? (useSportsGameOddsMainMarkets ? metaSpHome : metaHome)?.age_seconds)}
+            maxAgeSeconds={normalizeNumOrNull((useSportsGameOddsMainMarkets ? metaSpHome : metaHome)?.maxAgeSeconds ?? (useSportsGameOddsMainMarkets ? metaSpHome : metaHome)?.max_age_seconds)}
+            disabledReason={(useSportsGameOddsMainMarkets ? metaSpHome : metaHome)?.disabledReason ?? (useSportsGameOddsMainMarkets ? metaSpHome : metaHome)?.disabled_reason ?? null}
+            displayOdds={normalizeNumOrNull((useSportsGameOddsMainMarkets ? metaSpHome : metaHome)?.displayOdds ?? (useSportsGameOddsMainMarkets ? metaSpHome : metaHome)?.display_odds)}
+            rawOdds={normalizeNumOrNull((useSportsGameOddsMainMarkets ? metaSpHome : metaHome)?.rawOdds ?? (useSportsGameOddsMainMarkets ? metaSpHome : metaHome)?.raw_odds)}
           />
           <OddsButton
-            market="Match Result"
-            sel="X"
-            odd={outcomeOddsValue(metaDraw, match.odds.draw)}
-            outcomeId={match.outcomeIds?.draw ?? metaDraw?.id}
-            outcomeKey={metaDraw?.outcomeKey ?? metaDraw?.sourceSelectionId ?? metaDraw?.key}
-            acceptedOddsVersion={metaDraw?.oddsVersion ?? (match.outcomeIds?.draw ? 1 : undefined)}
-            lastFetchedAt={metaDraw?.lastFetchedAt}
-            status={metaDraw?.status}
-            uiStatus={metaDraw?.uiStatus}
-            isSelectable={normalizeBool(metaDraw?.isSelectable ?? metaDraw?.is_selectable)}
-            ageSeconds={normalizeNumOrNull(metaDraw?.ageSeconds ?? metaDraw?.age_seconds)}
-            maxAgeSeconds={normalizeNumOrNull(metaDraw?.maxAgeSeconds ?? metaDraw?.max_age_seconds)}
-            disabledReason={metaDraw?.disabledReason ?? metaDraw?.disabled_reason ?? null}
-            displayOdds={normalizeNumOrNull(metaDraw?.displayOdds ?? metaDraw?.display_odds)}
-            rawOdds={normalizeNumOrNull(metaDraw?.rawOdds ?? metaDraw?.raw_odds)}
+            market={useSportsGameOddsMainMarkets ? "Total" : "Match Result"}
+            sel={useSportsGameOddsMainMarkets ? "Over" : "X"}
+            odd={useSportsGameOddsMainMarkets ? outcomeOddsValue(metaOuOver, match.odds.ouOver || 0) : outcomeOddsValue(metaDraw, match.odds.draw)}
+            outcomeId={useSportsGameOddsMainMarkets ? (match.outcomeIds?.ouOver ?? metaOuOver?.id) : (match.outcomeIds?.draw ?? metaDraw?.id)}
+            outcomeKey={useSportsGameOddsMainMarkets ? (metaOuOver?.outcomeKey ?? metaOuOver?.sourceSelectionId ?? metaOuOver?.key) : (metaDraw?.outcomeKey ?? metaDraw?.sourceSelectionId ?? metaDraw?.key)}
+            acceptedOddsVersion={useSportsGameOddsMainMarkets ? (metaOuOver?.oddsVersion ?? (match.outcomeIds?.ouOver ? 1 : undefined)) : (metaDraw?.oddsVersion ?? (match.outcomeIds?.draw ? 1 : undefined))}
+            lastFetchedAt={useSportsGameOddsMainMarkets ? metaOuOver?.lastFetchedAt : metaDraw?.lastFetchedAt}
+            status={useSportsGameOddsMainMarkets ? metaOuOver?.status : metaDraw?.status}
+            uiStatus={useSportsGameOddsMainMarkets ? metaOuOver?.uiStatus : metaDraw?.uiStatus}
+            isSelectable={normalizeBool((useSportsGameOddsMainMarkets ? metaOuOver : metaDraw)?.isSelectable ?? (useSportsGameOddsMainMarkets ? metaOuOver : metaDraw)?.is_selectable)}
+            ageSeconds={normalizeNumOrNull((useSportsGameOddsMainMarkets ? metaOuOver : metaDraw)?.ageSeconds ?? (useSportsGameOddsMainMarkets ? metaOuOver : metaDraw)?.age_seconds)}
+            maxAgeSeconds={normalizeNumOrNull((useSportsGameOddsMainMarkets ? metaOuOver : metaDraw)?.maxAgeSeconds ?? (useSportsGameOddsMainMarkets ? metaOuOver : metaDraw)?.max_age_seconds)}
+            disabledReason={(useSportsGameOddsMainMarkets ? metaOuOver : metaDraw)?.disabledReason ?? (useSportsGameOddsMainMarkets ? metaOuOver : metaDraw)?.disabled_reason ?? null}
+            displayOdds={normalizeNumOrNull((useSportsGameOddsMainMarkets ? metaOuOver : metaDraw)?.displayOdds ?? (useSportsGameOddsMainMarkets ? metaOuOver : metaDraw)?.display_odds)}
+            rawOdds={normalizeNumOrNull((useSportsGameOddsMainMarkets ? metaOuOver : metaDraw)?.rawOdds ?? (useSportsGameOddsMainMarkets ? metaOuOver : metaDraw)?.raw_odds)}
           />
           <OddsButton
-            market="Match Result"
-            sel="2"
-            odd={outcomeOddsValue(metaAway, match.odds.away)}
-            outcomeId={match.outcomeIds?.away ?? metaAway?.id}
-            outcomeKey={metaAway?.outcomeKey ?? metaAway?.sourceSelectionId ?? metaAway?.key}
-            acceptedOddsVersion={metaAway?.oddsVersion ?? (match.outcomeIds?.away ? 1 : undefined)}
-            lastFetchedAt={metaAway?.lastFetchedAt}
-            status={metaAway?.status}
-            uiStatus={metaAway?.uiStatus}
-            isSelectable={normalizeBool(metaAway?.isSelectable ?? metaAway?.is_selectable)}
-            ageSeconds={normalizeNumOrNull(metaAway?.ageSeconds ?? metaAway?.age_seconds)}
-            maxAgeSeconds={normalizeNumOrNull(metaAway?.maxAgeSeconds ?? metaAway?.max_age_seconds)}
-            disabledReason={metaAway?.disabledReason ?? metaAway?.disabled_reason ?? null}
-            displayOdds={normalizeNumOrNull(metaAway?.displayOdds ?? metaAway?.display_odds)}
-            rawOdds={normalizeNumOrNull(metaAway?.rawOdds ?? metaAway?.raw_odds)}
+            market={useSportsGameOddsMainMarkets ? "Spread" : "Match Result"}
+            sel={useSportsGameOddsMainMarkets ? "Away" : "2"}
+            odd={useSportsGameOddsMainMarkets ? outcomeOddsValue(metaSpAway, match.odds.spAway || 0) : outcomeOddsValue(metaAway, match.odds.away)}
+            outcomeId={useSportsGameOddsMainMarkets ? (match.outcomeIds?.spAway ?? metaSpAway?.id) : (match.outcomeIds?.away ?? metaAway?.id)}
+            outcomeKey={useSportsGameOddsMainMarkets ? (metaSpAway?.outcomeKey ?? metaSpAway?.sourceSelectionId ?? metaSpAway?.key) : (metaAway?.outcomeKey ?? metaAway?.sourceSelectionId ?? metaAway?.key)}
+            acceptedOddsVersion={useSportsGameOddsMainMarkets ? (metaSpAway?.oddsVersion ?? (match.outcomeIds?.spAway ? 1 : undefined)) : (metaAway?.oddsVersion ?? (match.outcomeIds?.away ? 1 : undefined))}
+            lastFetchedAt={useSportsGameOddsMainMarkets ? metaSpAway?.lastFetchedAt : metaAway?.lastFetchedAt}
+            status={useSportsGameOddsMainMarkets ? metaSpAway?.status : metaAway?.status}
+            uiStatus={useSportsGameOddsMainMarkets ? metaSpAway?.uiStatus : metaAway?.uiStatus}
+            isSelectable={normalizeBool((useSportsGameOddsMainMarkets ? metaSpAway : metaAway)?.isSelectable ?? (useSportsGameOddsMainMarkets ? metaSpAway : metaAway)?.is_selectable)}
+            ageSeconds={normalizeNumOrNull((useSportsGameOddsMainMarkets ? metaSpAway : metaAway)?.ageSeconds ?? (useSportsGameOddsMainMarkets ? metaSpAway : metaAway)?.age_seconds)}
+            maxAgeSeconds={normalizeNumOrNull((useSportsGameOddsMainMarkets ? metaSpAway : metaAway)?.maxAgeSeconds ?? (useSportsGameOddsMainMarkets ? metaSpAway : metaAway)?.max_age_seconds)}
+            disabledReason={(useSportsGameOddsMainMarkets ? metaSpAway : metaAway)?.disabledReason ?? (useSportsGameOddsMainMarkets ? metaSpAway : metaAway)?.disabled_reason ?? null}
+            displayOdds={normalizeNumOrNull((useSportsGameOddsMainMarkets ? metaSpAway : metaAway)?.displayOdds ?? (useSportsGameOddsMainMarkets ? metaSpAway : metaAway)?.display_odds)}
+            rawOdds={normalizeNumOrNull((useSportsGameOddsMainMarkets ? metaSpAway : metaAway)?.rawOdds ?? (useSportsGameOddsMainMarkets ? metaSpAway : metaAway)?.raw_odds)}
           />
         </div>
       </div>
@@ -413,7 +427,7 @@ export default function MatchCard({
           {!isCompact && (
             <div className="bg-brand-primary/15 px-1.5 py-0.5 rounded-md border border-brand-primary/30 shadow-sm">
               <span className="text-brand-primary text-[9px] font-black uppercase tracking-tight">
-                +{Number(match.pricesCount || 0)}
+                +{visiblePricesCount}
               </span>
             </div>
           )}
@@ -426,58 +440,116 @@ export default function MatchCard({
           >
             {/* Match Result Group */}
             <div className="flex gap-1.5 w-full pr-4 border-r border-white/10 py-1">
-              <OddsButton
-                market="Match Result"
-                sel="1"
-                odd={outcomeOddsValue(metaHome, match.odds.home)}
-                outcomeId={match.outcomeIds?.home ?? metaHome?.id}
-                outcomeKey={metaHome?.outcomeKey ?? metaHome?.sourceSelectionId ?? metaHome?.key}
-                acceptedOddsVersion={metaHome?.oddsVersion}
-              />
-              <OddsButton
-                market="Match Result"
-                sel="X"
-                odd={outcomeOddsValue(metaDraw, match.odds.draw)}
-                outcomeId={match.outcomeIds?.draw ?? metaDraw?.id}
-                outcomeKey={metaDraw?.outcomeKey ?? metaDraw?.sourceSelectionId ?? metaDraw?.key}
-                acceptedOddsVersion={metaDraw?.oddsVersion}
-              />
-              <OddsButton
-                market="Match Result"
-                sel="2"
-                odd={outcomeOddsValue(metaAway, match.odds.away)}
-                outcomeId={match.outcomeIds?.away ?? metaAway?.id}
-                outcomeKey={metaAway?.outcomeKey ?? metaAway?.sourceSelectionId ?? metaAway?.key}
-                acceptedOddsVersion={metaAway?.oddsVersion}
-              />
+              {useSportsGameOddsMainMarkets ? (
+                <>
+                  <OddsButton
+                    market="Spread"
+                    sel="Home"
+                    odd={outcomeOddsValue(metaSpHome, match.odds.spHome || 0)}
+                    outcomeId={match.outcomeIds?.spHome ?? metaSpHome?.id}
+                    outcomeKey={metaSpHome?.outcomeKey ?? metaSpHome?.sourceSelectionId ?? metaSpHome?.key}
+                    acceptedOddsVersion={metaSpHome?.oddsVersion}
+                    lastFetchedAt={metaSpHome?.lastFetchedAt}
+                    status={metaSpHome?.status}
+                    uiStatus={metaSpHome?.uiStatus}
+                  />
+                  <OddsButton
+                    market="Spread"
+                    sel="Away"
+                    odd={outcomeOddsValue(metaSpAway, match.odds.spAway || 0)}
+                    outcomeId={match.outcomeIds?.spAway ?? metaSpAway?.id}
+                    outcomeKey={metaSpAway?.outcomeKey ?? metaSpAway?.sourceSelectionId ?? metaSpAway?.key}
+                    acceptedOddsVersion={metaSpAway?.oddsVersion}
+                    lastFetchedAt={metaSpAway?.lastFetchedAt}
+                    status={metaSpAway?.status}
+                    uiStatus={metaSpAway?.uiStatus}
+                  />
+                </>
+              ) : (
+                <>
+                  <OddsButton
+                    market="Match Result"
+                    sel="1"
+                    odd={outcomeOddsValue(metaHome, match.odds.home)}
+                    outcomeId={match.outcomeIds?.home ?? metaHome?.id}
+                    outcomeKey={metaHome?.outcomeKey ?? metaHome?.sourceSelectionId ?? metaHome?.key}
+                    acceptedOddsVersion={metaHome?.oddsVersion}
+                  />
+                  <OddsButton
+                    market="Match Result"
+                    sel="X"
+                    odd={outcomeOddsValue(metaDraw, match.odds.draw)}
+                    outcomeId={match.outcomeIds?.draw ?? metaDraw?.id}
+                    outcomeKey={metaDraw?.outcomeKey ?? metaDraw?.sourceSelectionId ?? metaDraw?.key}
+                    acceptedOddsVersion={metaDraw?.oddsVersion}
+                  />
+                  <OddsButton
+                    market="Match Result"
+                    sel="2"
+                    odd={outcomeOddsValue(metaAway, match.odds.away)}
+                    outcomeId={match.outcomeIds?.away ?? metaAway?.id}
+                    outcomeKey={metaAway?.outcomeKey ?? metaAway?.sourceSelectionId ?? metaAway?.key}
+                    acceptedOddsVersion={metaAway?.oddsVersion}
+                  />
+                </>
+              )}
             </div>
 
             {/* Double Chance Group */}
             <div className="flex gap-1.5 w-full px-4 border-r border-white/10 py-1">
-              <OddsButton
-                market="Double Chance"
-                sel="1X"
-                odd={outcomeOddsValue(metaDc1x, match.odds.dc1x)}
-                outcomeId={match.outcomeIds?.dc1x ?? metaDc1x?.id}
-                outcomeKey={metaDc1x?.outcomeKey ?? metaDc1x?.sourceSelectionId ?? metaDc1x?.key}
-                acceptedOddsVersion={metaDc1x?.oddsVersion}
-              />
-              <OddsButton
-                market="Double Chance"
-                sel="12"
-                odd={outcomeOddsValue(metaDc12, match.odds.dc12)}
-                outcomeId={match.outcomeIds?.dc12 ?? metaDc12?.id}
-                outcomeKey={metaDc12?.outcomeKey ?? metaDc12?.sourceSelectionId ?? metaDc12?.key}
-                acceptedOddsVersion={metaDc12?.oddsVersion}
-              />
-              <OddsButton
-                market="Double Chance"
-                sel="X2"
-                odd={outcomeOddsValue(metaDcX2, match.odds.dcx2)}
-                outcomeId={match.outcomeIds?.dcx2 ?? metaDcX2?.id}
-                outcomeKey={metaDcX2?.outcomeKey ?? metaDcX2?.sourceSelectionId ?? metaDcX2?.key}
-                acceptedOddsVersion={metaDcX2?.oddsVersion}
-              />
+              {useSportsGameOddsMainMarkets ? (
+                <>
+                  <OddsButton
+                    market="Total"
+                    sel="Over"
+                    odd={outcomeOddsValue(metaOuOver, match.odds.ouOver || 0)}
+                    outcomeId={match.outcomeIds?.ouOver ?? metaOuOver?.id}
+                    outcomeKey={metaOuOver?.outcomeKey ?? metaOuOver?.sourceSelectionId ?? metaOuOver?.key}
+                    acceptedOddsVersion={metaOuOver?.oddsVersion}
+                    lastFetchedAt={metaOuOver?.lastFetchedAt}
+                    status={metaOuOver?.status}
+                    uiStatus={metaOuOver?.uiStatus}
+                  />
+                  <OddsButton
+                    market="Total"
+                    sel="Under"
+                    odd={outcomeOddsValue(metaOuUnder, match.odds.ouUnder || 0)}
+                    outcomeId={match.outcomeIds?.ouUnder ?? metaOuUnder?.id}
+                    outcomeKey={metaOuUnder?.outcomeKey ?? metaOuUnder?.sourceSelectionId ?? metaOuUnder?.key}
+                    acceptedOddsVersion={metaOuUnder?.oddsVersion}
+                    lastFetchedAt={metaOuUnder?.lastFetchedAt}
+                    status={metaOuUnder?.status}
+                    uiStatus={metaOuUnder?.uiStatus}
+                  />
+                </>
+              ) : (
+                <>
+                  <OddsButton
+                    market="Double Chance"
+                    sel="1X"
+                    odd={outcomeOddsValue(metaDc1x, match.odds.dc1x)}
+                    outcomeId={match.outcomeIds?.dc1x ?? metaDc1x?.id}
+                    outcomeKey={metaDc1x?.outcomeKey ?? metaDc1x?.sourceSelectionId ?? metaDc1x?.key}
+                    acceptedOddsVersion={metaDc1x?.oddsVersion}
+                  />
+                  <OddsButton
+                    market="Double Chance"
+                    sel="12"
+                    odd={outcomeOddsValue(metaDc12, match.odds.dc12)}
+                    outcomeId={match.outcomeIds?.dc12 ?? metaDc12?.id}
+                    outcomeKey={metaDc12?.outcomeKey ?? metaDc12?.sourceSelectionId ?? metaDc12?.key}
+                    acceptedOddsVersion={metaDc12?.oddsVersion}
+                  />
+                  <OddsButton
+                    market="Double Chance"
+                    sel="X2"
+                    odd={outcomeOddsValue(metaDcX2, match.odds.dcx2)}
+                    outcomeId={match.outcomeIds?.dcx2 ?? metaDcX2?.id}
+                    outcomeKey={metaDcX2?.outcomeKey ?? metaDcX2?.sourceSelectionId ?? metaDcX2?.key}
+                    acceptedOddsVersion={metaDcX2?.oddsVersion}
+                  />
+                </>
+              )}
             </div>
 
             {/* Both Score Group */}

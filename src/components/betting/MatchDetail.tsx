@@ -23,42 +23,43 @@ interface MarketSectionProps {
 }
 
 const MarketSection = ({ title, children, hasInfo = false, isExpanded, onToggle, disabled = false, subtitle = null }: MarketSectionProps) => (
-  <div className="mb-2">
-    <div 
-      className={`relative overflow-hidden rounded-xl border transition-colors ${
-        isExpanded 
-          ? "bg-[#111111] border-white/10" 
-          : "bg-[#0d0d0d] border-white/5 hover:border-white/10"
+  <div className="mb-1">
+    {/* Header — always visible */}
+    <div
+      className={`relative overflow-hidden border transition-colors ${
+        isExpanded
+          ? "rounded-t-lg bg-[#1a1a1a] border-white/10 border-b-transparent"
+          : "rounded-lg bg-[#0d0d0d] border-white/5 hover:border-white/10"
       } ${disabled ? "opacity-40 cursor-default" : "cursor-pointer"}`}
       onClick={disabled ? undefined : onToggle}
     >
-      <div className="p-3.5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="px-2.5 py-1.5 flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
           <div className="flex flex-col">
-            <span className="text-[13px] font-bold text-white/90">
+            <span className="text-[10px] font-bold text-white/80">
               {title}
             </span>
-            {subtitle ? <span className="text-[10px] text-gray-500 font-medium mt-0.5 uppercase tracking-wider">{subtitle}</span> : null}
+            {subtitle ? <span className="text-[8px] text-gray-500 font-medium uppercase tracking-wider">{subtitle}</span> : null}
           </div>
-          {hasInfo && <Info className="w-3.5 h-3.5 text-brand-primary opacity-60" />}
+          {hasInfo && <Info className="w-2.5 h-2.5 text-brand-primary opacity-60" />}
         </div>
-        
+
         {disabled ? null : (
-          <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-            isExpanded ? "bg-white/10 rotate-180" : "bg-white/5"
+          <div className={`w-5 h-5 rounded-md flex items-center justify-center transition-all duration-200 ${
+            isExpanded ? "bg-brand-primary/20 rotate-180" : "bg-white/5"
           }`}>
-            <ChevronDown className="w-4 h-4 text-gray-500" />
+            <ChevronDown className={`w-3 h-3 transition-colors ${isExpanded ? "text-brand-primary" : "text-gray-500"}`} />
           </div>
         )}
       </div>
-
-      {isExpanded && (
-        <div className="px-3.5 pb-3.5 pt-0">
-          <div className="h-[1px] w-full bg-white/5 mb-3" />
-          {children}
-        </div>
-      )}
     </div>
+
+    {/* Expanded content — visually attached below header inside its own container */}
+    {isExpanded && (
+      <div className="rounded-b-lg border border-t-0 border-white/10 bg-[#111111] px-2 pb-2 pt-1.5">
+        {children}
+      </div>
+    )}
   </div>
 );
 
@@ -76,7 +77,7 @@ function DetailLoadingSkeleton() {
 export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }: MatchDetailProps) {
   const isUuid = (v: any) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(v || "").trim());
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ MAIN: true });
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const { data: detailResp, isLoading: detailLoading } = useFixtureDetails(match.id, {
     externalProvider: match.externalProvider ?? null,
     externalEventId: match.externalEventId ?? null,
@@ -92,7 +93,7 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
 
   const toggleCategory = (key: string) => {
     const k = String(key || "").trim().toUpperCase() || "OTHER";
-    setExpandedCategories(prev => ({ ...prev, [k]: !(prev?.[k] ?? false) }));
+    setExpandedCategories(prev => ({ ...prev, [k]: !(prev?.[k] ?? (k === "MAIN")) }));
   };
 
   const isSelected = (market: string, selection: string) => 
@@ -350,7 +351,7 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
   }
 
   function displayMarketTitle(m: any) {
-    const code = String(m?.code || m?.key || "").trim();
+    const code = String(m?.code || m?.marketCode || m?.key || "").trim();
     const handicap = String(m?.handicap || "").trim();
 
     // Prefer backend-provided display name if available
@@ -358,6 +359,12 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
     const norm = (s: string) => String(s || "").replace(/[\s_]+/g, "").toUpperCase();
     const directLooksLikeCode = directName && code && norm(directName) === norm(code);
     if (directName && !directLooksLikeCode && directName.toUpperCase() !== code.toUpperCase()) {
+      const dl = directName.toLowerCase();
+      if (dl.includes("3-way moneyline")) return "Match Result";
+      if (dl.includes("both teams to score")) return "Both Teams To Score";
+      if (dl.includes("double chance")) return "Double Chance";
+      if (dl.includes("draw no bet")) return "Draw No Bet";
+      if (dl.includes("correct score")) return "Correct Score";
       return handicap ? `${directName} ${handicap}` : directName;
     }
 
@@ -396,10 +403,13 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
       if (codeU.startsWith("CK_") || codeU.startsWith("COR_")) return "CORNERS";
       if (codeU.startsWith("YC_")) return "YELLOW CARDS";
       if (codeU.startsWith("CARDS_") || codeU.startsWith("CARD_")) return "STATISTIC";
+      if (codeU.includes("SHOT") && codeU.includes("TARGET")) return "SHOTS ON TARGET";
       if (codeU.startsWith("SHOTS_")) return "SHOTS";
       if (codeU.includes("SHOT") && !codeU.includes("TARGET")) return "SHOTS";
-      if (codeU.includes("SHOT") && codeU.includes("TARGET")) return "SHOTS ON TARGET";
-      if (codeU === "DC" || codeU.includes("DOUBLE")) return "DOUBLE BETS";
+      if (codeU.startsWith("FOUL_") || codeU.startsWith("FLS_")) return "FOULS";
+      if (codeU.startsWith("GSCR_") || codeU.startsWith("PLAYER_")) return "PLAYERS";
+      if (codeU === "DC" || codeU === "BTS" || codeU === "DNB" || codeU === "OE" || codeU === "OE_T1" || codeU === "OE_T2") return "MAIN";
+      if (codeU.includes("DOUBLE")) return "DOUBLE BETS";
       if (codeU === "HTFT") return "MAIN";
     }
 
@@ -436,7 +446,7 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
     if (n.includes("half") && n.includes("1st")) return "1ST HALF";
     if (n.includes("half") && n.includes("2nd")) return "2ND HALF";
     // Keep this late: many stat markets contain "Total ..." (e.g. Total Corners / Cards / Shots).
-    if (n.includes("total") || n.includes("over/under") || n.includes("odd/even")) return isBasketball ? "TOTALS" : "GOALS";
+    if (n.includes("any goals") || n.includes("goals yes/no") || n.includes("total") || n.includes("over/under") || n.includes("odd/even")) return isBasketball ? "TOTALS" : "GOALS";
 
     return "MAIN";
   }
@@ -476,10 +486,42 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
     const map = new Map<string, any[]>();
     for (const m of activeMarketsSource || []) {
       const titleGuess = displayMarketTitle(m);
-      const cat = categoryForMarket(titleGuess, m.code);
+      const cat = categoryForMarket(titleGuess, m.code || m.marketCode || m.key);
       const arr = map.get(cat) || [];
       arr.push(m);
       map.set(cat, arr);
+    }
+    if (isFootball) {
+      const main = map.get("MAIN") || [];
+      const hasTitle = (title: string) =>
+        main.some((m: any) => displayMarketTitle(m).trim().toLowerCase() === title.trim().toLowerCase());
+      const addPlaceholder = (title: string, marketCode: string) => {
+        if (hasTitle(title)) return;
+        main.push({
+          id: `template:${marketCode}`,
+          marketId: `template:${marketCode}`,
+          marketName: title,
+          name: title,
+          marketCode,
+          code: marketCode,
+          outcomes: [],
+          prices: [],
+          __templateOnly: true,
+        });
+      };
+      addPlaceholder("Match Result", "1X2");
+      addPlaceholder("2UP", "2UP");
+      addPlaceholder("Double Chance", "DC");
+      addPlaceholder("Both Teams To Score", "BTS");
+      addPlaceholder("Correct Score", "CS");
+      addPlaceholder("Draw No Bet", "DNB");
+      addPlaceholder("Goals Odd/Even", "OE");
+      addPlaceholder("Home Team Goals Odd/Even", "OE_T1");
+      addPlaceholder("Away Team Goals Odd/Even", "OE_T2");
+      addPlaceholder("Half Time/Full Time", "HTFT");
+      addPlaceholder("Highest Scoring Half", "HSH");
+      addPlaceholder("Next Goal", "NG");
+      map.set("MAIN", main);
     }
     return categoryOrder
       .map((key) => ({ key, markets: map.get(key) || [] }))
@@ -551,107 +593,115 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
         </div>
 
         {/* Markets Area */}
-        <div className="px-3 space-y-4">
+        <div className="px-3 space-y-1.5">
           {detailLoading ? <DetailLoadingSkeleton /> : null}
           {detailResp?.warning ? <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-400 text-xs font-bold mb-6">{detailResp.warning}</div> : null}
           {detailResp?.success === false ? <div className="p-5 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm font-bold">{detailResp?.message || "Could not load event details."}</div> : null}
           
-          {!detailLoading && categories.map((cat) => (
-            <div key={cat.key} className="space-y-4">
+          {!detailLoading && categories.map((cat) => {
+            const catKey = String(cat.key || "").toUpperCase();
+            const categoryExpanded = expandedCategories[catKey] ?? (catKey === "MAIN");
+            return (
+            <div key={cat.key} className="space-y-0">
+              {/* Category header */}
               <button
                 type="button"
                 onClick={() => toggleCategory(cat.key)}
-                className="w-full text-left flex items-center gap-2 mb-1 px-1 sticky top-0 z-20 bg-[#0a0a0a]/95 py-3 group"
+                className={`w-full text-left flex items-center gap-2 px-2.5 py-1.5 group transition-colors ${
+                  categoryExpanded
+                    ? "rounded-t-lg bg-[#1c1728] border border-white/10 border-b-transparent"
+                    : "rounded-lg bg-[#1c1728] border border-white/5 hover:border-white/10 mb-2"
+                }`}
               >
-                <div className="w-1 h-4 bg-brand-primary rounded-full" />
-                <span className="text-[11px] font-bold text-white/60 uppercase tracking-widest group-hover:text-white transition-colors">
+                <span className="text-[10px] font-black text-white uppercase tracking-wide group-hover:text-white transition-colors">
                   {cat.key}
                 </span>
-                <div className="ml-auto flex items-center gap-2">
-                  <span className="text-[8px] font-bold text-white/10 uppercase tracking-tighter">{cat.markets.length} MARKETS</span>
-                  <div className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${
-                      (expandedCategories[String(cat.key || "").toUpperCase()] ?? (String(cat.key || "").toUpperCase() === "MAIN")) ? "rotate-180" : ""
+                <div className="ml-auto flex items-center gap-1.5">
+                  <span className="text-[7px] font-bold text-white/20 uppercase tracking-tighter">{cat.markets.length} MARKETS</span>
+                  <div className={`w-4 h-4 rounded flex items-center justify-center transition-colors ${categoryExpanded ? "bg-brand-primary/20" : "bg-white/5 group-hover:bg-white/10"}`}>
+                    <ChevronDown className={`w-3 h-3 transition-transform duration-300 ${
+                      categoryExpanded ? "rotate-180 text-brand-primary" : "text-white/40"
                     }`} />
                   </div>
                 </div>
               </button>
 
-              {(expandedCategories[String(cat.key || "").toUpperCase()] ?? (String(cat.key || "").toUpperCase() === "MAIN")) ? (
-                <div className="grid gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                  {cat.markets.map((m: any) => {
-                    const marketTitle = displayMarketTitle(m);
-                    const outcomes = m.outcomes || m.prices || [];
-                    const hasOdds = Array.isArray(outcomes) && outcomes.length > 0;
-                    const expanded = expandedSections[marketTitle] ?? false;
-                    
-                    return (
-                      <MarketSection
-                        key={m.id}
-                        title={marketTitle}
-                        isExpanded={hasOdds ? expanded : false}
-                        onToggle={() => toggleSection(marketTitle)}
-                        disabled={!hasOdds}
-                        subtitle={!hasOdds ? "SUSPENDED" : null}
-                      >
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 mt-2">
-                          {outcomes.map((o: any) => {
-                            const oName = o.label || o.priceName || o.name || o.outcomeKey || o.key;
-                            const handicapSuffix = Number(o.handicapValue || 0) ? ` ${Number(o.handicapValue)}` : "";
-                            const selectionKey = `${String(oName)}${handicapSuffix}`;
-                            const isBetActive = isSelected(m.marketName || m.name, selectionKey);
-                            const maybeOutcomeId = String(
-                              (isUuid(o.outcomeId) ? o.outcomeId : "") ||
-                                (isUuid(o.id) ? o.id : "") ||
-                                ""
-                            ).trim();
-                            const rawSelectionKey = String(o.selectionKey || o.referenceId || o.selection_key || "").trim();
-                            const hasOutcomeId = !!maybeOutcomeId;
-                            const selectable = outcomeSelectable(o) && (hasOutcomeId || !!rawSelectionKey);
+              {/* Expanded content — contained panel attached to the header */}
+              {categoryExpanded ? (
+                <div className="rounded-b-lg border border-t-0 border-white/10 bg-[#0f0d14] px-1.5 pb-1.5 pt-1 animate-in fade-in slide-in-from-bottom-1 duration-200 mb-2">
+                  <div className="grid gap-1">
+                    {cat.markets.map((m: any) => {
+                      const marketTitle = displayMarketTitle(m);
+                      const outcomes = m.outcomes || m.prices || [];
+                      const hasOdds = Array.isArray(outcomes) && outcomes.length > 0;
+                      const expanded = expandedSections[marketTitle] ?? false;
 
-                            return (
-                              <button
-                                key={o.id}
-                                onClick={() => {
-                                  if (!selectable || o.uiStatus === "suspended" || o.uiStatus === "closed") return;
-                                  const rawOutcomeId = maybeOutcomeId;
-                                  onToggleBet(
-                                    match,
-                                    m.marketName || m.name,
-                                    selectionKey,
-                                    outcomeOddsValue(o),
-                                    rawOutcomeId || undefined,
-                                    rawSelectionKey || undefined,
-                                    Number(o.oddsVersion ?? o.odds_version ?? 1),
-                                    o.lastFetchedAt,
-                                    o.status,
-                                    o.uiStatus
-                                  );
-                                }}
-                                disabled={!selectable}
-                                className={`group relative flex items-center justify-between px-3 py-2 rounded-lg border transition-all ${
-                                  isBetActive
-                                    ? "bg-brand-primary text-black border-brand-primary"
-                                    : "bg-[#111111] border-white/5 text-white/90 hover:bg-[#1a1a1a] hover:border-white/10"
-                                } disabled:opacity-30 disabled:cursor-not-allowed`}
-                              >
-                                <span className={`text-[10px] font-bold truncate pr-1.5 uppercase ${isBetActive ? "text-black/80" : "text-gray-400"}`}>
-                                  {oName}{Number(o.handicapValue || 0) ? ` ${Number(o.handicapValue)}` : ""}
-                                </span>
-                                <span className={`text-[12px] font-black tabular-nums ${isBetActive ? "text-black" : "text-brand-primary"}`}>
-                                  {outcomeOddsValue(o).toFixed(2)}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </MarketSection>
-                    );
-                  })}
+                      return (
+                        <MarketSection
+                          key={m.id}
+                          title={marketTitle}
+                          isExpanded={hasOdds ? expanded : false}
+                          onToggle={() => toggleSection(marketTitle)}
+                          disabled={!hasOdds}
+                          subtitle={!hasOdds ? "SUSPENDED" : null}
+                        >
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 mt-1">
+                            {outcomes.map((o: any) => {
+                              const oName = o.label || o.priceName || o.name || o.outcomeKey || o.key;
+                              const selectionKey = String(oName);
+                              const isBetActive = isSelected(m.marketName || m.name, selectionKey);
+                              const maybeOutcomeId = String(
+                                (isUuid(o.outcomeId) ? o.outcomeId : "") ||
+                                  (isUuid(o.id) ? o.id : "") ||
+                                  ""
+                              ).trim();
+                              const rawSelectionKey = String(o.selectionKey || o.referenceId || o.selection_key || "").trim();
+                              const hasOutcomeId = !!maybeOutcomeId;
+                              const selectable = outcomeSelectable(o) && (hasOutcomeId || !!rawSelectionKey);
+
+                              return (
+                                <button
+                                  key={o.id}
+                                  onClick={() => {
+                                    if (!selectable || o.uiStatus === "suspended" || o.uiStatus === "closed") return;
+                                    onToggleBet(
+                                      match,
+                                      m.marketName || m.name,
+                                      selectionKey,
+                                      outcomeOddsValue(o),
+                                      maybeOutcomeId || undefined,
+                                      rawSelectionKey || undefined,
+                                      Number(o.oddsVersion ?? o.odds_version ?? 1),
+                                      o.lastFetchedAt,
+                                      o.status,
+                                      o.uiStatus
+                                    );
+                                  }}
+                                  disabled={!selectable}
+                                  className={`group relative flex items-center justify-between px-2 py-1 rounded border transition-all ${
+                                    isBetActive
+                                      ? "bg-brand-primary text-black border-brand-primary"
+                                      : "bg-[#111111] border-white/5 text-white/90 hover:bg-[#1a1a1a] hover:border-white/10"
+                                  } disabled:opacity-30 disabled:cursor-not-allowed`}
+                                >
+                                  <span className={`text-[9px] font-bold truncate pr-1 uppercase ${isBetActive ? "text-black/80" : "text-gray-400"}`}>
+                                    {oName}
+                                  </span>
+                                  <span className={`text-[10px] font-black tabular-nums shrink-0 ${isBetActive ? "text-black" : "text-brand-primary"}`}>
+                                    {outcomeOddsValue(o).toFixed(2)}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </MarketSection>
+                      );
+                    })}
+                  </div>
                 </div>
               ) : null}
             </div>
-          ))}
+          )})}
 
           {!detailLoading && activeMarketsSource.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 opacity-10">

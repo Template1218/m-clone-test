@@ -64,7 +64,7 @@ export default function Navbar({ currentView, onViewChange }: NavbarProps) {
   }, []);
 
   return (
-    <nav className="bg-[#0b0b0b] border-b border-white/10 h-[72px] flex items-center justify-start lg:justify-center shrink-0 sticky top-[50px] z-[90] overflow-x-auto no-scrollbar shadow-[0_15px_40px_rgba(0,0,0,0.9)] mb-1">
+    <nav className="bg-[#0b0b0b] border-b border-white/10 h-[56px] lg:h-[72px] flex items-center justify-start lg:justify-center shrink-0 sticky top-[70px] lg:top-[50px] z-[90] overflow-x-auto no-scrollbar shadow-[0_15px_40px_rgba(0,0,0,0.9)] mb-1">
       <div className="flex w-auto lg:gap-1 px-2 lg:px-4 min-w-max justify-start h-full">
         {NAV_ITEMS.map((item) => {
           const isActive = currentView === item.view;
@@ -88,7 +88,7 @@ export default function Navbar({ currentView, onViewChange }: NavbarProps) {
                   onViewChange(item.view);
                 }
               }}
-              className={`flex-none min-w-[75px] sm:min-w-[85px] lg:min-w-0 flex flex-col items-center justify-center cursor-pointer group px-3 lg:px-5 relative h-full transition-all duration-300 ${
+              className={`flex-none min-w-[60px] sm:min-w-[75px] lg:min-w-0 flex flex-col items-center justify-center cursor-pointer group px-2 sm:px-3 lg:px-5 relative h-full transition-all duration-300 ${
                 isActive 
                   ? "text-brand-primary bg-white/[0.04]" 
                   : "text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.01]"
@@ -104,7 +104,7 @@ export default function Navbar({ currentView, onViewChange }: NavbarProps) {
                 </div>
               </div>
               <span
-                className={`text-[9px] sm:text-[10px] font-black tracking-widest uppercase whitespace-nowrap transition-all duration-300 ${
+                className={`text-[8px] sm:text-[9px] lg:text-[10px] font-black tracking-widest uppercase whitespace-nowrap transition-all duration-300 ${
                   isActive ? "text-brand-primary" : ""
                 }`}
               >
