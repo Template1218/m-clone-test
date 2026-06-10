@@ -40,6 +40,7 @@ interface SidebarProps {
   isHot: boolean;
   onIsHotChange: (val: boolean) => void;
   className?: string;
+  applySportOnHeaderClick?: boolean;
 }
 
 export default function Sidebar({ 
@@ -51,7 +52,8 @@ export default function Sidebar({
   onTimeFilterChange,
   isHot,
   onIsHotChange,
-  className
+  className,
+  applySportOnHeaderClick = true
 }: SidebarProps) {
   const [expandedSports, setExpandedSports] = useState<string[]>([]);
   const [isTimeDropdownOpen, setIsTimeDropdownOpen] = useState(false);
@@ -301,8 +303,10 @@ export default function Sidebar({
                     <div 
                       onClick={() => {
                         toggleSport(sport.id);
-                        onSportChange(activeSport === sport.id ? null : sport.id);
-                        onLeagueChange({ name: null, id: null, apiFootballLeagueId: null });
+                        if (applySportOnHeaderClick) {
+                          onSportChange(activeSport === sport.id ? null : sport.id);
+                          onLeagueChange({ name: null, id: null, apiFootballLeagueId: null });
+                        }
                       }}
                       className={`sidebar-item group !rounded-none px-4 py-3 cursor-pointer hover:bg-zinc-900/80 ${isExpanded || activeSport === sport.id ? 'bg-zinc-900/70 text-white border-l-2 border-brand-primary' : ''}`}
                     >
