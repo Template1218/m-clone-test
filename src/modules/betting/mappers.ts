@@ -11,7 +11,7 @@ function normalizeMarketKey(value?: string | null): string {
   return key.toUpperCase();
 }
 
-export function mapBackendCatalog(sports: any[]): Sport[] {
+export function mapBackendCatalog(sports: any[], provider?: string | null): Sport[] {
   const soccerRank = (s: any) => {
     const id = String(s?.slug ?? s?.id ?? '').toLowerCase();
     const name = String(s?.name ?? '').toLowerCase();
@@ -23,16 +23,24 @@ export function mapBackendCatalog(sports: any[]): Sport[] {
     name: s.name,
     icon: s.name.toLowerCase() === 'football' ? 'Soccer' : 'Activity',
     count: s.eventCount || 0,
-    countries: (s.Leagues || []).reduce((acc: any[], l: any) => {
-      const countryName = l.country || 'International';
-      const country = acc.find(c => c.name === countryName);
-      if (country) {
-        country.count += (l.eventCount || 0);
-      } else {
-        acc.push({ name: countryName, count: (l.eventCount || 0) });
-      }
-      return acc;
-    }, [])
+    countries: provider === 'sports_game_odds'
+      ? (s.Leagues || []).map((l: any) => ({
+          id: String(l.sportsGameOddsLeagueId || l.id || l.name || ''),
+          name: String(l.name || l.sportsGameOddsLeagueId || l.id || '').trim(),
+          count: Number(l.eventCount || 0) || 0,
+          country: l.country || null,
+          apiFootballLeagueId: null,
+        })).filter((l: any) => l.id && l.name)
+      : (s.Leagues || []).reduce((acc: any[], l: any) => {
+          const countryName = l.country || 'International';
+          const country = acc.find(c => c.name === countryName);
+          if (country) {
+            country.count += (l.eventCount || 0);
+          } else {
+            acc.push({ name: countryName, count: (l.eventCount || 0) });
+          }
+          return acc;
+        }, [])
   })).sort((a: any, b: any) => soccerRank(a) - soccerRank(b) || String(a.name).localeCompare(String(b.name)));
 }
 

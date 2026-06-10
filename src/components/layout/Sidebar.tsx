@@ -186,7 +186,7 @@ export default function Sidebar({
       .filter((sport: any) => {
         const name = String(sport?.name || sport?.slug || sport?.id || "").toLowerCase();
         const count = Number(sport?.count ?? sport?.eventCount ?? 0) || 0;
-        return name === "football" || count > 0;
+        return isStructured && (catalog as any).provider === "sports_game_odds" ? true : name === "football" || count > 0;
       })
       .sort((a: any, b: any) => {
         const af = String(a?.name || a?.slug || a?.id || "").toLowerCase() === "football" ? 1 : 0;

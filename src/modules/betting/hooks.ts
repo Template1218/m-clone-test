@@ -259,7 +259,7 @@ export function useCatalog() {
       if (data.provider) {
         const mapped = {
           ...data,
-          sports: mapBackendCatalog(data.sports || []),
+          sports: mapBackendCatalog(data.sports || [], data.provider),
           rawSports: data.sports || []
         };
         return mapped;
