@@ -6,11 +6,18 @@ function normalizeMarketKey(value?: string | null): string {
   if (key === '1x2' || key === 'match result') return '1X2';
   if (key === 'dc' || key === 'double chance') return 'DC';
   if (key === 'bts' || key === 'both teams to score') return 'BTS';
+  if (key === 'ah' || key === 'handicap' || key === 'sp' || key === 'spread') return 'SP';
 
   return key.toUpperCase();
 }
 
 export function mapBackendCatalog(sports: any[]): Sport[] {
+  const soccerRank = (s: any) => {
+    const id = String(s?.slug ?? s?.id ?? '').toLowerCase();
+    const name = String(s?.name ?? '').toLowerCase();
+    return id.includes('football') || id.includes('soccer') || name.includes('football') || name.includes('soccer') ? 0 : 1;
+  };
+
   return sports.map((s: any) => ({
     id: s.slug,
     name: s.name,
@@ -26,7 +33,7 @@ export function mapBackendCatalog(sports: any[]): Sport[] {
       }
       return acc;
     }, [])
-  }));
+  })).sort((a: any, b: any) => soccerRank(a) - soccerRank(b) || String(a.name).localeCompare(String(b.name)));
 }
 
 export function mapBackendFixtures(fixtures: any[]): Match[] {
@@ -225,10 +232,14 @@ export function mapBackendFixtures(fixtures: any[]): Match[] {
     const mainPick = findBestMarketByKeys('1X2', ['1x2', '12', 'winner', 'match_winner', 'match winner', 'ha', 'home/away']);
     const dcPick = findBestMarketByKeys('DC', ['dc', 'double_chance', 'double chance', 'doublechance']);
     const btsPick = findBestMarketByKeys('BTS', ['bts', 'both_teams_to_score', 'both teams to score', 'both score', 'bothscore', 'btts']);
+    const spPick = findBestMarketByKeys('SP', ['sp', 'ah', 'spread', 'handicap']);
+    const ouPick = findBestMarketByKeys('OU', ['ou', 'over_under', 'over/under', 'total', 'totals']);
 
     const mainOutcomes = (mainPick?.renderable || []).map((o: any) => ({ ...o, odds: getOutcomeOdds(o) }));
     const dcOutcomes = (dcPick?.renderable || []).map((o: any) => ({ ...o, odds: getOutcomeOdds(o) }));
     const btsOutcomes = (btsPick?.renderable || []).map((o: any) => ({ ...o, odds: getOutcomeOdds(o) }));
+    const spOutcomes = (spPick?.renderable || []).map((o: any) => ({ ...o, odds: getOutcomeOdds(o) }));
+    const ouOutcomes = (ouPick?.renderable || []).map((o: any) => ({ ...o, odds: getOutcomeOdds(o) }));
     
     const mainHome = findOutcome(mainOutcomes, '1');
     const mainDraw = findOutcome(mainOutcomes, 'X');
@@ -240,6 +251,16 @@ export function mapBackendFixtures(fixtures: any[]): Match[] {
     
     const bYes = findOutcome(btsOutcomes, 'YES');
     const bNo = findOutcome(btsOutcomes, 'NO');
+    const spHome = spOutcomes.find((o: any) => {
+      const text = String(o?.name || o?.outcomeKey || o?.key || '').toLowerCase();
+      return text.includes(String(f.homeTeam?.name || '').toLowerCase()) || text.includes('-home') || text.endsWith('home');
+    });
+    const spAway = spOutcomes.find((o: any) => {
+      const text = String(o?.name || o?.outcomeKey || o?.key || '').toLowerCase();
+      return text.includes(String(f.awayTeam?.name || '').toLowerCase()) || text.includes('-away') || text.endsWith('away');
+    });
+    const ouOver = findOutcome(ouOutcomes, 'OVER') || ouOutcomes.find((o: any) => String(o?.name || o?.outcomeKey || o?.key || '').toLowerCase().includes('over'));
+    const ouUnder = findOutcome(ouOutcomes, 'UNDER') || ouOutcomes.find((o: any) => String(o?.name || o?.outcomeKey || o?.key || '').toLowerCase().includes('under'));
 
 
     // Temporary debug: only for fixtures where Match Result would be blank.
@@ -297,6 +318,10 @@ export function mapBackendFixtures(fixtures: any[]): Match[] {
         dcx2: Number(dcx2?.odds || 0),
         btsYes: Number(bYes?.odds || 0),
         btsNo: Number(bNo?.odds || 0),
+        spHome: Number(spHome?.odds || 0),
+        spAway: Number(spAway?.odds || 0),
+        ouOver: Number(ouOver?.odds || 0),
+        ouUnder: Number(ouUnder?.odds || 0),
       },
       outcomeIds: {
         home: mainHome?.id,
@@ -307,6 +332,10 @@ export function mapBackendFixtures(fixtures: any[]): Match[] {
         dcx2: dcx2?.id,
         btsYes: bYes?.id,
         btsNo: bNo?.id,
+        spHome: spHome?.id,
+        spAway: spAway?.id,
+        ouOver: ouOver?.id,
+        ouUnder: ouUnder?.id,
       }
     };
   });
