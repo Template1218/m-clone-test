@@ -827,12 +827,7 @@ export default function App() {
             <div className="p-0 lg:hidden h-full">
               <Sidebar
                 activeSport={activeSport}
-                onSportChange={(sportId) => {
-                  setActiveSport(sportId);
-                  setSelectedMatchId(null);
-                  setView("home");
-                  pushPath("/");
-                }}
+                onSportChange={setActiveSport}
                 activeLeague={activeLeague}
                 onLeagueChange={({ name, id, apiFootballLeagueId }) => {
                   setActiveLeague(name);
