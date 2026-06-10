@@ -842,6 +842,7 @@ export default function App() {
                 isHot={fixturesTab === "top"}
                 onIsHotChange={(v) => setFixturesTab(v ? "top" : "upcoming")}
                 className="w-full border-r-0"
+                applySportOnHeaderClick={false}
               />
             </div>
           ) : isComingSoonView ? (
