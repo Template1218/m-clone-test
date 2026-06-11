@@ -519,7 +519,8 @@ export function useFixtures(filters: any = {}) {
 }
 
 export function useFixturesInfinite(filters: any = {}) {
-  const pageSize = 10;
+  const requestedPageSize = Number(filters?.pageSize || filters?.limit || 50);
+  const pageSize = Number.isFinite(requestedPageSize) ? Math.min(Math.max(requestedPageSize, 10), 100) : 50;
   const filtersKey = stableQueryKey(filters);
   return useInfiniteQuery({
     queryKey: ['fixtures', 'infinite', filtersKey],
@@ -536,7 +537,7 @@ export function useFixturesInfinite(filters: any = {}) {
         return { fixtures: [], count: 0, nextOffset: undefined };
       }
 
-      const { providerOverride: _providerOverride, ...params } = filters || {};
+      const { providerOverride: _providerOverride, pageSize: _pageSize, ...params } = filters || {};
       const { data } = await api.get('/betting/fixtures', {
         params: {
           ...params,
@@ -546,13 +547,16 @@ export function useFixturesInfinite(filters: any = {}) {
       });
       const rows = data.rows || data.fixtures || [];
       const fixtures = mapBackendFixtures(rows);
+      const totalCount = Number(data.count);
+      const hasReliableCount = Number.isFinite(totalCount) && totalCount > 0;
+      const nextByCount = hasReliableCount ? pageParam + rows.length < totalCount : false;
+      const nextByFullPage = rows.length >= pageSize;
       return {
         fixtures,
         count: data.count,
-
-        // Keep scanning offsets even if backend returns < pageSize due to dedupe.
-        // Stop only when the backend returns 0 rows for the requested offset.
-        nextOffset: fixtures.length > 0 ? pageParam + pageSize : undefined
+        nextOffset: rows.length > 0 && (nextByCount || nextByFullPage)
+          ? pageParam + pageSize
+          : undefined
       };
     },
     getNextPageParam: (lastPage) => lastPage.nextOffset,
@@ -658,7 +662,6 @@ export function useFixtureDetails(
           data: {
             eventId,
             collections: mappedCollections,
-            raw,
           },
         };
       }
@@ -669,11 +672,7 @@ export function useFixtureDetails(
       const provider = String(opts?.externalProvider || "").trim().toLowerCase();
       const externalEventId = String(opts?.externalEventId ?? "").trim();
       const sportId = inferMezzoSportIdFromName(opts?.sportName ?? null);
-      const canUseMezzoDetails =
-        !!externalEventId &&
-        Number.isFinite(Number(externalEventId)) &&
-        sportId > 0 &&
-        (provider === "mezzo" || provider === "king5");
+      const canUseMezzoDetails = false;
       if (canUseMezzoDetails) {
         // Use the "king5" alias route for nicer URLs; provider still stays "mezzo" internally.
         const fetchDetails = async (force: boolean) => {
@@ -691,16 +690,15 @@ export function useFixtureDetails(
           ? mappedCollections.reduce((n: number, c: any) => n + (Array.isArray(c?.markets) ? c.markets.length : 0), 0)
           : 0;
 
-        const data = marketCount === 0 ? await fetchDetails(true) : first;
+        const data = first;
         const raw = data?.data ?? null;
-        mappedCollections = marketCount === 0 ? mapMezzoEventDetailsToCollections(raw) : mappedCollections;
         return {
           provider: "mezzo",
           eventId: externalEventId,
           sportId,
           fetchedAt: data?.fetchedAt ?? null,
           cached: Boolean(data?.cached),
-          data: { eventId: externalEventId, collections: mappedCollections, raw },
+          data: { eventId: externalEventId, collections: mappedCollections },
         };
       }
 
@@ -708,7 +706,10 @@ export function useFixtureDetails(
       return data;
     },
     enabled: !!fixtureId,
-    staleTime: 5000,
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 }
 
