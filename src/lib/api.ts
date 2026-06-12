@@ -42,6 +42,7 @@ function getDedupKey(config: any) {
 // aborted/cancelled requests can skip the adapter and permanently deadlock the queue.
 let tail: Promise<unknown> = Promise.resolve();
 const baseRequest = api.request.bind(api);
+const baseGet = api.get.bind(api);
 (api as any).request = async function queuedMutations(config: any) {
   const method = String(config?.method || "get").toLowerCase();
   if (method === "get") {
@@ -71,6 +72,22 @@ const baseRequest = api.request.bind(api);
   } finally {
     release();
   }
+};
+
+(api as any).get = async function dedupedGet(url: string, config: any = {}) {
+  const requestConfig = { ...(config || {}), method: "get", url };
+  const key = getDedupKey(requestConfig);
+  const existing = inFlightGets.get(key);
+  if (existing) return existing;
+  const p = (async () => {
+    try {
+      return await baseGet(url, config);
+    } finally {
+      inFlightGets.delete(key);
+    }
+  })();
+  inFlightGets.set(key, p);
+  return p;
 };
 
 // Automatically add token to requests
