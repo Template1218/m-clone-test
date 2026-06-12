@@ -919,7 +919,6 @@ export default function App() {
                   <button
                     onClick={() => {
                       setFixturesTab("upcoming");
-                      setTimeFilter("3 Hours");
                       setSelectedMatchId(null);
                       pushPath("/");
                     }}

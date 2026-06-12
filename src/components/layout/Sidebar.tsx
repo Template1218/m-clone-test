@@ -165,7 +165,7 @@ export default function Sidebar({
     /^competition\s+\d+/i.test(name) ||
     /^comp_\d+/i.test(name);
 
-  const effectiveTopLeagues = isPissbet
+  const effectiveTopLeaguesRaw = isPissbet
     ? pissbetTopLeagues
     : isMezzo
       ? uniqueLeagueItems(mezzoTopLeagues).slice(0, 8)
@@ -180,6 +180,7 @@ export default function Sidebar({
             .filter((l: any) => !isJunkLeague(String(l?.name || "")))
             .slice(0, 8);
         })();
+  const effectiveTopLeagues = uniqueLeagueItems(effectiveTopLeaguesRaw as any[]).slice(0, 8);
   const effectiveSports = isPissbet
     ? [
         {
