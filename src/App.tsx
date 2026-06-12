@@ -427,7 +427,7 @@ export default function App() {
     timeLimit: timeFilter,
     tab: fixturesTab,
     providerOverride: activeProvider,
-    pageSize: fixturesTab === "top" ? 80 : 50,
+    pageSize: fixturesTab === "top" ? 20 : 30,
   });
 
   const data = apifbInfinite.data;
