@@ -24,14 +24,15 @@ export function mapBackendCatalog(sports: any[], provider?: string | null): Spor
     name: s.name,
     icon: s.name.toLowerCase() === 'football' ? 'Soccer' : 'Activity',
     count: s.eventCount || 0,
-    countries: provider === 'sports_game_odds'
+    countries: provider === 'sports_game_odds' || provider === 'thestatsapi'
       ? (s.Leagues || []).map((l: any) => ({
-          id: String(l.sportsGameOddsLeagueId || l.id || l.name || ''),
+          id: String(provider === 'sports_game_odds' ? (l.sportsGameOddsLeagueId || l.id || l.name || '') : (l.id || l.name || '')),
           name: String(l.name || l.sportsGameOddsLeagueId || l.id || '').trim(),
           count: Number(l.eventCount || 0) || 0,
           country: String(l.country || l.Country?.name || '').trim() || null,
+          sportId: String(s.id || s.slug || ''),
           apiFootballLeagueId: null,
-        })).filter((l: any) => l.id && l.name)
+        })).filter((l: any) => l.id && l.name && l.count > 0)
       : (s.Leagues || []).reduce((acc: any[], l: any) => {
           const countryName = l.country || 'International';
           const country = acc.find(c => c.name === countryName);
