@@ -626,6 +626,21 @@ function mapMezzoEventDetailsToCollections(raw: any) {
   }));
 }
 
+const fixtureDetailsInFlight = new Map<string, Promise<any>>();
+
+async function getFixtureDetailsOnce(fixtureId: string) {
+  const key = String(fixtureId || "");
+  const existing = fixtureDetailsInFlight.get(key);
+  if (existing) return existing;
+  const request = api.get(`/betting/fixtures/${fixtureId}/details`)
+    .then(({ data }) => data)
+    .finally(() => {
+      fixtureDetailsInFlight.delete(key);
+    });
+  fixtureDetailsInFlight.set(key, request);
+  return request;
+}
+
 export function useFixtureDetails(
   fixtureId?: string,
   opts?: { externalProvider?: string | null; externalEventId?: any; sportName?: string | null }
@@ -702,8 +717,7 @@ export function useFixtureDetails(
         };
       }
 
-      const { data } = await api.get(`/betting/fixtures/${fixtureId}/details`);
-      return data;
+      return getFixtureDetailsOnce(String(fixtureId || ""));
     },
     enabled: !!fixtureId,
     staleTime: 5 * 60_000,
