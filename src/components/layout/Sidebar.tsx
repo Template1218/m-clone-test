@@ -173,6 +173,12 @@ export default function Sidebar({
           const raw = (isStructured && Array.isArray(fallbackTopLeaguesFromCatalog) && fallbackTopLeaguesFromCatalog.length
             ? fallbackTopLeaguesFromCatalog
             : topLeagues) as any[];
+          if (isTheStatsApi) {
+            return (Array.isArray(topLeagues) ? topLeagues : [])
+              .map(cleanStatsLeague)
+              .filter((l: any) => !isJunkLeague(String(l?.name || "")) && Number(l?.oddsFixtureCount ?? l?.fixtureCount ?? l?.count ?? 0) > 0)
+              .slice(0, 8);
+          }
           if (!isTheStatsApi) return raw;
           // TheStatsAPI: filter junk names and cap at 8
           return raw
@@ -239,7 +245,8 @@ export default function Sidebar({
       .filter((sport: any) => {
         const name = String(sport?.name || sport?.slug || sport?.id || "").toLowerCase();
         const count = Number(sport?.count ?? sport?.eventCount ?? 0) || 0;
-        return isStructured && (catalog as any).provider === "sports_game_odds" ? true : name === "football" || count > 0;
+        if (isStructured && ((catalog as any).provider === "sports_game_odds" || (catalog as any).provider === "thestatsapi")) return true;
+        return name === "football" || count > 0;
       })
       .sort((a: any, b: any) => {
         const af = String(a?.name || a?.slug || a?.id || "").toLowerCase() === "football" ? 1 : 0;
