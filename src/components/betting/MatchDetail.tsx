@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ChevronDown, Globe, Info, ChevronUp } from 'lucide-react';
 import { Match, BetSelection } from '../../types';
 import { useFixtureDetails, usePissbetMarketsTemplate } from '../../modules/betting/hooks';
@@ -475,14 +475,17 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
   // Pissbet markets arrive via socket and are attached to `match.markets`.
   // The HTTP fixture-details endpoint may return a different provider's shape (or empty),
   // so prefer the socket markets when the match comes from `pissbet_socket`.
-  const marketsFromCollections = Array.isArray(detailCollections)
-    ? detailCollections.flatMap((c: any) => (c.markets || []).map((m: any) => ({ ...m, __collectionName: c.collectionName })))
-    : [];
+  const marketsFromCollections = useMemo(
+    () => Array.isArray(detailCollections)
+      ? detailCollections.flatMap((c: any) => (c.markets || []).map((m: any) => ({ ...m, __collectionName: c.collectionName })))
+      : [],
+    [detailCollections],
+  );
 
   const activeMarketsSource =
     preferSocketMarkets || marketsFromCollections.length === 0 ? (match.markets || []) : marketsFromCollections;
 
-  const categories = (() => {
+  const categories = useMemo(() => {
     const map = new Map<string, any[]>();
     for (const m of activeMarketsSource || []) {
       const titleGuess = displayMarketTitle(m);
@@ -526,7 +529,7 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
     return categoryOrder
       .map((key) => ({ key, markets: map.get(key) || [] }))
       .filter((x) => x.markets.length > 0);
-  })();  return (
+  }, [activeMarketsSource, isFootball]);  return (
     <div className="w-full h-full flex flex-col min-h-0 bg-[#0a0a0a]">
       {/* Top Navigation */}
       <div className="flex items-center justify-between px-3 py-3 shrink-0">

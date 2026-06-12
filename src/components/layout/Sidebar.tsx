@@ -30,11 +30,33 @@ function isWorldGamesName(name?: string | null) {
   return n === "world" || n === "international" || n.includes("world cup") || n.includes("friendly internationals");
 }
 
+function normalizeLeagueLabel(name?: string | null) {
+  return String(name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/^world\s+-\s+/i, "")
+    .replace(/^international\s+-\s+/i, "");
+}
+
+function uniqueLeagueItems<T extends { name?: string | null; sportId?: any; count?: any; eventsCount?: any }>(items: T[]) {
+  const byName = new Map<string, T>();
+  for (const item of items) {
+    const key = normalizeLeagueLabel(item.name);
+    if (!key) continue;
+    const existing = byName.get(key);
+    if (!existing || Number(item.eventsCount ?? item.count ?? 0) > Number(existing.eventsCount ?? existing.count ?? 0)) {
+      byName.set(key, item);
+    }
+  }
+  return Array.from(byName.values());
+}
+
 interface SidebarProps {
   activeSport: string | null;
   onSportChange: (id: string | null) => void;
   activeLeague: string | null;
-  onLeagueChange: (params: { name: string | null; id: string | null; apiFootballLeagueId: string | null }) => void;
+  onLeagueChange: (params: { name: string | null; id: string | null; apiFootballLeagueId: string | null; sportId?: string | null; country?: string | null }) => void;
   timeFilter: string;
   onTimeFilterChange: (filter: string) => void;
   isHot: boolean;
@@ -84,6 +106,8 @@ export default function Sidebar({
   const rawSports = isStructured ? (catalog as any).rawSports : null;
   const topLeagues = isStructured ? (catalog as any).topLeagues : TOP_LEAGUES;
   const isApiFootball = isStructured && (catalog as any).provider === "apifootball";
+  const isTheStatsApi = isStructured && (catalog as any).provider === "thestatsapi";
+  const isHttpFootballProvider = isApiFootball || isTheStatsApi;
   const isPissbet = isStructured && (catalog as any).provider === "pissbet_socket";
   const isMezzo = isStructured && (catalog as any).provider === "mezzo";
 
@@ -111,9 +135,10 @@ export default function Sidebar({
           .flatMap((s: any) => (Array.isArray(s?.Leagues) ? s.Leagues : []))
           .filter((l: any) => Boolean(l?.isTop) || Boolean(l?.top) || Boolean(l?.is_top))
           .map((l: any) => ({
-            id: String(l?.id || ""),
+            id: String(l?.sportsGameOddsLeagueId || l?.id || ""),
             name: String(l?.name || "").trim(),
-            country: String(l?.country || "").trim(),
+            country: String(l?.country || l?.Country?.name || "").trim(),
+            sportId: String(l?.sportId || l?.SportId || l?.Sport?.id || ""),
             apiFootballLeagueId: l?.apiFootballLeagueId ?? l?.api_football_league_id ?? null,
           }))
           .filter((l: any) => l.id && l.name)
@@ -121,13 +146,41 @@ export default function Sidebar({
 
   // NOTE: In Mezzo mode, only show Mezzo-derived leagues (competitionId-based).
   // Mixing in DB catalog leagues breaks filtering because /odds/mezzo expects Mezzo competition ids.
-  const effectiveTopLeagues = isPissbet
+  // For TheStatsAPI: filter out junk competition names and limit to 8 top leagues
+  const cleanStatsLeague = (league: any) => {
+    const rawName = String(league?.name || league?.competitionName || "").trim();
+    const rawCountry = String(league?.country || "").trim();
+    const joined = `${rawName} ${String(league?.id || "")}`.toLowerCase();
+    if (joined.includes("international_soccer") || /^world cup$/i.test(rawName) || /fifa world cup/i.test(rawName)) {
+      return { ...league, name: "FIFA World Cup", country: "World" };
+    }
+    if (joined.includes("comp_2674")) {
+      return { ...league, name: "Veikkausliiga", country: "Finland" };
+    }
+    return league;
+  };
+
+  const isJunkLeague = (name: string) =>
+    /^competition\s+comp_\d+/i.test(name) ||
+    /^competition\s+\d+/i.test(name) ||
+    /^comp_\d+/i.test(name);
+
+  const effectiveTopLeaguesRaw = isPissbet
     ? pissbetTopLeagues
     : isMezzo
-      ? mezzoTopLeagues
-      : (isStructured && Array.isArray(fallbackTopLeaguesFromCatalog) && fallbackTopLeaguesFromCatalog.length
-        ? fallbackTopLeaguesFromCatalog
-        : topLeagues);
+      ? uniqueLeagueItems(mezzoTopLeagues).slice(0, 8)
+      : (() => {
+          const raw = (isStructured && Array.isArray(fallbackTopLeaguesFromCatalog) && fallbackTopLeaguesFromCatalog.length
+            ? fallbackTopLeaguesFromCatalog
+            : topLeagues) as any[];
+          if (!isTheStatsApi) return raw;
+          // TheStatsAPI: filter junk names and cap at 8
+          return raw
+            .map(cleanStatsLeague)
+            .filter((l: any) => !isJunkLeague(String(l?.name || "")))
+            .slice(0, 8);
+        })();
+  const effectiveTopLeagues = uniqueLeagueItems(effectiveTopLeaguesRaw as any[]).slice(0, 8);
   const effectiveSports = isPissbet
     ? [
         {
@@ -217,9 +270,9 @@ export default function Sidebar({
                      onLeagueChange({ 
                        name: isSelected ? null : league.name, 
                        id: isSelected ? null : (league.id || null),
-                       apiFootballLeagueId: isSelected ? null : (league.apiFootballLeagueId || null)
+                       apiFootballLeagueId: isSelected ? null : (league.apiFootballLeagueId || null),
+                       sportId: isSelected ? null : (league.sportId || null)
                      });
-                     // Keep sport filter unchanged; Mezzo endpoint is keyed by sportId in App state.
                    }}
                    className={`sidebar-item group !rounded-none !px-4 !py-2.5 border-b border-zinc-900 last:border-0 hover:bg-zinc-900/80 cursor-pointer ${activeLeague === league.name ? 'bg-brand-primary/10 text-brand-primary border-l-2 border-l-brand-primary' : ''}`}
                
@@ -233,7 +286,7 @@ export default function Sidebar({
                   </div>
                   <span className={`truncate flex-1 text-[13px] font-medium transition-colors ${activeLeague === league.name ? 'text-white' : 'group-hover:text-white'}`}>{league.name}</span>
                   <div className="flex items-center gap-1.5">
-                    {isApiFootball && league.oddsFixtureCount > 0 && (
+                    {isHttpFootballProvider && league.oddsFixtureCount > 0 && (
                       <span className="text-gray-500 text-[10px] font-bold">{league.oddsFixtureCount}</span>
                     )}
                     <ChevronRight className={`w-3.5 h-3.5 transition-all ${activeLeague === league.name ? 'text-brand-primary' : 'text-gray-600 group-hover:text-brand-primary group-hover:translate-x-0.5'}`} />
@@ -241,7 +294,7 @@ export default function Sidebar({
                 </div>
               ))}
               
-              {isApiFootball && topLeagues.length === 0 && (
+              {isHttpFootballProvider && topLeagues.length === 0 && (
                 <div className="p-4 text-xs text-zinc-500 text-center italic">
                   No leagues with odds yet.<br/>Sync fixtures in Admin.
                 </div>
@@ -298,6 +351,14 @@ export default function Sidebar({
                   combat: "\uD83E\uDD4A"
                 };
 
+                const slug = String(sport?.slug || sport?.id || "").toLowerCase();
+                const iconKey = slug.includes('football') || slug.includes('soccer') || slug === '501' ? 'football' : 
+                               slug.includes('basket') || slug === '504' ? 'basketball' :
+                               slug.includes('tennis') || slug === '503' ? 'tennis' :
+                               slug.includes('hockey') || slug === '502' ? 'hockey' :
+                               slug.includes('volley') || slug === '505' ? 'volleyball' :
+                               slug;
+
                 return (
                   <div key={sport.id} className="flex flex-col border-b border-zinc-900 last:border-0">
                     <div 
@@ -311,7 +372,7 @@ export default function Sidebar({
                       className={`sidebar-item group !rounded-none px-4 py-3 cursor-pointer hover:bg-zinc-900/80 ${isExpanded || activeSport === sport.id ? 'bg-zinc-900/70 text-white border-l-2 border-brand-primary' : ''}`}
                     >
                       <div className={`w-5 h-5 rounded-md bg-white/5 flex items-center justify-center flex-shrink-0 transition-colors border border-white/5 ${activeSport === sport.id ? 'bg-brand-primary/20 border-brand-primary' : 'group-hover:bg-brand-primary/10'}`}>
-                        <span className="text-[13px] leading-none">{sportIcons[sport.id] || "\u26BD"}</span>
+                        <span className="text-[13px] leading-none">{sportIcons[iconKey as any] || sportIcons[slug as any] || "\u26BD"}</span>
                       </div>
                       <span className="flex-1 font-bold text-[12px] uppercase tracking-wide">{sport.name}</span>
                       <div className="flex items-center gap-1.5">
@@ -330,9 +391,11 @@ export default function Sidebar({
                               onLeagueChange({ 
                                 name: isSelected ? null : country.name, 
                                 id: isSelected ? null : (country.id || null),
-                                apiFootballLeagueId: isSelected ? null : (country.apiFootballLeagueId || null)
+                                apiFootballLeagueId: isSelected ? null : (country.apiFootballLeagueId || null),
+                                sportId: sport.id,
+                                country: isSelected ? null : (country.isCountry || !country.id ? country.name : null)
                               });
-                              // Keep sport expanded but clear other filters
+                              // Keep sport expanded
                               onSportChange(sport.id);
                             }}
                             className={`flex items-center gap-2.5 px-5 py-2 hover:bg-white/5 cursor-pointer text-[12px] transition-colors group/country ${activeLeague === country.name ? 'text-brand-primary bg-white/[0.03]' : 'text-gray-400 hover:text-white'}`}

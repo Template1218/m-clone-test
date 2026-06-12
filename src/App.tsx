@@ -51,6 +51,7 @@ export default function App() {
   const [activeLeague, setActiveLeague] = useState<string | null>(null);
   const [activeLeagueId, setActiveLeagueId] = useState<string | null>(null);
   const [activeApiFootballLeagueId, setActiveApiFootballLeagueId] = useState<string | null>(null);
+  const [activeCountry, setActiveCountry] = useState<string | null>(null);
   const [timeFilter, setTimeFilter] = useState<string>('All Time');
   const [fixturesTab, setFixturesTab] = useState<"upcoming" | "top">("top");
   const [isDesktop, setIsDesktop] = useState<boolean>(() => {
@@ -88,8 +89,8 @@ export default function App() {
     enabled: activeProvider === "mezzo",
     sportId: mezzoSportId,
     tab: fixturesTab,
-    // For Mezzo we filter by league name (as provided by catalog), not by internal IDs.
-    leagueId: null,
+    // Mezzo sidebar entries carry provider competition IDs; pass them through for reliable filtering.
+    leagueId: activeLeagueId,
     leagueName: activeLeague,
   });
 
@@ -202,6 +203,7 @@ export default function App() {
           setActiveLeague(null);
           setActiveLeagueId(null);
           setActiveApiFootballLeagueId(null);
+          setActiveCountry(null);
           return;
         }
         if (comingSoonTitles[routeView]) {
@@ -408,6 +410,7 @@ export default function App() {
       setActiveLeague(null);
       setActiveLeagueId(null);
       setActiveApiFootballLeagueId(null);
+      setActiveCountry(null);
     }
     if (tabRoutes[newView]) pushPath(tabRoutes[newView]);
     if (newView === "account") pushPath("/user/profile");
@@ -420,9 +423,11 @@ export default function App() {
     leagueName: activeLeague,
     leagueId: activeLeagueId,
     apiFootballLeagueId: activeApiFootballLeagueId,
+    country: activeCountry,
     timeLimit: timeFilter,
     tab: fixturesTab,
     providerOverride: activeProvider,
+    pageSize: fixturesTab === "top" ? 80 : 50,
   });
 
   const data = apifbInfinite.data;
@@ -580,8 +585,9 @@ export default function App() {
 
   // Bulk refresh visible fixtures (one call per chunk) so a page refresh updates odds "all at once".
   useEffect(() => {
-    // Pissbet socket odds are live-streamed; there is no per-fixture refresh endpoint.
-    if (activeProvider === "pissbet_socket") return;
+    // Only API-Football needs client-triggered visible odds refresh.
+    // StatsAPI/Mezzo-linked odds are filled from DB/workers/admin matching.
+    if (activeProvider !== "apifootball") return;
     if (!visibleFixtures.length) return;
     if (bulkRefreshInFlightRef.current) return;
 
@@ -802,12 +808,20 @@ export default function App() {
           <div className="hidden lg:block">
             <Sidebar 
               activeSport={activeSport} 
-              onSportChange={setActiveSport}
+              onSportChange={(id) => {
+                setActiveSport(id);
+                if (id) setFixturesTab("upcoming");
+              }}
               activeLeague={activeLeague}
-              onLeagueChange={({ name, id, apiFootballLeagueId }) => {
+              onLeagueChange={({ name, id, apiFootballLeagueId, sportId, country }) => {
                 setActiveLeague(name);
                 setActiveLeagueId(id);
                 setActiveApiFootballLeagueId(apiFootballLeagueId);
+                setActiveCountry(country || null);
+                if (sportId) {
+                  setActiveSport(String(sportId));
+                }
+                setFixturesTab("upcoming");
               }}
               timeFilter={timeFilter}
               onTimeFilterChange={setTimeFilter}
@@ -827,12 +841,20 @@ export default function App() {
             <div className="p-0 lg:hidden h-full">
               <Sidebar
                 activeSport={activeSport}
-                onSportChange={setActiveSport}
+                onSportChange={(id) => {
+                  setActiveSport(id);
+                  if (id) setFixturesTab("upcoming");
+                }}
                 activeLeague={activeLeague}
-                onLeagueChange={({ name, id, apiFootballLeagueId }) => {
+                onLeagueChange={({ name, id, apiFootballLeagueId, sportId, country }) => {
                   setActiveLeague(name);
                   setActiveLeagueId(id);
                   setActiveApiFootballLeagueId(apiFootballLeagueId);
+                  setActiveCountry(country || null);
+                  if (sportId) {
+                    setActiveSport(String(sportId));
+                  }
+                  setFixturesTab("upcoming");
                   // After choosing a league, go back to the main list.
                   setView("home");
                   pushPath("/");
@@ -903,7 +925,6 @@ export default function App() {
                   <button
                     onClick={() => {
                       setFixturesTab("upcoming");
-                      setTimeFilter("3 Hours");
                       setSelectedMatchId(null);
                       pushPath("/");
                     }}

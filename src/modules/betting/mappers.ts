@@ -19,7 +19,8 @@ export function mapBackendCatalog(sports: any[], provider?: string | null): Spor
   };
 
   return sports.map((s: any) => ({
-    id: s.slug,
+    id: String(s.id || s.slug || ''),
+    slug: s.slug,
     name: s.name,
     icon: s.name.toLowerCase() === 'football' ? 'Soccer' : 'Activity',
     count: s.eventCount || 0,
@@ -28,7 +29,7 @@ export function mapBackendCatalog(sports: any[], provider?: string | null): Spor
           id: String(l.sportsGameOddsLeagueId || l.id || l.name || ''),
           name: String(l.name || l.sportsGameOddsLeagueId || l.id || '').trim(),
           count: Number(l.eventCount || 0) || 0,
-          country: l.country || null,
+          country: String(l.country || l.Country?.name || '').trim() || null,
           apiFootballLeagueId: null,
         })).filter((l: any) => l.id && l.name)
       : (s.Leagues || []).reduce((acc: any[], l: any) => {
