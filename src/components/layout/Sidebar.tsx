@@ -30,6 +30,28 @@ function isWorldGamesName(name?: string | null) {
   return n === "world" || n === "international" || n.includes("world cup") || n.includes("friendly internationals");
 }
 
+function normalizeLeagueLabel(name?: string | null) {
+  return String(name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/^world\s+-\s+/i, "")
+    .replace(/^international\s+-\s+/i, "");
+}
+
+function uniqueLeagueItems<T extends { name?: string | null; sportId?: any; count?: any; eventsCount?: any }>(items: T[]) {
+  const byName = new Map<string, T>();
+  for (const item of items) {
+    const key = normalizeLeagueLabel(item.name);
+    if (!key) continue;
+    const existing = byName.get(key);
+    if (!existing || Number(item.eventsCount ?? item.count ?? 0) > Number(existing.eventsCount ?? existing.count ?? 0)) {
+      byName.set(key, item);
+    }
+  }
+  return Array.from(byName.values());
+}
+
 interface SidebarProps {
   activeSport: string | null;
   onSportChange: (id: string | null) => void;
@@ -104,11 +126,7 @@ export default function Sidebar({
       eventsCount: Number(l?.eventsCount ?? 0) || 0,
       apiFootballLeagueId: null,
     }))
-    .filter((l: any) => l.id && l.name)
-    .filter((league: any, index: number, leagues: any[]) => {
-      const key = `${String(league.name || "").trim().toLowerCase()}|${String(league.sportId || "").trim()}`;
-      return leagues.findIndex((item: any) => `${String(item.name || "").trim().toLowerCase()}|${String(item.sportId || "").trim()}` === key) === index;
-    });
+    .filter((l: any) => l.id && l.name);
 
   // If catalog doesn't provide a `topLeagues` list, derive it from raw league rows (so we preserve ids).
   const fallbackTopLeaguesFromCatalog =
@@ -150,7 +168,7 @@ export default function Sidebar({
   const effectiveTopLeagues = isPissbet
     ? pissbetTopLeagues
     : isMezzo
-      ? mezzoTopLeagues
+      ? uniqueLeagueItems(mezzoTopLeagues).slice(0, 8)
       : (() => {
           const raw = (isStructured && Array.isArray(fallbackTopLeaguesFromCatalog) && fallbackTopLeaguesFromCatalog.length
             ? fallbackTopLeaguesFromCatalog
