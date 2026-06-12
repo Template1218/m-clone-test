@@ -51,6 +51,7 @@ export default function App() {
   const [activeLeague, setActiveLeague] = useState<string | null>(null);
   const [activeLeagueId, setActiveLeagueId] = useState<string | null>(null);
   const [activeApiFootballLeagueId, setActiveApiFootballLeagueId] = useState<string | null>(null);
+  const [activeCountry, setActiveCountry] = useState<string | null>(null);
   const [timeFilter, setTimeFilter] = useState<string>('All Time');
   const [fixturesTab, setFixturesTab] = useState<"upcoming" | "top">("top");
   const [isDesktop, setIsDesktop] = useState<boolean>(() => {
@@ -202,6 +203,7 @@ export default function App() {
           setActiveLeague(null);
           setActiveLeagueId(null);
           setActiveApiFootballLeagueId(null);
+          setActiveCountry(null);
           return;
         }
         if (comingSoonTitles[routeView]) {
@@ -408,6 +410,7 @@ export default function App() {
       setActiveLeague(null);
       setActiveLeagueId(null);
       setActiveApiFootballLeagueId(null);
+      setActiveCountry(null);
     }
     if (tabRoutes[newView]) pushPath(tabRoutes[newView]);
     if (newView === "account") pushPath("/user/profile");
@@ -420,6 +423,7 @@ export default function App() {
     leagueName: activeLeague,
     leagueId: activeLeagueId,
     apiFootballLeagueId: activeApiFootballLeagueId,
+    country: activeCountry,
     timeLimit: timeFilter,
     tab: fixturesTab,
     providerOverride: activeProvider,
@@ -809,10 +813,11 @@ export default function App() {
                 if (id) setFixturesTab("upcoming");
               }}
               activeLeague={activeLeague}
-              onLeagueChange={({ name, id, apiFootballLeagueId, sportId }) => {
+              onLeagueChange={({ name, id, apiFootballLeagueId, sportId, country }) => {
                 setActiveLeague(name);
                 setActiveLeagueId(id);
                 setActiveApiFootballLeagueId(apiFootballLeagueId);
+                setActiveCountry(country || null);
                 if (sportId) {
                   setActiveSport(String(sportId));
                 }
@@ -841,10 +846,11 @@ export default function App() {
                   if (id) setFixturesTab("upcoming");
                 }}
                 activeLeague={activeLeague}
-                onLeagueChange={({ name, id, apiFootballLeagueId, sportId }) => {
+                onLeagueChange={({ name, id, apiFootballLeagueId, sportId, country }) => {
                   setActiveLeague(name);
                   setActiveLeagueId(id);
                   setActiveApiFootballLeagueId(apiFootballLeagueId);
+                  setActiveCountry(country || null);
                   if (sportId) {
                     setActiveSport(String(sportId));
                   }

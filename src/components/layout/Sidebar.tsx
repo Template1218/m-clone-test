@@ -56,7 +56,7 @@ interface SidebarProps {
   activeSport: string | null;
   onSportChange: (id: string | null) => void;
   activeLeague: string | null;
-  onLeagueChange: (params: { name: string | null; id: string | null; apiFootballLeagueId: string | null; sportId?: string | null }) => void;
+  onLeagueChange: (params: { name: string | null; id: string | null; apiFootballLeagueId: string | null; sportId?: string | null; country?: string | null }) => void;
   timeFilter: string;
   onTimeFilterChange: (filter: string) => void;
   isHot: boolean;
@@ -392,7 +392,8 @@ export default function Sidebar({
                                 name: isSelected ? null : country.name, 
                                 id: isSelected ? null : (country.id || null),
                                 apiFootballLeagueId: isSelected ? null : (country.apiFootballLeagueId || null),
-                                sportId: sport.id
+                                sportId: sport.id,
+                                country: isSelected ? null : (country.isCountry || !country.id ? country.name : null)
                               });
                               // Keep sport expanded
                               onSportChange(sport.id);

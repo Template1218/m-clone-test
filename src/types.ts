@@ -96,8 +96,11 @@ export interface Banner {
 }
 
 export interface Country {
+  id?: string;
   name: string;
   count: number;
+  apiFootballLeagueId?: string | null;
+  isCountry?: boolean;
 }
 
 export interface Sport {
