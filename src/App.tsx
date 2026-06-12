@@ -88,8 +88,8 @@ export default function App() {
     enabled: activeProvider === "mezzo",
     sportId: mezzoSportId,
     tab: fixturesTab,
-    // For Mezzo we filter by league name (as provided by catalog), not by internal IDs.
-    leagueId: null,
+    // Mezzo sidebar entries carry provider competition IDs; pass them through for reliable filtering.
+    leagueId: activeLeagueId,
     leagueName: activeLeague,
   });
 
