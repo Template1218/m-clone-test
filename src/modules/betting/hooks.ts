@@ -524,7 +524,7 @@ export function useFixturesInfinite(filters: any = {}) {
   const filtersKey = stableQueryKey(filters);
   return useInfiniteQuery({
     queryKey: ['fixtures', 'infinite', filtersKey],
-    enabled: filters?.enabled === false ? false : true,
+    enabled: filters?.enabled === false || !filters?.providerOverride ? false : true,
     queryFn: async ({ pageParam = 0 }) => {
       const provider = String(filters?.providerOverride || "");
       const effectiveProvider = provider || String((await getActiveOddsProviderFromCatalog()) || "");
