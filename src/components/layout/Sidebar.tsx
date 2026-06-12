@@ -104,7 +104,11 @@ export default function Sidebar({
       eventsCount: Number(l?.eventsCount ?? 0) || 0,
       apiFootballLeagueId: null,
     }))
-    .filter((l: any) => l.id && l.name);
+    .filter((l: any) => l.id && l.name)
+    .filter((league: any, index: number, leagues: any[]) => {
+      const key = `${String(league.name || "").trim().toLowerCase()}|${String(league.sportId || "").trim()}`;
+      return leagues.findIndex((item: any) => `${String(item.name || "").trim().toLowerCase()}|${String(item.sportId || "").trim()}` === key) === index;
+    });
 
   // If catalog doesn't provide a `topLeagues` list, derive it from raw league rows (so we preserve ids).
   const fallbackTopLeaguesFromCatalog =
