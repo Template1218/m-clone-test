@@ -45,7 +45,7 @@ export default function MatchCard({
   const visiblePricesCount = (() => {
     const n = Number(match.pricesCount || 0);
     if (!Number.isFinite(n) || n <= 0) return 0;
-    return n < 800 ? n + 1000 : n;
+    return n;
   })();
 
   const isBetSelected = (market: string, selection: string) =>

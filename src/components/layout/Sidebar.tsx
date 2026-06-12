@@ -125,6 +125,19 @@ export default function Sidebar({
   // NOTE: In Mezzo mode, only show Mezzo-derived leagues (competitionId-based).
   // Mixing in DB catalog leagues breaks filtering because /odds/mezzo expects Mezzo competition ids.
   // For TheStatsAPI: filter out junk competition names and limit to 8 top leagues
+  const cleanStatsLeague = (league: any) => {
+    const rawName = String(league?.name || league?.competitionName || "").trim();
+    const rawCountry = String(league?.country || "").trim();
+    const joined = `${rawName} ${String(league?.id || "")}`.toLowerCase();
+    if (joined.includes("international_soccer") || /^world cup$/i.test(rawName) || /fifa world cup/i.test(rawName)) {
+      return { ...league, name: "FIFA World Cup", country: "World" };
+    }
+    if (joined.includes("comp_2674")) {
+      return { ...league, name: "Veikkausliiga", country: "Finland" };
+    }
+    return league;
+  };
+
   const isJunkLeague = (name: string) =>
     /^competition\s+comp_\d+/i.test(name) ||
     /^competition\s+\d+/i.test(name) ||
@@ -141,6 +154,7 @@ export default function Sidebar({
           if (!isTheStatsApi) return raw;
           // TheStatsAPI: filter junk names and cap at 8
           return raw
+            .map(cleanStatsLeague)
             .filter((l: any) => !isJunkLeague(String(l?.name || "")))
             .slice(0, 8);
         })();
