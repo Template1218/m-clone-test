@@ -851,7 +851,6 @@ export default function App() {
                 onSportChange={(id) => {
                   setActiveSport(id);
                   if (id) setFixturesTab("upcoming");
-                  returnToMatchList();
                 }}
                 activeLeague={activeLeague}
                 onLeagueChange={({ name, id, apiFootballLeagueId, sportId, country }) => {
@@ -873,7 +872,7 @@ export default function App() {
                 isHot={fixturesTab === "top"}
                 onIsHotChange={(v) => setFixturesTab(v ? "top" : "upcoming")}
                 className="w-full border-r-0"
-                applySportOnHeaderClick={true}
+                applySportOnHeaderClick={false}
               />
             </div>
           ) : isComingSoonView ? (
