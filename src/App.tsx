@@ -416,6 +416,13 @@ export default function App() {
     if (newView === "account") pushPath("/user/profile");
   };
 
+  const returnToMatchList = () => {
+    setActiveNavView("home");
+    setView("home");
+    setSelectedMatchId(null);
+    replacePath("/");
+  };
+
 
   const apifbInfinite = useFixturesInfinite({
     enabled: !!activeProvider && activeProvider !== "mezzo" && activeProvider !== "pissbet_socket",
@@ -844,6 +851,7 @@ export default function App() {
                 onSportChange={(id) => {
                   setActiveSport(id);
                   if (id) setFixturesTab("upcoming");
+                  returnToMatchList();
                 }}
                 activeLeague={activeLeague}
                 onLeagueChange={({ name, id, apiFootballLeagueId, sportId, country }) => {
@@ -855,16 +863,17 @@ export default function App() {
                     setActiveSport(String(sportId));
                   }
                   setFixturesTab("upcoming");
-                  // After choosing a league, go back to the main list.
-                  setView("home");
-                  pushPath("/");
+                  returnToMatchList();
                 }}
                 timeFilter={timeFilter}
-                onTimeFilterChange={setTimeFilter}
+                onTimeFilterChange={(filter) => {
+                  setTimeFilter(filter);
+                  returnToMatchList();
+                }}
                 isHot={fixturesTab === "top"}
                 onIsHotChange={(v) => setFixturesTab(v ? "top" : "upcoming")}
                 className="w-full border-r-0"
-                applySportOnHeaderClick={false}
+                applySportOnHeaderClick={true}
               />
             </div>
           ) : isComingSoonView ? (
