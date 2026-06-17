@@ -19,6 +19,7 @@ import AccountPanelPage from "./components/betting/AccountPanelPage";
 import { MatchCardSkeletonList } from "./components/betting/MatchCardSkeleton";
 
 import GamesView from "./components/games/GamesView";
+import FastKenoView from "./components/games/FastKenoView";
 import LiveView from "./components/live/LiveView";
 import VirtualSportsView from "./components/virtual/VirtualSportsView";
 import ComingSoon from "./components/common/ComingSoon";
@@ -100,8 +101,18 @@ export default function App() {
   }, [activeSlipSlot]);
 
   useEffect(() => {
-    if (!authLoading) setUser(currentUser || null);
+    if (!authLoading) {
+      setUser(currentUser || null);
+    }
   }, [authLoading, currentUser]);
+
+  const syncUserBalance = (balance: number) => {
+    queryClient.invalidateQueries({ queryKey: ["user"] });
+    setUser((prev: any) => {
+      if (!prev) return prev;
+      return { ...prev, balance: Number.isFinite(balance) ? balance : prev.balance };
+    });
+  };
 
   const handleSignOut = () => {
     localStorage.removeItem('accessToken');
@@ -130,6 +141,7 @@ export default function App() {
     live: "/live",
     games: "/games",
     "live-games": "/live-games",
+    "fast-keno": "/casino/fast-keno",
     virtual: "/virtual-sports",
     promotions: "/promotions",
   };
@@ -191,6 +203,12 @@ export default function App() {
         setActiveNavView("account");
         setAccountPanelTab("ticket");
         setView("account");
+        return;
+      }
+      if (p === "/casino/fast-keno" || p.startsWith("/casino/fast-keno/")) {
+        setActiveNavView("games");
+        setSelectedMatchId(null);
+        setView("fast-keno");
         return;
       }
       const routeView = Object.entries(tabRoutes).find(([, route]) => p === route || (route !== "/" && p.startsWith(`${route}/`)))?.[0];
@@ -665,6 +683,7 @@ export default function App() {
 
   const isLiveView = view === "live";
   const isGamesView = view === "games";
+  const isFastKenoView = view === "fast-keno";
   const isVirtualView = view === "virtual";
   const isComingSoonView = view === "coming-soon";
   const isSportFiltersView = view === "sport";
@@ -709,11 +728,15 @@ export default function App() {
           pushPath("/user/ticket");
         }}
       />
-      <Navbar
-        currentView={view === "detail" ? "home" : activeNavView}
-        onViewChange={handleViewChange}
-      />
-      <div className="h-px lg:h-1.5 w-full bg-gradient-to-b from-black to-transparent opacity-50 relative z-[85]" />
+      {view !== "fast-keno" && (
+        <>
+          <Navbar
+            currentView={view === "detail" ? "home" : activeNavView}
+            onViewChange={handleViewChange}
+          />
+          <div className="h-px lg:h-1.5 w-full bg-gradient-to-b from-black to-transparent opacity-50 relative z-[85]" />
+        </>
+      )}
 
       {/* Mobile menu drawer */}
       <AnimatePresence>
@@ -881,6 +904,12 @@ export default function App() {
             <div className="p-4 lg:p-0">
               <AccountPanelPage tab={accountPanelTab} onTabChange={setAccountPanelTab} user={user} />
             </div>
+          ) : isFastKenoView ? (
+            <FastKenoView
+              user={user}
+              authLoading={authLoading}
+              onWalletChange={syncUserBalance}
+            />
           ) : isGamesView ? (
             <GamesView user={user} onLoginRequired={() => handleAuth("login")} />
           ) : isLiveView ? (
@@ -1045,7 +1074,7 @@ export default function App() {
         </main>
 
         {/* Sidebar/Drawer: Betslip */}
-        {view !== "games" && view !== "virtual" && view !== "account" && (
+        {view !== "games" && view !== "virtual" && view !== "account" && view !== "fast-keno" && (
       <Betslip
         selectedBets={selectedBets}
         onRemoveBet={removeBet}
@@ -1116,7 +1145,7 @@ export default function App() {
         type={authModal.type}
         onClose={() => setAuthModal((prev) => ({ ...prev, open: false }))}
         onSwitch={(type) => setAuthModal({ open: true, type })}
-        onSuccess={(data) => setUser(data)}
+          onSuccess={(data) => setUser(data)}
       />
     </div>
   );
