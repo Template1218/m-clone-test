@@ -8,7 +8,7 @@ const fastKenoUrl = (rawFastKenoUrl || "http://localhost:3000").replace(/\/+$/, 
 const fastKenoOrigin = new URL(fastKenoUrl).origin;
 const rawApiBaseUrl = (import.meta as any)?.env?.VITE_API_BASE_URL
   ? String((import.meta as any).env.VITE_API_BASE_URL).trim()
-  : "";
+  : "https://api.king5.bet";
 
 export default function FastKenoView({
   user,
@@ -29,9 +29,7 @@ export default function FastKenoView({
       balance: String(Number(user?.balance || 0)),
       currency: String(user?.currency || "ETB"),
     });
-    if (rawApiBaseUrl) {
-      params.set("backendApiBase", rawApiBaseUrl.replace(/\/+$/, "").replace(/\/api$/i, ""));
-    }
+    params.set("backendApiBase", rawApiBaseUrl.replace(/\/+$/, "").replace(/\/api$/i, ""));
     if (accessToken) {
       params.set("authToken", accessToken);
     }
