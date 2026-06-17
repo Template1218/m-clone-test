@@ -30,6 +30,7 @@ export type LiveGame = {
 
 const GAME_PROVIDERS: GameProvider[] = [
   { id: "all", name: "All" },
+  { id: "king5", name: "King5", catalog: "/games/silent-king5.json" },
   { id: "spribe", name: "SPRIBE", catalog: "/games/silent-spribe.json" },
   { id: "smartsoft", name: "SmartSoft", catalog: "/games/silent-smartsoft.json" },
   { id: "evolution", name: "Evolution", catalog: "/games/silent-evolution.json" },
@@ -150,6 +151,10 @@ export function extractLaunchUrl(result: any) {
 
 export async function launchLiveGame(game: LiveGame, user: any) {
   if (!user?.id) throw new Error("Please log in to play live games.");
+
+  if (game.providerId === "king5" && game.uid === "king5-fast-keno") {
+    return `${window.location.origin}${window.location.pathname}#/casino/fast-keno`;
+  }
 
   const { data } = await api.post("/games/launch", {
     game_uid: game.uid,

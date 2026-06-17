@@ -51,7 +51,14 @@ export default function GamesView({ user, onLoginRequired }: { user?: any; onLog
     try {
       setLaunchingGameId(game.id);
       const url = await launchLiveGame(game as any, user);
-      window.location.href = url;
+      if (game.providerId === 'king5' && game.uid === 'king5-fast-keno') {
+        const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!newWindow) {
+          throw new Error('Popup blocked. Please allow popups for Fast Keno.');
+        }
+      } else {
+        window.location.href = url;
+      }
     } catch (err: any) {
       setLaunchError(err?.message || 'Unable to open this game right now.');
     } finally {
