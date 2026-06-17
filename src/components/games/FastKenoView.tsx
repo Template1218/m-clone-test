@@ -6,6 +6,9 @@ const rawFastKenoUrl = (import.meta as any)?.env?.VITE_FAST_KENO_URL
   : "http://localhost:3000";
 const fastKenoUrl = (rawFastKenoUrl || "http://localhost:3000").replace(/\/+$/, "");
 const fastKenoOrigin = new URL(fastKenoUrl).origin;
+const rawApiBaseUrl = (import.meta as any)?.env?.VITE_API_BASE_URL
+  ? String((import.meta as any).env.VITE_API_BASE_URL).trim()
+  : "";
 
 export default function FastKenoView({
   user,
@@ -20,11 +23,18 @@ export default function FastKenoView({
   const frameUrlRef = useRef<string>("");
 
   if (!frameUrlRef.current && !authLoading && user?.id) {
+    const accessToken = localStorage.getItem("accessToken") || "";
     const params = new URLSearchParams({
       userId: String(user?.id || ""),
       balance: String(Number(user?.balance || 0)),
       currency: String(user?.currency || "ETB"),
     });
+    if (rawApiBaseUrl) {
+      params.set("backendApiBase", rawApiBaseUrl.replace(/\/+$/, "").replace(/\/api$/i, ""));
+    }
+    if (accessToken) {
+      params.set("authToken", accessToken);
+    }
     frameUrlRef.current = `${fastKenoUrl}/?${params.toString()}`;
   }
 
