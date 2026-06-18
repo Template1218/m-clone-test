@@ -156,6 +156,16 @@ export default function AccountPanelPage({ tab, onTabChange, user }: AccountPane
     if (slipPage > totalSlipPages) setSlipPage(totalSlipPages);
   }, [slipPage, totalSlipPages]);
 
+  useEffect(() => {
+    if (tab !== "ticket") return;
+    const hashPath = String(window.location.hash || "").replace(/^#/, "");
+    const match = hashPath.match(/^\/user\/ticket\/([^/?#]+)/);
+    const routeTicketId = match?.[1] ? decodeURIComponent(match[1]) : "";
+    if (!routeTicketId) return;
+    setTicketId(routeTicketId);
+    setSubmittedTicketId(routeTicketId);
+  }, [tab]);
+
   const slipPagesToShow = useMemo(() => {
     if (totalSlipPages <= 7) return Array.from({ length: totalSlipPages }, (_, i) => i + 1);
     const pages = new Set<number>([1, totalSlipPages]);
