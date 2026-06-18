@@ -28,6 +28,7 @@ export default function FastKenoView({
       userId: String(user?.id || ""),
       balance: String(Number(user?.balance || 0)),
       currency: String(user?.currency || "ETB"),
+      embedded: "king5",
     });
     params.set("backendApiBase", rawApiBaseUrl.replace(/\/+$/, "").replace(/\/api$/i, ""));
     if (accessToken) {
@@ -52,8 +53,8 @@ export default function FastKenoView({
   }, [onWalletChange]);
 
   return (
-    <div className="min-h-full bg-[#070707] px-0 py-0">
-      <div className="mx-auto max-w-full">
+    <div className="h-full min-h-0 bg-[#070707] px-0 py-0">
+      <div className="mx-auto h-full max-w-full">
         {!frameUrlRef.current ? (
           <div className="flex min-h-[70vh] items-center justify-center border border-white/10 bg-black px-6 text-center">
             <div className="text-sm font-black uppercase tracking-wider text-white/70">
@@ -73,11 +74,11 @@ export default function FastKenoView({
             </div>
           </div>
         ) : (
-          <div className="overflow-hidden border-y border-white/10 bg-black shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+          <div className="h-full overflow-hidden border-y border-white/10 bg-black shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
             <iframe
               src={frameUrlRef.current}
               title="Fast Keno"
-              className="h-[100dvh] min-h-[100dvh] w-full border-0 bg-[#050909]"
+              className="h-full min-h-full w-full border-0 bg-[#050909]"
               onError={() => setFrameError(true)}
             />
           </div>

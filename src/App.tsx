@@ -744,45 +744,43 @@ export default function App() {
 
   return (
     <div className="h-screen overflow-hidden flex flex-col bg-brand-dark">
-      {!isFastKenoView && (
-        <Header
-          user={user}
-          authLoading={authLoading}
-          onAuth={handleAuth}
-          onSignOut={handleSignOut}
-          onLogoClick={() => {
-            setMobileMenuOpen(false);
-            setActiveNavView("home");
-            setView("home");
-            setSelectedMatchId(null);
-            pushPath("/");
-          }}
-          onOpenDeposit={() => {
-            setActiveNavView("account");
-            setAccountPanelTab("deposit");
-            setView("account");
-            pushPath("/user/profile");
-          }}
-          onOpenWithdraw={() => {
-            setActiveNavView("account");
-            setAccountPanelTab("withdraw");
-            setView("account");
-            pushPath("/user/withdraw");
-          }}
-          onOpenBetsHistory={() => {
-            setActiveNavView("account");
-            setAccountPanelTab("bets");
-            setView("account");
-            pushPath("/user/bets");
-          }}
-          onOpenCheckTicket={() => {
-            setActiveNavView("account");
-            setAccountPanelTab("ticket");
-            setView("account");
-            pushPath("/user/ticket");
-          }}
-        />
-      )}
+      <Header
+        user={user}
+        authLoading={authLoading}
+        onAuth={handleAuth}
+        onSignOut={handleSignOut}
+        onLogoClick={() => {
+          setMobileMenuOpen(false);
+          setActiveNavView("home");
+          setView("home");
+          setSelectedMatchId(null);
+          pushPath("/");
+        }}
+        onOpenDeposit={() => {
+          setActiveNavView("account");
+          setAccountPanelTab("deposit");
+          setView("account");
+          pushPath("/user/profile");
+        }}
+        onOpenWithdraw={() => {
+          setActiveNavView("account");
+          setAccountPanelTab("withdraw");
+          setView("account");
+          pushPath("/user/withdraw");
+        }}
+        onOpenBetsHistory={() => {
+          setActiveNavView("account");
+          setAccountPanelTab("bets");
+          setView("account");
+          pushPath("/user/bets");
+        }}
+        onOpenCheckTicket={() => {
+          setActiveNavView("account");
+          setAccountPanelTab("ticket");
+          setView("account");
+          pushPath("/user/ticket");
+        }}
+      />
       {view !== "fast-keno" && (
         <>
           <Navbar
