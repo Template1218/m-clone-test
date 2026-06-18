@@ -77,7 +77,7 @@ export default function FastKenoView({
             <iframe
               src={frameUrlRef.current}
               title="Fast Keno"
-              className="h-[calc(100vh-128px)] min-h-[720px] w-full border-0 bg-[#050909]"
+              className="h-[100dvh] min-h-[100dvh] w-full border-0 bg-[#050909]"
               onError={() => setFrameError(true)}
             />
           </div>

@@ -744,43 +744,45 @@ export default function App() {
 
   return (
     <div className="h-screen overflow-hidden flex flex-col bg-brand-dark">
-      <Header
-        user={user}
-        authLoading={authLoading}
-        onAuth={handleAuth}
-        onSignOut={handleSignOut}
-        onLogoClick={() => {
-          setMobileMenuOpen(false);
-          setActiveNavView("home");
-          setView("home");
-          setSelectedMatchId(null);
-          pushPath("/");
-        }}
-        onOpenDeposit={() => {
-          setActiveNavView("account");
-          setAccountPanelTab("deposit");
-          setView("account");
-          pushPath("/user/profile");
-        }}
-        onOpenWithdraw={() => {
-          setActiveNavView("account");
-          setAccountPanelTab("withdraw");
-          setView("account");
-          pushPath("/user/withdraw");
-        }}
-        onOpenBetsHistory={() => {
-          setActiveNavView("account");
-          setAccountPanelTab("bets");
-          setView("account");
-          pushPath("/user/bets");
-        }}
-        onOpenCheckTicket={() => {
-          setActiveNavView("account");
-          setAccountPanelTab("ticket");
-          setView("account");
-          pushPath("/user/ticket");
-        }}
-      />
+      {!isFastKenoView && (
+        <Header
+          user={user}
+          authLoading={authLoading}
+          onAuth={handleAuth}
+          onSignOut={handleSignOut}
+          onLogoClick={() => {
+            setMobileMenuOpen(false);
+            setActiveNavView("home");
+            setView("home");
+            setSelectedMatchId(null);
+            pushPath("/");
+          }}
+          onOpenDeposit={() => {
+            setActiveNavView("account");
+            setAccountPanelTab("deposit");
+            setView("account");
+            pushPath("/user/profile");
+          }}
+          onOpenWithdraw={() => {
+            setActiveNavView("account");
+            setAccountPanelTab("withdraw");
+            setView("account");
+            pushPath("/user/withdraw");
+          }}
+          onOpenBetsHistory={() => {
+            setActiveNavView("account");
+            setAccountPanelTab("bets");
+            setView("account");
+            pushPath("/user/bets");
+          }}
+          onOpenCheckTicket={() => {
+            setActiveNavView("account");
+            setAccountPanelTab("ticket");
+            setView("account");
+            pushPath("/user/ticket");
+          }}
+        />
+      )}
       {view !== "fast-keno" && (
         <>
           <Navbar
@@ -918,7 +920,7 @@ export default function App() {
           ref={(el) => {
             mainScrollRef.current = el;
           }}
-          className={`flex-1 ${selectedMatchId ? "overflow-hidden" : "overflow-y-auto w-full"} ${isGamesView || isVirtualView ? "bg-[#0a0a0a]" : "p-0"} pb-32 lg:pb-10`}
+          className={`flex-1 ${selectedMatchId ? "overflow-hidden" : "overflow-y-auto w-full"} ${isGamesView || isVirtualView ? "bg-[#0a0a0a]" : "p-0"} ${isFastKenoView ? "pb-0 lg:pb-0" : "pb-32 lg:pb-10"}`}
         >
           {isSportFiltersView ? (
             <div className="p-0 lg:hidden h-full">
@@ -1185,12 +1187,14 @@ export default function App() {
       )}
 
       {/* Mobile Bottom Nav */}
-      <MobileBottomNav
-        currentView={view}
-        onViewChange={handleViewChange}
-        onMenuOpen={() => setMobileMenuOpen(true)}
-        scrollElement={mainScrollRef.current}
-      />
+      {!isFastKenoView && (
+        <MobileBottomNav
+          currentView={view}
+          onViewChange={handleViewChange}
+          onMenuOpen={() => setMobileMenuOpen(true)}
+          scrollElement={mainScrollRef.current}
+        />
+      )}
 
 
       <AuthModal
