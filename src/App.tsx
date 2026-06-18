@@ -16,7 +16,9 @@ import MatchCard from "./components/betting/MatchCard";
 import MatchDetail from "./components/betting/MatchDetail";
 import AuthModal from "./components/betting/AuthModal";
 import AccountPanelPage from "./components/betting/AccountPanelPage";
+import PublicTicketModal from "./components/betting/PublicTicketModal";
 import { MatchCardSkeletonList } from "./components/betting/MatchCardSkeleton";
+import { api } from "./lib/api";
 
 import GamesView from "./components/games/GamesView";
 import FastKenoView from "./components/games/FastKenoView";
@@ -132,6 +134,11 @@ export default function App() {
     type: "login",
   });
   const [accountPanelTab, setAccountPanelTab] = useState<"deposit" | "withdraw" | "bets" | "ticket">("deposit");
+  const [publicTicketCode, setPublicTicketCode] = useState("");
+  const [publicTicket, setPublicTicket] = useState<any>(null);
+  const [publicTicketLoading, setPublicTicketLoading] = useState(false);
+  const [publicTicketError, setPublicTicketError] = useState("");
+  const [publicTicketRefresh, setPublicTicketRefresh] = useState(0);
 
   const getMatchRoute = (matchId: string) => `/match/${encodeURIComponent(matchId)}`;
 
@@ -160,6 +167,17 @@ export default function App() {
     const applyPath = (rawPath: string) => {
       const raw = String(rawPath || "/");
       const p = raw.toLowerCase();
+      if (p === "/ticket" || p.startsWith("/ticket/")) {
+        const encodedCode = raw.split("/").slice(2).join("/");
+        let code = "";
+        try {
+          code = encodedCode ? decodeURIComponent(encodedCode) : "";
+        } catch {
+          code = encodedCode;
+        }
+        if (code) setPublicTicketCode(code);
+        return;
+      }
       if (p === "/betslip" || p.startsWith("/betslip/")) {
         setIsBetslipOpen(true);
         // Keep view as-is (home/detail/etc); betslip is an overlay.
@@ -253,6 +271,41 @@ export default function App() {
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, [isDesktop]);
+
+  useEffect(() => {
+    if (!publicTicketCode) return;
+    let cancelled = false;
+    setPublicTicketLoading(true);
+    setPublicTicketError("");
+    setPublicTicket(null);
+
+    api.get(`/public/tickets/${encodeURIComponent(publicTicketCode)}`)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setPublicTicket(data?.ticket || null);
+        if (!data?.ticket) setPublicTicketError("Ticket not found");
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setPublicTicketError(e?.response?.data?.error || e?.response?.data?.message || e?.message || "Ticket not found");
+      })
+      .finally(() => {
+        if (!cancelled) setPublicTicketLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [publicTicketCode, publicTicketRefresh]);
+
+  const closePublicTicket = () => {
+    setPublicTicketCode("");
+    setPublicTicket(null);
+    setPublicTicketError("");
+    if (window.location.hash.toLowerCase().startsWith("#/ticket/")) {
+      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#/`);
+    }
+  };
 
   const pushPath = (path: string) => {
     if (typeof window === "undefined") return;
@@ -1146,6 +1199,14 @@ export default function App() {
         onClose={() => setAuthModal((prev) => ({ ...prev, open: false }))}
         onSwitch={(type) => setAuthModal({ open: true, type })}
           onSuccess={(data) => setUser(data)}
+      />
+      <PublicTicketModal
+        isOpen={!!publicTicketCode}
+        ticket={publicTicket}
+        isLoading={publicTicketLoading}
+        error={publicTicketError}
+        onClose={closePublicTicket}
+        onRefresh={() => setPublicTicketRefresh((v) => v + 1)}
       />
     </div>
   );
