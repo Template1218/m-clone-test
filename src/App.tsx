@@ -348,11 +348,16 @@ export default function App() {
       return;
     }
     const safeOddsVersion = Number.isFinite(Number(acceptedOddsVersion)) ? Number(acceptedOddsVersion) : 1;
+    const matchesSelection = (bet: BetSelection) => {
+      if (safeOutcomeId && bet.outcomeId) return String(bet.outcomeId) === safeOutcomeId;
+      if (safeSelectionKey && bet.selectionKey) return String(bet.selectionKey) === safeSelectionKey;
+      return bet.matchId === match.id && bet.market === market && bet.selection === selection;
+    };
     setSelectedBetsBySlot((prevBySlot) => {
       const prev = prevBySlot[activeSlipSlot];
-      const exists = prev.find((b) => b.matchId === match.id && b.market === market && b.selection === selection);
+      const exists = prev.find(matchesSelection);
       if (exists) {
-        const nextSlot = prev.filter((b) => !(b.matchId === match.id && b.market === market && b.selection === selection));
+        const nextSlot = prev.filter((b) => !matchesSelection(b));
         return { ...prevBySlot, [activeSlipSlot]: nextSlot };
       }
 

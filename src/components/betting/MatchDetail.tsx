@@ -96,8 +96,16 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
     setExpandedCategories(prev => ({ ...prev, [k]: !(prev?.[k] ?? (k === "MAIN")) }));
   };
 
-  const isSelected = (market: string, selection: string) => 
-    selectedBets.some(b => b.matchId === match.id && b.market === market && b.selection === selection);
+  const isSelected = (market: string, selection: string, outcomeId?: string, selectionKey?: string) => {
+    const safeOutcomeId = String(outcomeId || "").trim();
+    const safeSelectionKey = String(selectionKey || "").trim();
+    return selectedBets.some((b) => {
+      if (b.matchId !== match.id) return false;
+      if (safeOutcomeId && b.outcomeId) return String(b.outcomeId) === safeOutcomeId;
+      if (safeSelectionKey && b.selectionKey) return String(b.selectionKey) === safeSelectionKey;
+      return b.market === market && b.selection === selection;
+    });
+  };
 
   const sportName = String(match.sportName || "").toLowerCase();
   const isFootball = sportName.includes("football") || sportName.includes("soccer");
@@ -651,26 +659,27 @@ export default function MatchDetail({ match, selectedBets, onToggleBet, onBack }
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 mt-1">
                             {outcomes.map((o: any) => {
                               const oName = o.label || o.priceName || o.name || o.outcomeKey || o.key;
-                              const selectionKey = String(oName);
-                              const isBetActive = isSelected(m.marketName || m.name, selectionKey);
                               const maybeOutcomeId = String(
                                 (isUuid(o.outcomeId) ? o.outcomeId : "") ||
                                   (isUuid(o.id) ? o.id : "") ||
                                   ""
                               ).trim();
                               const rawSelectionKey = String(o.selectionKey || o.referenceId || o.selection_key || "").trim();
+                              const displaySelection = String(oName);
+                              const isBetActive = isSelected(m.marketName || m.name, displaySelection, maybeOutcomeId, rawSelectionKey);
                               const hasOutcomeId = !!maybeOutcomeId;
                               const selectable = outcomeSelectable(o) && (hasOutcomeId || !!rawSelectionKey);
+                              const buttonKey = maybeOutcomeId || rawSelectionKey || String(o.id || o.outcomeKey || o.key || displaySelection);
 
                               return (
                                 <button
-                                  key={o.id}
+                                  key={buttonKey}
                                   onClick={() => {
                                     if (!selectable || o.uiStatus === "suspended" || o.uiStatus === "closed") return;
                                     onToggleBet(
                                       match,
                                       m.marketName || m.name,
-                                      selectionKey,
+                                      displaySelection,
                                       outcomeOddsValue(o),
                                       maybeOutcomeId || undefined,
                                       rawSelectionKey || undefined,
